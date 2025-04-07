@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,11 +20,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DomentiaCareTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                LoginScreen { accessToken ->
+                    // TODO: 카카오 로그인 성공 후 처리
+                    println("로그인 성공! accessToken: $accessToken")
                 }
             }
         }
