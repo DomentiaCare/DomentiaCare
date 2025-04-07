@@ -3,18 +3,29 @@ package com.example.domentiacare.ui.screen.login
 import android.app.Activity
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.domentiacare.data.remote.RetrofitClient
+import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
+import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.user.UserApiClient
-import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun LoginScreen(
@@ -31,7 +42,26 @@ fun LoginScreen(
         } else if (token != null) {
             Log.d("KakaoLogin", "로그인 성공 - token: ${token.accessToken}")
             Toast.makeText(context, "로그인 성공", Toast.LENGTH_SHORT).show()
-            onLoginSuccess(token.accessToken)
+
+
+            val request = KakaoTokenRequest(token.accessToken)
+
+            RetrofitClient.authApi.kakaoLogin(request).enqueue(object : Callback<KakaoLoginResponse> {
+                override fun onResponse(call: Call<KakaoLoginResponse>, response: Response<KakaoLoginResponse>) {
+                    if (response.isSuccessful) {
+                        val result = response.body()
+                        Log.d("KakaoLogin", "서버 로그인 성공: ${result?.user?.nickname}")
+                        // JWT 저장 및 다음 화면 이동
+                        onLoginSuccess(token.accessToken)
+                    } else {
+                        Log.e("KakaoLogin", "서버 로그인 실패: ${response.code()}")
+                    }
+                }
+
+                override fun onFailure(call: Call<KakaoLoginResponse>, t: Throwable) {
+                    Log.e("KakaoLogin", "서버 연결 실패", t)
+                }
+            })
         }
     }
 
