@@ -7,10 +7,10 @@
       </SelectionState>
       <SelectionState runConfigName="domentiacarewatch">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-04-03T02:05:47.885437700Z">
+        <DropdownSelection timestamp="2025-04-09T04:22:01.015924400Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\hsooo\.android\avd\Wear_OS_Large_Round_API_34.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\User\.android\avd\Pixel_8.avd" />
             </handle>
           </Target>
         </DropdownSelection>

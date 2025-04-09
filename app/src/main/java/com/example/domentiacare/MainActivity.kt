@@ -12,17 +12,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.domentiacare.ui.screen.login.LoginScreen
+import com.example.domentiacare.ui.screen.navigate.NavigateScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val IS_DEV_MODE = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             DomentiaCareTheme {
-                LoginScreen { accessToken ->
-                    // TODO: 카카오 로그인 성공 후 처리
-                    println("로그인 성공! accessToken: $accessToken")
+                if (IS_DEV_MODE) {
+                    NavigateScreen()
+                } else {
+                    LoginScreen { accessToken ->
+                        // TODO: 카카오 로그인 성공 후 처리
+                        println("로그인 성공! accessToken: $accessToken")
+                    }
                 }
             }
         }
