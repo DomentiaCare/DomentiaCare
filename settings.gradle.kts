@@ -20,6 +20,8 @@ dependencyResolutionManagement {
         mavenCentral()
         // ✅ 여기도 Kakao SDK용 저장소 추가
         maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
+        // ✅ 네이버 지도 SDK용 저장소 추가
+        maven { url = uri("https://naver.jfrog.io/artifactory/maven/") }
     }
 }
 
