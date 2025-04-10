@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
 import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
@@ -51,7 +52,12 @@ fun LoginScreen(
                     if (response.isSuccessful) {
                         val result = response.body()
                         Log.d("KakaoLogin", "서버 로그인 성공: ${result?.user?.nickname}")
+                        Log.d("KakaoLogin", "서버 로그인 성공 jwt: ${result?.jwt}")
                         // JWT 저장 및 다음 화면 이동
+                        result?.jwt?.let { jwt ->
+                            TokenManager.saveToken(jwt) // 🔐 저장
+                            Log.d("KakaoLogin", "JWT 저장 완료: $jwt")
+                        }
                         onLoginSuccess(token.accessToken)
                     } else {
                         Log.e("KakaoLogin", "서버 로그인 실패: ${response.code()}")

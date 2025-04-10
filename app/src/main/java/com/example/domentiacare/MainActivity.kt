@@ -4,13 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.navigate.NavigateScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
@@ -27,11 +25,25 @@ class MainActivity : ComponentActivity() {
                 if (IS_DEV_MODE) {
                     NavigateScreen()
                 } else {
-                    LoginScreen { accessToken ->
-                        // TODO: 카카오 로그인 성공 후 처리
-                        println("로그인 성공! accessToken: $accessToken")
+                    val jwtToken = TokenManager.getToken()
+                    
+                    if (jwtToken != null) {
+                        // ✅ 토큰이 있다면 로그인된 상태 → 홈 화면으로 이동
+                        LoginScreen(
+                            onLoginSuccess = { accessToken ->
+                                // 로그인 후 처리 (예: navigate or recomposition)
+                            }
+                        )
+                        /*Log.d("KakaoLogin", "저장된 JWT: $jwtToken")
+                        HomeScreen()*/
+                    } else {
+                        // ✅ 토큰이 없다면 로그인 화면
+                        LoginScreen(
+                            onLoginSuccess = { accessToken ->
+                                // 로그인 후 처리 (예: navigate or recomposition)
+                            }
+                        )
                     }
-                }
             }
         }
     }

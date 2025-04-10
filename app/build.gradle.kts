@@ -33,6 +33,7 @@ android {
         // 네이버 지도 API 키 설정
         manifestPlaceholders["naverMapClientId"] = naverMapClientId
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
+        buildConfigField("String", "BASE_URL", "\"http://223.194.131.143:8080\"")
     }
 
     buildTypes {
