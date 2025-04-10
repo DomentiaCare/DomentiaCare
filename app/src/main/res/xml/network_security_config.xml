@@ -3,8 +3,6 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">map.naver.com</domain>
         <domain includeSubdomains="true">naveropenapi.apigw.ntruss.com</domain>
-    <!-- 여기에 본인 서버 IP 입력 -->
-    <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">223.194.131.143</domain>
     </domain-config>
 </network-security-config>
