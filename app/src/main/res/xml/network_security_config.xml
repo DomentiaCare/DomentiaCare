@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 여기에 본인 서버 IP 입력 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">223.194.131.143</domain>
+    </domain-config>
+</network-security-config>

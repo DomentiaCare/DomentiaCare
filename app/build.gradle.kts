@@ -28,6 +28,7 @@ android {
 
         manifestPlaceholders["kakao_scheme"] = "kakao$kakaoKey"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+        buildConfigField("String", "BASE_URL", "\"http://223.194.131.143:8080\"")
     }
 
     buildTypes {
