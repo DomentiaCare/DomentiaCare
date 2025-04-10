@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                     NavigateScreen()
                 } else {
                     val jwtToken = TokenManager.getToken()
-                    
+
                     if (jwtToken != null) {
                         // ✅ 토큰이 있다면 로그인된 상태 → 홈 화면으로 이동
                         LoginScreen(
@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                }
             }
         }
     }
