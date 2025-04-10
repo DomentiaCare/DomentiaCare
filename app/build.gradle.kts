@@ -6,6 +6,7 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 val kakaoKey = localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
+val naverMapClientId = localProperties.getProperty("NAVER_MAP_CLIENT_ID") ?: ""
 
 plugins {
     alias(libs.plugins.android.application)
@@ -28,6 +29,10 @@ android {
 
         manifestPlaceholders["kakao_scheme"] = "kakao$kakaoKey"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
+
+        // 네이버 지도 API 키 설정
+        manifestPlaceholders["naverMapClientId"] = naverMapClientId
+        buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
         buildConfigField("String", "BASE_URL", "\"http://223.194.131.143:8080\"")
     }
 
@@ -74,5 +79,16 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    // 네이버 지도 SDK
+    implementation ("com.naver.maps:map-sdk:3.17.0")
+
+    // 위치 서비스를 위한 Play Services 의존성
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    // Retrofit 및 네트워크 통신 라이브러리 (API 호출용)
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
 
 }

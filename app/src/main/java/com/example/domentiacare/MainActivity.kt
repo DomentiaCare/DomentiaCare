@@ -10,31 +10,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.screen.login.LoginScreen
+import com.example.domentiacare.ui.screen.navigate.NavigateScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val IS_DEV_MODE = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             DomentiaCareTheme {
-                val jwtToken = TokenManager.getToken()
-                if (jwtToken != null) {
-                    // ✅ 토큰이 있다면 로그인된 상태 → 홈 화면으로 이동
-                    LoginScreen(
-                        onLoginSuccess = { accessToken ->
-                            // 로그인 후 처리 (예: navigate or recomposition)
-                        }
-                    )
-                    /*Log.d("KakaoLogin", "저장된 JWT: $jwtToken")
-                    HomeScreen()*/
+                if (IS_DEV_MODE) {
+                    NavigateScreen()
                 } else {
-                    // ✅ 토큰이 없다면 로그인 화면
-                    LoginScreen(
-                        onLoginSuccess = { accessToken ->
-                            // 로그인 후 처리 (예: navigate or recomposition)
-                        }
-                    )
+                    val jwtToken = TokenManager.getToken()
+
+                    if (jwtToken != null) {
+                        // ✅ 토큰이 있다면 로그인된 상태 → 홈 화면으로 이동
+                        LoginScreen(
+                            onLoginSuccess = { accessToken ->
+                                // 로그인 후 처리 (예: navigate or recomposition)
+                            }
+                        )
+                        /*Log.d("KakaoLogin", "저장된 JWT: $jwtToken")
+                        HomeScreen()*/
+                    } else {
+                        // ✅ 토큰이 없다면 로그인 화면
+                        LoginScreen(
+                            onLoginSuccess = { accessToken ->
+                                // 로그인 후 처리 (예: navigate or recomposition)
+                            }
+                        )
+                    }
                 }
             }
         }
