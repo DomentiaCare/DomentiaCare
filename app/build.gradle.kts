@@ -1,5 +1,5 @@
-import java.util.Properties
 import java.net.InetAddress
+import java.util.Properties
 
 val localIpAddress = InetAddress.getLocalHost().hostAddress
 val baseUrl = "http://$localIpAddress:8080"
@@ -83,6 +83,19 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+
+    //navigation
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
+    //viewmodel
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+
+    //화면 전환 애니메이션
+    implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+
+    //캘린더 라이브러리
+    implementation("com.kizitonwose.calendar:compose:2.0.3")
+
 
     // 네이버 지도 SDK
     //implementation ("com.naver.maps:map-sdk:3.16.2")

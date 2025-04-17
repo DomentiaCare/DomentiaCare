@@ -14,14 +14,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.domentiacare.data.local.TokenManager
+import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.screen.home.HomeScreen
 import com.example.domentiacare.ui.screen.login.LoginScreen
-import com.example.domentiacare.ui.screen.navigate.NavigateScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
+
 
 class MainActivity : ComponentActivity() {
 
-    private val IS_DEV_MODE = false
+    private val IS_DEV_MODE = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +30,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             DomentiaCareTheme {
                 if (IS_DEV_MODE) {
-                    NavigateScreen()
+//                    NavigateScreen()
+                    AppNavHost() //이 함수 안에 초기 화면과 이동화면들 정의되어있음
                 } else {
                     // ✅ remember 상태로 jwtToken 관리
                     var jwtToken by remember { mutableStateOf(TokenManager.getToken()) }
