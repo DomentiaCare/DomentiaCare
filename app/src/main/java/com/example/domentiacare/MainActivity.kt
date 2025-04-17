@@ -21,7 +21,7 @@ import com.example.domentiacare.ui.theme.DomentiaCareTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val IS_DEV_MODE = false
+    private val IS_DEV_MODE = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +29,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             DomentiaCareTheme {
                 if (IS_DEV_MODE) {
-                    NavigateScreen()
+                    HomeScreen(
+                        onLogout = {
+                            var jwtToken = null // ✅ recomposition 유도
+                        }
+                    )
                 } else {
                     // ✅ remember 상태로 jwtToken 관리
                     var jwtToken by remember { mutableStateOf(TokenManager.getToken()) }
