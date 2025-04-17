@@ -49,6 +49,13 @@ fun HomeScreen(
     val context = LocalContext.current
     val token = TokenManager.getToken()
 
+    // 파일 경로 통합 변수 추가
+    val possiblePaths = listOf(
+        "/sdcard/Download/ai_output.txt",
+        "/storage/emulated/0/Download/ai_output.txt",
+        "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/ai_output.txt"
+    )
+
     // 권한 체크 함수
     fun checkStoragePermissions(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -104,10 +111,10 @@ fun HomeScreen(
         }
     }
 
-    // 파일 확인 함수
+    // 파일 확인 함수 - 수정됨
     fun checkForResponseFile() {
         val handler = Handler(Looper.getMainLooper())
-        val maxAttempts = 15
+        val maxAttempts = 30 // 시도 횟수 증가
         var attempts = 0
 
         val fileChecker = object : Runnable {
@@ -119,35 +126,40 @@ fun HomeScreen(
 
                 try {
                     // 여러 경로 시도
-                    val paths = listOf(
-                        "/sdcard/Download/ai_output.txt",
-                        "/storage/emulated/0/Download/ai_output.txt",
-                        "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/ai_output.txt"
-                    )
+                    var fileFound = false
 
-                    for (path in paths) {
+                    for (path in possiblePaths) {
                         val file = File(path)
                         Log.d("TermuxAPI", "경로 확인: $path (존재: ${file.exists()})")
 
                         if (file.exists() && file.length() > 0) {
-                            val response = file.readText()
-                            isLoading = false
-                            aiResponse = response
-                            Log.d("TermuxAPI", "응답 발견: $path")
-                            return
+                            try {
+                                val response = file.readText()
+                                isLoading = false
+                                aiResponse = response
+                                Log.d("TermuxAPI", "응답 발견: $path")
+                                fileFound = true
+                                return
+                            } catch (e: Exception) {
+                                Log.e("TermuxAPI", "파일 읽기 오류: $path", e)
+                            }
                         }
                     }
 
                     // 디버그 로그 확인
                     val debugLog = File("/sdcard/Download/debug_log.txt")
                     if (debugLog.exists()) {
-                        val logContent = debugLog.readText()
-                        debugInfo = "디버그 로그: $logContent"
-                        Log.d("TermuxAPI", "디버그 로그 내용: $logContent")
+                        try {
+                            val logContent = debugLog.readText()
+                            debugInfo = "디버그 로그: $logContent"
+                            Log.d("TermuxAPI", "디버그 로그 내용: $logContent")
+                        } catch (e: Exception) {
+                            Log.e("TermuxAPI", "디버그 로그 읽기 오류", e)
+                        }
                     }
 
                     if (attempts < maxAttempts) {
-                        handler.postDelayed(this, 2000)
+                        handler.postDelayed(this, 3000) // 딜레이 시간 증가 (2초→3초)
                     } else {
                         isLoading = false
                         aiResponse = "⚠️ 응답 파일을 찾을 수 없습니다."
@@ -161,7 +173,8 @@ fun HomeScreen(
             }
         }
 
-        handler.post(fileChecker)
+        // 초기 딜레이 추가 - Termux가 실행될 시간 확보
+        handler.postDelayed(fileChecker, 5000) // 5초 후부터 확인 시작
     }
 
     // Android 11+ 권한 요청 런처
@@ -225,6 +238,44 @@ fun HomeScreen(
         }
     }
 
+    // Termux 스크립트 권한 확인 - 새로 추가
+    fun checkScriptPermissions() {
+        try {
+            val termuxPath = "/data/data/com.termux/files/home/run_model.sh"
+            val scriptPermissionsIntent = Intent("com.termux.app.RUN_COMMAND")
+            scriptPermissionsIntent.putExtra("executable", "/data/data/com.termux/files/usr/bin/ls")
+            scriptPermissionsIntent.putExtra("arguments", arrayOf("-la", termuxPath))
+            scriptPermissionsIntent.putExtra("wants_result", true)
+            context.sendBroadcast(scriptPermissionsIntent)
+
+            // 실행 권한 부여 시도
+            val chmodIntent = Intent("com.termux.app.RUN_COMMAND")
+            chmodIntent.putExtra("executable", "/data/data/com.termux/files/usr/bin/chmod")
+            chmodIntent.putExtra("arguments", arrayOf("+x", termuxPath))
+            chmodIntent.putExtra("wants_result", true)
+            context.sendBroadcast(chmodIntent)
+
+            Toast.makeText(context, "스크립트 권한 확인 중", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("TermuxAPI", "스크립트 권한 확인 오류", e)
+        }
+    }
+
+    // Termux 프로세스 상태 확인 - 새로 추가
+    fun checkTermuxProcess() {
+        try {
+            val processIntent = Intent("com.termux.app.RUN_COMMAND")
+            processIntent.putExtra("executable", "/data/data/com.termux/files/usr/bin/ps")
+            processIntent.putExtra("arguments", arrayOf("-ef"))
+            processIntent.putExtra("wants_result", true)
+            context.sendBroadcast(processIntent)
+
+            Toast.makeText(context, "Termux 프로세스 확인 중", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("TermuxAPI", "프로세스 확인 오류", e)
+        }
+    }
+
     // Termux 실행 결과를 받기 위한 BroadcastReceiver
     val outputReceiver = remember {
         object : BroadcastReceiver() {
@@ -242,10 +293,16 @@ fun HomeScreen(
                     Log.d("TermuxAPI", "응답 설정 완료: $stdout")
                     isLoading = false
                 } else if (stderr.isNotEmpty()) {
-                    aiResponse = "⚠️ 오류 발생: $stderr"
-                    Log.e("TermuxAPI", "오류 발생: $stderr")
-                    errorMessage = stderr
-                    isLoading = false
+                    // 스크립트 권한 확인 응답일 수 있음
+                    if (stderr.contains("run_model.sh")) {
+                        debugInfo = "스크립트 정보: $stderr"
+                        Log.d("TermuxAPI", "스크립트 정보: $stderr")
+                    } else {
+                        aiResponse = "⚠️ 오류 발생: $stderr"
+                        Log.e("TermuxAPI", "오류 발생: $stderr")
+                        errorMessage = stderr
+                        isLoading = false
+                    }
                 } else {
                     // BroadcastReceiver에서 응답이 없으면 파일 확인 계속 진행
                     Log.w("TermuxAPI", "브로드캐스트에서 응답 없음, 파일 확인 계속 진행")
@@ -299,7 +356,7 @@ fun HomeScreen(
         } ?: Log.e("HomeScreen", "토큰 없음")
     }
 
-    // Termux에 명령 실행하기
+    // Termux에 명령 실행하기 - 수정됨
     fun runTermuxCommand(context: Context, prompt: String) {
         try {
             // 먼저 디렉토리 상태 확인
@@ -308,11 +365,19 @@ fun HomeScreen(
                 throw IOException("다운로드 디렉토리를 생성할 수 없습니다: ${downloadsDir.absolutePath}")
             }
 
-            // 1. 기존 출력 파일 삭제
-            val outputFile = File(downloadsDir, "ai_output.txt")
-            if (outputFile.exists()) {
-                outputFile.delete()
-                Log.d("TermuxAPI", "기존 출력 파일 삭제됨: ${outputFile.absolutePath}")
+            // 1. 기존 출력 파일 삭제 - 모든 가능한 경로 확인
+            possiblePaths.forEach { path ->
+                val outputFile = File(path)
+                if (outputFile.exists()) {
+                    outputFile.delete()
+                    Log.d("TermuxAPI", "기존 출력 파일 삭제됨: $path")
+                }
+            }
+
+            // 파일 삭제 확인 로그 추가
+            possiblePaths.forEach { path ->
+                val file = File(path)
+                Log.d("TermuxAPI", "삭제 후 파일 확인: $path (존재: ${file.exists()})")
             }
 
             // 2. 프롬프트 파일 저장 (공용 디렉토리 사용)
@@ -339,6 +404,7 @@ fun HomeScreen(
             executeIntent.putExtra("workdir", "/data/data/com.termux/files/home")
             executeIntent.putExtra("session_action", "0")
             executeIntent.putExtra("create_new_session", false) // 세션 생성 설정 변경
+            executeIntent.putExtra("debug", true) // 디버그 플래그 추가
 
             // 결과를 받기 위한 브로드캐스트 요청
             executeIntent.putExtra("command_label", "DementiaCare_AI")
@@ -352,6 +418,17 @@ fun HomeScreen(
             context.sendBroadcast(executeIntent)
             Log.d("TermuxAPI", "Termux로 명령 전송됨 (스크립트: $scriptPath, 프롬프트: $termuxPromptPath, 출력: $termuxOutputPath)")
 
+            // 실행 후 즉시 디버그 파일 확인 코드 추가
+            val debugFile = File("/sdcard/Download/debug_log.txt")
+            if (debugFile.exists()) {
+                try {
+                    val debugContent = debugFile.readText()
+                    Log.d("TermuxAPI", "Termux 디버그 로그: $debugContent")
+                } catch (e: Exception) {
+                    Log.e("TermuxAPI", "디버그 파일 읽기 오류", e)
+                }
+            }
+
             // 명령 실행 직후 파일 확인 프로세스 시작
             checkForResponseFile()
 
@@ -363,33 +440,30 @@ fun HomeScreen(
         }
     }
 
-    // 기존 응답 파일 읽기 함수
+    // 기존 응답 파일 읽기 함수 - 수정됨
     fun readExistingOutputFile() {
         try {
             isLoading = true
             aiResponse = "기존 파일을 확인하는 중..."
 
-            // 여러 가능한 경로 시도
-            val paths = listOf(
-                "/sdcard/Download/ai_output.txt",
-                "/storage/emulated/0/Download/ai_output.txt",
-                "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/ai_output.txt"
-            )
-
             var fileFound = false
 
-            for (path in paths) {
+            for (path in possiblePaths) {
                 val file = File(path)
                 Log.d("TermuxAPI", "기존 파일 확인: $path (존재: ${file.exists()})")
 
                 if (file.exists() && file.length() > 0) {
-                    val response = file.readText()
-                    isLoading = false
-                    aiResponse = response
-                    Toast.makeText(context, "기존 응답 파일을 읽었습니다", Toast.LENGTH_SHORT).show()
-                    Log.d("TermuxAPI", "기존 응답 발견: $path")
-                    fileFound = true
-                    break
+                    try {
+                        val response = file.readText()
+                        isLoading = false
+                        aiResponse = response
+                        Toast.makeText(context, "기존 응답 파일을 읽었습니다", Toast.LENGTH_SHORT).show()
+                        Log.d("TermuxAPI", "기존 응답 발견: $path")
+                        fileFound = true
+                        break
+                    } catch (e: Exception) {
+                        Log.e("TermuxAPI", "파일 읽기 오류: $path", e)
+                    }
                 }
             }
 
@@ -417,6 +491,38 @@ fun HomeScreen(
             Toast.makeText(context, "파일 생성/읽기 테스트: ${if (canRead) "성공" else "실패"}", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(context, "파일 권한 테스트 오류: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // 직접 출력 파일 생성 테스트
+    fun testOutputFileCreation() {
+        try {
+            // 여러 경로 시도
+            val paths = possiblePaths
+            var success = false
+
+            for (path in paths) {
+                try {
+                    val file = File(path)
+                    file.writeText("테스트 출력 파일 - ${System.currentTimeMillis()}")
+
+                    if (file.exists() && file.length() > 0) {
+                        aiResponse = "테스트 파일 생성 성공: $path"
+                        Log.d("TermuxAPI", "테스트 파일 생성 성공: $path")
+                        success = true
+                        break
+                    }
+                } catch (e: Exception) {
+                    Log.e("TermuxAPI", "테스트 파일 생성 실패: $path", e)
+                }
+            }
+
+            if (!success) {
+                aiResponse = "모든 경로에서 테스트 파일 생성 실패"
+            }
+        } catch (e: Exception) {
+            Log.e("TermuxAPI", "테스트 파일 생성 오류", e)
+            aiResponse = "테스트 파일 생성 오류: ${e.message}"
         }
     }
 
@@ -524,6 +630,18 @@ fun HomeScreen(
                         )
                     ) {
                         Text("기존 응답 파일 읽기")
+                    }
+
+                    Button(
+                        onClick = {
+                            testOutputFileCreation()
+                        },
+                        enabled = hasStoragePermissions,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Text("테스트 파일 생성")
                     }
                 }
 
