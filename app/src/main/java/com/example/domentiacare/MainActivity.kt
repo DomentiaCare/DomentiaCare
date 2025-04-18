@@ -18,8 +18,9 @@ import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.screen.home.HomeScreen
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val IS_DEV_MODE = true

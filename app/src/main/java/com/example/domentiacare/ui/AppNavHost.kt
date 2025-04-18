@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.domentiacare.ui.screen.Schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 
@@ -17,5 +18,9 @@ fun AppNavHost() {
     ) {
         composable("home") { Home(navController) }
         composable("schedule") { ScheduleScreen(navController) }
+        composable("addSchedule/{selectedDate}") { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("selectedDate") ?: ""
+            AddScheduleScreen(navController = navController, selectedDate = date)
+        }
     }
 }

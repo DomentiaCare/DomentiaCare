@@ -7,8 +7,10 @@ import android.util.Base64
 import android.util.Log
 import com.example.domentiacare.data.local.TokenManager
 import com.kakao.sdk.common.KakaoSdk
+import dagger.hilt.android.HiltAndroidApp
 import java.security.MessageDigest
 
+@HiltAndroidApp
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()

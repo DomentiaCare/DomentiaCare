@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.domentiacare.data.remote.dto.Schedule
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -42,8 +43,9 @@ import java.time.YearMonth
 @Composable
 fun CustomCalendar(
     modifier: Modifier = Modifier,
-    onDateSelected: (LocalDate) -> Unit = {},
-    holidays: Map<LocalDate, String> = emptyMap()
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    schedules: List<Schedule>
 ) {
     val today = LocalDate.now()
     var selectedDate by remember { mutableStateOf(today) }
@@ -109,22 +111,26 @@ fun CustomCalendar(
         // 날짜 그리드
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxHeight(),
+            modifier = Modifier
+                .fillMaxHeight() // 달력이 아래까지
+                .weight(1f),
             contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(dates) { date ->
-                val holidayName = holidays[date]
+                val daySchedule = schedules.find { it.date == date }
                 val dayOfWeek = date?.dayOfWeek
                 val textColor = when (dayOfWeek) {
                     DayOfWeek.SUNDAY -> if (date == selectedDate) Color.White else Color(0xFFD32F2F)
                     DayOfWeek.SATURDAY -> if (date == selectedDate) Color.White else Color(0xFF1976D2)
                     else -> if (date == selectedDate) Color.White else Color.Black
                 }
+
                 Box(
                     modifier = Modifier
-                        .aspectRatio(1f)
+                        .fillMaxWidth()
+                        .aspectRatio(0.6f) // ✅ 정사각형보다 세로로 길게
                         .background(
                             color = when {
                                 date == selectedDate -> Color(0xFF2196F3)
@@ -139,22 +145,42 @@ fun CustomCalendar(
                                 onDateSelected(it)
                             }
                         },
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Text(
-                        text = date?.dayOfMonth?.toString() ?: "",
-                        color = textColor
-                    )
-                    // ✅ 공휴일 이름 표시
-                    if (holidayName != null) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Top,
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
                         Text(
-                            text = holidayName,
-                            fontSize = 10.sp,
-                            color = Color.Red
+                            text = date?.dayOfMonth?.toString() ?: "",
+                            color = textColor
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // ✅ 일정 있는 경우만 라운드된 박스로 표시
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = if (daySchedule != null) Color(0xFF4C8C4A) else Color.Transparent,
+                                    shape = MaterialTheme.shapes.small // ✅ 둥근 모서리 적용
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            if (daySchedule != null) {
+                                Text(
+                                    text = daySchedule.content,
+                                    fontSize = 10.sp,
+                                    maxLines = 1,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+
+
     }
 }
