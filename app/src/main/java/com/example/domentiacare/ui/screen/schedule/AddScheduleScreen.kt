@@ -1,4 +1,4 @@
-package com.example.domentiacare.ui.screen.Schedule
+package com.example.domentiacare.ui.screen.schedule
 
 import android.util.Log
 import androidx.compose.foundation.layout.Column

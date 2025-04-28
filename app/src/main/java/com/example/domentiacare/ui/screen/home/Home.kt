@@ -119,7 +119,7 @@ fun Home(navController: NavController) {
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    QuickAccessButton("환자관리", Icons.Default.Face, {})
+                    QuickAccessButton("환자관리", Icons.Default.Face, {navController.navigate("patientList")})
                     QuickAccessButton("설정", Icons.Default.Settings, {})
                 }
             }
