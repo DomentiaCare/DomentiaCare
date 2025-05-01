@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.screen.login.LoginScreen
-import com.example.domentiacare.ui.screen.navigate.NavigateScreen
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
+import com.example.domentiacare.ui.screen.navigate.RouteFinderScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DomentiaCareTheme {
                 if (IS_DEV_MODE) {
-                    NavigateScreen()
+                    RouteFinderScreen() // ✅ 이 부분 수정
                 } else {
                     val jwtToken = TokenManager.getToken()
 

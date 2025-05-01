@@ -5,6 +5,10 @@
     <!-- 인터넷 사용 권한 설정-->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- GCP Maps 설정 -->`
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -18,11 +22,12 @@
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
-        <!-- 네이버 지도 API 클라이언트 ID 설정 -->
-        <meta-data
-            android:name="com.naver.maps.map.CLIENT_ID"
-            android:value="YOUR_CLIENT_ID_HERE" />
-  
+<!--        &lt;!&ndash; 네이버 지도 API 클라이언트 ID 설정 &ndash;&gt;-->
+<!--        <meta-data-->
+<!--            android:name="com.naver.maps.map.CLIENT_ID"-->
+<!--            android:value="YOUR_CLIENT_ID_HERE" />-->
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

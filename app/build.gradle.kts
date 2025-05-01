@@ -79,11 +79,14 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    implementation ("androidx.compose.material:material-icons-extended")
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+    implementation ("com.google.android.libraries.places:places:3.3.0")
 
 //    // 네이버 지도 SDK
 //    implementation ("com.naver.maps:map-sdk:3.16.2")
 
-    // 위치 서비스를 위한 Play Services 의존성
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
     implementation ("com.google.android.gms:play-services-location:21.0.1")
 
     // Retrofit 및 네트워크 통신 라이브러리 (API 호출용)
