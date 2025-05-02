@@ -21,19 +21,17 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.TopBar
+import kotlinx.coroutines.CoroutineScope
 
 data class Patient(
     val name: String,
@@ -51,9 +50,10 @@ data class Patient(
 )
 
 @Composable
-fun PatientList(navController: NavController) {
-    val drawerState = rememberDrawerState(DrawerValue.Closed) // DrawerState 만들기
-    val scope = rememberCoroutineScope()
+fun PatientList(navController: NavController,
+                drawerState: DrawerState,
+                scope: CoroutineScope
+) {
     // ✅ 다이얼로그 표시 여부 관리
     var showDialog by remember { mutableStateOf(false) }
 

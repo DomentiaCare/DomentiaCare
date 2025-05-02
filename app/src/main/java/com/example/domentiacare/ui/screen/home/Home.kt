@@ -21,17 +21,12 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,34 +37,15 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.TopBar
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
-fun Home(navController: NavController) {
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+fun Home(navController: NavController,
+         drawerState: DrawerState,
+         scope: CoroutineScope
+) {
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Text("메뉴", modifier = Modifier.padding(16.dp))
-                NavigationDrawerItem(
-                    label = { Text("홈") },
-                    selected = false,
-                    onClick = {
-                        // TODO
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("내 정보") },
-                    selected = false,
-                    onClick = {
-                        // TODO
-                    }
-                )
-            }
-        }
-    ) { Scaffold(
+    Scaffold(
         topBar = { TopBar(title = "DomenticaCare", drawerState = drawerState, scope = scope) },
         bottomBar = { BottomNavBar() }
     ) { padding ->
@@ -126,7 +102,7 @@ fun Home(navController: NavController) {
         }
     }}
 
-}
+
 
 @Composable
 fun QuickAccessButton(label: String, icon: ImageVector, onClick: () -> Unit ) {
