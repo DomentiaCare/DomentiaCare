@@ -14,11 +14,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.domentiacare.ui.screen.home.Home
+import com.example.domentiacare.ui.screen.patientCare.Patient
+import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
+import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
 import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
@@ -81,6 +86,30 @@ import java.time.LocalDate
                     val dateString = backStackEntry.arguments?.getString("date") ?: ""
                     val date = LocalDate.parse(dateString)
                     ScheduleDetailScreen(navController, drawerState, scope, date, scheduleViewModel)
+                }
+
+                composable(
+                    "patientDetail/{name}/{age}/{condition}",
+                    arguments = listOf(
+                        navArgument("name") { type = NavType.StringType },
+                        navArgument("age") { type = NavType.IntType },
+                        navArgument("condition") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val age = backStackEntry.arguments?.getInt("age") ?: 0
+                    val condition = backStackEntry.arguments?.getString("condition") ?: ""
+                    PatientDetailScreen(navController, drawerState, scope, Patient(name, age, condition), )
+                }
+
+                composable(
+                    "PatientLocationScreen/{name}",
+                    arguments = listOf(
+                        navArgument("name") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    PatientLocationScreen( navController, drawerState, scope, name )
                 }
             }
         }

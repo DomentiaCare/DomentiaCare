@@ -1,5 +1,6 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -101,7 +102,9 @@ fun PatientList(navController: NavController,
                 modifier = Modifier.fillMaxSize()
             ) {
                 itemsIndexed(patients) { index, patient ->
-                    PatientCard(patient, index)
+                    PatientCard(patient, index){
+                        navController.navigate("patientDetail/${patient.name}/${patient.age}/${patient.condition}")
+                    }
                 }
             }
         }
@@ -120,7 +123,7 @@ fun PatientList(navController: NavController,
 }
 
 @Composable
-fun PatientCard(patient: Patient, index: Int) {
+fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -132,6 +135,9 @@ fun PatientCard(patient: Patient, index: Int) {
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
+            .clickable{
+                onClick()
+            }
     ) {
         Row(
             modifier = Modifier

@@ -42,6 +42,8 @@ android {
         manifestPlaceholders["naverMapClientId"] = naverMapClientId
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
         buildConfigField("String", "BASE_URL", "\"${baseUrl}\"")
+
+        manifestPlaceholders["GOOGLE_MAP_KEY"] = project.findProperty("GOOGLE_MAP_KEY") ?: ""
     }
 
     buildTypes {
@@ -101,12 +103,20 @@ dependencies {
     //캘린더 라이브러리
     implementation("com.kizitonwose.calendar:compose:2.0.3")
 
+    //달력 화면전환 스와이프 형식으로 하게하는거
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+
 
     // 네이버 지도 SDK
     //implementation ("com.naver.maps:map-sdk:3.16.2")
 
     // 위치 서비스를 위한 Play Services 의존성
     implementation ("com.google.android.gms:play-services-location:21.0.1")
+
+    // 구글 지도 SDK
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+
 
     // Retrofit 및 네트워크 통신 라이브러리 (API 호출용)
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")

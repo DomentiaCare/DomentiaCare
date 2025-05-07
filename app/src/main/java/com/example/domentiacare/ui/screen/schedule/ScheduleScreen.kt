@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.domentiacare.ui.component.BottomNavBar
-import com.example.domentiacare.ui.component.CustomCalendar
 import com.example.domentiacare.ui.component.TopBar
 import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +53,7 @@ fun ScheduleScreen(navController: NavController,
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            CustomCalendar(
+            PagerCalendar(
                 selectedDate = selectedDate,
                 onDateSelected = {
                     selectedDate = it // ✅ 상태 업데이트
