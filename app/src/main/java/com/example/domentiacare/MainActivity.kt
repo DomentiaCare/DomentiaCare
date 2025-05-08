@@ -15,6 +15,9 @@ import com.example.domentiacare.ui.screen.navigate.RouteFinderScreen
 
 class MainActivity : ComponentActivity() {
 
+    // 로그인 화면 스킵 변수
+    // true: 로그인 화면 스킵
+    // false: 로그인 화면 활성화
     private val IS_DEV_MODE = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
