@@ -37,6 +37,10 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.launch
+import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.BottomNavBar
+import com.example.domentiacare.ui.component.TopBar
+import kotlinx.coroutines.CoroutineScope
 
 // 경로 안내 단계 데이터 클래스
 data class RouteStep(
@@ -45,14 +49,12 @@ data class RouteStep(
     val isHighlight: Boolean = false
 )
 
-@Composable
-fun NavigateScreen() {
-    RouteFinderScreen()
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RouteFinderScreen() {
+fun RouteFinderScreen(
+    navController: NavController,
+    drawerState: DrawerState,
+    scope: CoroutineScope) {
     val context = LocalContext.current
 
     var startLocation = remember { mutableStateOf("") }
@@ -128,105 +130,110 @@ fun RouteFinderScreen() {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
-        Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF4285F4)).padding(16.dp)) {
-            Text("경로 찾기", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.align(Alignment.Center))
-        }
+    Scaffold(
+        topBar = { TopBar("일정 상세", drawerState, scope) },
+        bottomBar = { BottomNavBar() }
+    ) { padding ->
+        Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
+            Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF4285F4)).padding(16.dp)) {
+                Text("경로 찾기", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, modifier = Modifier.align(Alignment.Center))
+            }
 
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = startLocation.value,
+                        onValueChange = { startLocation.value = it },
+                        label = { Text("출발지", fontSize = 18.sp) },
+                        modifier = Modifier.weight(1f).height(65.dp),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
+                        singleLine = true,
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = Color(0xFF4285F4),
+                            unfocusedBorderColor = Color(0xFF9E9E9E)
+                        )
+                    )
+                    IconButton(onClick = { requestLocationPermission() }, modifier = Modifier.padding(start = 8.dp).size(48.dp).background(Color(0xFF4285F4), RoundedCornerShape(8.dp))) {
+                        Icon(imageVector = Icons.Default.MyLocation, contentDescription = "내 위치 가져오기", tint = Color.White)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(
-                    value = startLocation.value,
-                    onValueChange = { startLocation.value = it },
-                    label = { Text("출발지", fontSize = 18.sp) },
-                    modifier = Modifier.weight(1f).height(65.dp),
+                    value = destination.value,
+                    onValueChange = { destination.value = it },
+                    label = { Text("도착지", fontSize = 18.sp) },
+                    modifier = Modifier.fillMaxWidth().height(65.dp),
                     textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
                     singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.LocationOn, contentDescription = "도착지", tint = Color(0xFFE53935))
+                    },
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color(0xFF4285F4),
                         unfocusedBorderColor = Color(0xFF9E9E9E)
                     )
                 )
-                IconButton(onClick = { requestLocationPermission() }, modifier = Modifier.padding(start = 8.dp).size(48.dp).background(Color(0xFF4285F4), RoundedCornerShape(8.dp))) {
-                    Icon(imageVector = Icons.Default.MyLocation, contentDescription = "내 위치 가져오기", tint = Color.White)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = { calculateAndShowRoute() },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4285F4)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("경로 찾기", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = destination.value,
-                onValueChange = { destination.value = it },
-                label = { Text("도착지", fontSize = 18.sp) },
-                modifier = Modifier.fillMaxWidth().height(65.dp),
-                textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
-                singleLine = true,
-                leadingIcon = {
-                    Icon(Icons.Default.LocationOn, contentDescription = "도착지", tint = Color(0xFFE53935))
-                },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFF9E9E9E)
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { calculateAndShowRoute() },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4285F4)),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("경로 찾기", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).border(2.dp, Color(0xFF9E9E9E), RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp))
+                ) {
+                    AndroidView(
+                        factory = { context ->
+                            MapView(context).apply {
+                                onCreate(null)
+                                onResume()
+                                getMapAsync(OnMapReadyCallback { map ->
+                                    googleMapInstance = map
+                                    map.uiSettings.isZoomControlsEnabled = true
+                                    map.uiSettings.isMyLocationButtonEnabled = true
+                                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(37.5666102, 126.9783881), 15f))
+                                    currentLatLng?.let {
+                                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 17f))
+                                        map.addMarker(MarkerOptions().position(it).title("현재 위치"))
+                                    }
+                                })
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
-        }
 
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp).border(2.dp, Color(0xFF9E9E9E), RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp))
-            ) {
-                AndroidView(
-                    factory = { context ->
-                        MapView(context).apply {
-                            onCreate(null)
-                            onResume()
-                            getMapAsync(OnMapReadyCallback { map ->
-                                googleMapInstance = map
-                                map.uiSettings.isZoomControlsEnabled = true
-                                map.uiSettings.isMyLocationButtonEnabled = true
-                                map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(37.5666102, 126.9783881), 15f))
-                                currentLatLng?.let {
-                                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(it, 17f))
-                                    map.addMarker(MarkerOptions().position(it).title("현재 위치"))
+            if (isRouteCalculated) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    elevation = CardDefaults.cardElevation(4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("경로 안내", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4285F4), modifier = Modifier.padding(bottom = 8.dp))
+                        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp)) {
+                            items(routeSteps) { step ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(if (step.isHighlight) Color(0xFFE3F2FD) else Color.Transparent, RoundedCornerShape(4.dp)).padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = if (step.isHighlight) Color(0xFFE53935) else Color(0xFF4285F4), modifier = Modifier.size(24.dp))
+                                    Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                        Text(step.instruction, fontSize = 18.sp, fontWeight = if (step.isHighlight) FontWeight.Bold else FontWeight.Normal)
+                                    }
+                                    Text(step.distance, fontSize = 16.sp, color = Color(0xFF757575))
                                 }
-                            })
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-
-        if (isRouteCalculated) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                elevation = CardDefaults.cardElevation(4.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("경로 안내", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4285F4), modifier = Modifier.padding(bottom = 8.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 200.dp)) {
-                        items(routeSteps) { step ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(if (step.isHighlight) Color(0xFFE3F2FD) else Color.Transparent, RoundedCornerShape(4.dp)).padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.LocationOn, contentDescription = null, tint = if (step.isHighlight) Color(0xFFE53935) else Color(0xFF4285F4), modifier = Modifier.size(24.dp))
-                                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                                    Text(step.instruction, fontSize = 18.sp, fontWeight = if (step.isHighlight) FontWeight.Bold else FontWeight.Normal)
-                                }
-                                Text(step.distance, fontSize = 16.sp, color = Color(0xFF757575))
                             }
                         }
                     }

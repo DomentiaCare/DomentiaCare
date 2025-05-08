@@ -90,7 +90,7 @@ fun Home(navController: NavController,
             // 4. 2x2 버튼 그리드
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    QuickAccessButton("길찾기", Icons.Default.Place, {})
+                    QuickAccessButton("길찾기", Icons.Default.Place, {navController.navigate("routeFinder")})
                     QuickAccessButton("일정관리", Icons.Default.DateRange, {navController.navigate("schedule")})
                 }
                 Spacer(modifier = Modifier.height(16.dp))

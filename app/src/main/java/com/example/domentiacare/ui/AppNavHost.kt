@@ -20,6 +20,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.ui.screen.home.Home
+import com.example.domentiacare.ui.screen.navigate.RouteFinderScreen
 import com.example.domentiacare.ui.screen.patientCare.Patient
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
@@ -57,6 +58,10 @@ import java.time.LocalDate
                         navController.navigate("patientList")
                         scope.launch { drawerState.close() }
                     })
+                    NavigationDrawerItem(label = { Text("길찾기") }, selected = false, onClick = {
+                        navController.navigate("routeFinder")
+                        scope.launch { drawerState.close() }
+                    })
                 }
             }
         ) {
@@ -86,6 +91,9 @@ import java.time.LocalDate
                     val dateString = backStackEntry.arguments?.getString("date") ?: ""
                     val date = LocalDate.parse(dateString)
                     ScheduleDetailScreen(navController, drawerState, scope, date, scheduleViewModel)
+                }
+                composable("routeFinder") {
+                    RouteFinderScreen(navController, drawerState, scope)
                 }
 
                 composable(
