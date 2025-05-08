@@ -1,15 +1,20 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.domentiacare.ui.component.TopBar
@@ -49,16 +55,33 @@ fun PatientDetailScreen(navController: NavController,
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(text = "이름: ${patient.name}", style = MaterialTheme.typography.titleLarge)
-            Text(text = "나이: ${patient.age}세", style = MaterialTheme.typography.bodyLarge)
-            Text(text = "상태: ${patient.condition}", style = MaterialTheme.typography.bodyLarge)
+            // 이름
+            Text(
+                text = patient.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // 정보 카드
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    InfoRow(label = "주소", value = "서울시 강남구 역삼동")
+                    InfoRow(label = "생년월일", value = "1948-05-12" )
+                    InfoRow(label = "성별", value = "남")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 버튼 2개
             Button(
-                onClick = {
-                    navController.navigate("PatientLocationScreen/${patient.name}")
-                },
+                onClick = { navController.navigate("PatientLocationScreen/${patient.name}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -69,15 +92,34 @@ fun PatientDetailScreen(navController: NavController,
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {
-                    navController.navigate("schedule")
-                },
+                onClick = { navController.navigate("schedule") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("일정보기")
+                Text("일정 보기")
             }
         }
+    }
+}
+
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
