@@ -1,0 +1,46 @@
+package com.example.domentiacare.ui.component
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+
+@Composable
+fun BottomNavBar() {
+    NavigationBar(
+        containerColor = Color.White
+    ) {
+        NavigationBarItem(
+            selected = true,
+            onClick = { /* TODO */  },
+            icon = { Icon(Icons.Default.Home, contentDescription = "홈") },
+            label = { Text("홈") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* TODO */ },
+            icon = { Icon(Icons.Default.Person, contentDescription = "내정보") },
+            label = { Text("내정보") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* TODO */ },
+            icon = { Icon(Icons.Default.LocationOn, contentDescription = "내위치") },
+            label = { Text("내위치") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* TODO */ },
+            icon = { Icon(Icons.Default.Favorite, contentDescription = "좋아요") },
+            label = { Text("좋아요") }
+        )
+    }
+}
