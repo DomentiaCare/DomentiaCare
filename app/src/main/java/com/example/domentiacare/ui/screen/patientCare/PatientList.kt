@@ -22,12 +22,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,9 +38,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.BottomNavBar
-import com.example.domentiacare.ui.component.TopBar
-import kotlinx.coroutines.CoroutineScope
 
 data class Patient(
     val name: String,
@@ -51,9 +46,7 @@ data class Patient(
 )
 
 @Composable
-fun PatientList(navController: NavController,
-                drawerState: DrawerState,
-                scope: CoroutineScope
+fun PatientList(navController: NavController
 ) {
     // ✅ 다이얼로그 표시 여부 관리
     var showDialog by remember { mutableStateOf(false) }
@@ -71,13 +64,9 @@ fun PatientList(navController: NavController,
 
 
 
-    Scaffold(
-        topBar = { TopBar(title = "환자 관리", drawerState, scope) },     // ✅ TopBar 적용
-        bottomBar = { BottomNavBar() }      // ✅ BottomBar 적용
-    ) { innerPadding ->
+
         Column(
             modifier = Modifier
-                .padding(innerPadding) // ✅ Scaffold 안쪽 패딩 적용
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
@@ -107,19 +96,20 @@ fun PatientList(navController: NavController,
                     }
                 }
             }
-        }
-    }
-    // ✅ 다이얼로그 컴포저블 호출
-    if (showDialog) {
-        RegisterPatientDialog(
-            onDismiss = { showDialog = false },
-            onConfirm = { enteredId ->
-                // TODO: 여기서 enteredId를 저장하거나 처리
-                println("입력한 ID: $enteredId")
-                showDialog = false
+            // ✅ 다이얼로그 컴포저블 호출
+            if (showDialog) {
+                RegisterPatientDialog(
+                    onDismiss = { showDialog = false },
+                    onConfirm = { enteredId ->
+                        // TODO: 여기서 enteredId를 저장하거나 처리
+                        println("입력한 ID: $enteredId")
+                        showDialog = false
+                    }
+                )
             }
-        )
-    }
+        }
+
+
 }
 
 @Composable
