@@ -28,10 +28,8 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,14 +42,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.BottomNavBar
-import com.example.domentiacare.ui.component.TopBar
-import kotlinx.coroutines.CoroutineScope
 
 @Composable
-fun Home(navController: NavController,
-         drawerState: DrawerState,
-         scope: CoroutineScope
+fun Home(navController: NavController
 ) {
 
     ////////////////////////////////////////////////////////////////////////// 전화걸기
@@ -76,14 +69,9 @@ fun Home(navController: NavController,
 
     ////////////////////////////////////////////////////////////////////////////////
 
-    Scaffold(
-        topBar = { TopBar(title = "DomenticaCare", drawerState = drawerState, scope = scope) },
-        bottomBar = { BottomNavBar() }
-    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(16.dp)
         ) {
 
@@ -146,7 +134,7 @@ fun Home(navController: NavController,
                 }
             }
         }
-    }}
+    }
 
 
 

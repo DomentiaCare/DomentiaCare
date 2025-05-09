@@ -15,10 +15,8 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,22 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.TopBar
-import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun PatientDetailScreen(navController: NavController,
-                        drawerState: DrawerState,
-                        scope: CoroutineScope,
                         patient: Patient) {
-    Scaffold(
-        topBar = {
-            TopBar(title = "${patient.name} 상세정보", drawerState = drawerState, scope = scope)
-        }
-    ) { innerPadding ->
+
         Column(
             modifier = Modifier
-                .padding(innerPadding)
                 .fillMaxSize()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -101,7 +90,7 @@ fun PatientDetailScreen(navController: NavController,
             }
         }
     }
-}
+
 
 
 @Composable

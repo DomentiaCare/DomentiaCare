@@ -13,11 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.DrawerState
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,16 +24,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
-import kotlinx.coroutines.CoroutineScope
 import java.time.LocalDate
 
 @Composable
 fun ScheduleDetailScreen(
     navController: NavController,
-    drawerState: DrawerState,
-    scope: CoroutineScope,
     date: LocalDate,
     viewModel: ScheduleViewModel
 ) {
@@ -44,22 +38,13 @@ fun ScheduleDetailScreen(
         it.time.substring(0, 2)
     }
 
-
-    Scaffold(
-        topBar = { TopBar("일정 상세", drawerState, scope) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                navController.navigate("addSchedule/${date}") { launchSingleTop = true }
-            }) {
-                Icon(Icons.Default.Add, contentDescription = "일정 추가")
-            }
-        }
-    ) { padding ->
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             for (hour in 0..23) {
@@ -78,9 +63,10 @@ fun ScheduleDetailScreen(
                             modifier = Modifier.width(64.dp),
                             color = Color.DarkGray
                         )
-                        Canvas(modifier = Modifier
-                            .height(1.dp)
-                            .weight(1f)
+                        Canvas(
+                            modifier = Modifier
+                                .height(1.dp)
+                                .weight(1f)
                         ) {
                             drawLine(
                                 color = Color.LightGray,
@@ -104,6 +90,14 @@ fun ScheduleDetailScreen(
                     }
                 }
             }
+        }
+        FloatingActionButton(
+            onClick = { navController.navigate("addSchedule/${date}") { launchSingleTop = true } },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "일정 추가")
         }
     }
 }

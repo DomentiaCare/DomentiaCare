@@ -7,6 +7,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -17,8 +18,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.domentiacare.ui.component.BottomNavBar
+import com.example.domentiacare.ui.component.TopBar
+import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.patientCare.Patient
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
@@ -38,8 +43,14 @@ import java.time.LocalDate
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
 
+        //특정 화면의 이름을 알아내어 메뉴 드래그 비활성화하기
+        val currentBackStackEntry = navController.currentBackStackEntryAsState()
+        val currentDestination = currentBackStackEntry.value?.destination?.route
+        val isMapScreen = currentDestination?.startsWith("PatientLocationScreen") == true
+
         ModalNavigationDrawer( // ✅ 모든 화면을 감싸도록 이동
             drawerState = drawerState,
+            gesturesEnabled = !isMapScreen,
             drawerContent = {
                 ModalDrawerSheet {
                     Text("메뉴", modifier = Modifier.padding(16.dp))
@@ -65,54 +76,77 @@ import java.time.LocalDate
                     drawerState.close()
                 }
             }
-            NavHost(
-                navController = navController,
-                startDestination = "home"
-            ) {
-                composable("home") {
-                    Home(navController, drawerState, scope)
+            Scaffold(
+                topBar = {
+                    TopBar(title = "DomenticaCare", drawerState = drawerState, scope = scope)
+                },
+                bottomBar = {
+                    BottomNavBar(navController)
                 }
-                composable("schedule") {
-                    ScheduleScreen(navController, drawerState, scope, scheduleViewModel)
-                }
-                composable("addSchedule/{selectedDate}") { backStackEntry ->
-                    val date = backStackEntry.arguments?.getString("selectedDate") ?: ""
-                    AddScheduleScreen(navController = navController, drawerState, scope, selectedDate = date, scheduleViewModel)
-                }
-                composable("patientList") {
-                    PatientList(navController, drawerState, scope)
-                }
-                composable("scheduleDetail/{date}") { backStackEntry ->
-                    val dateString = backStackEntry.arguments?.getString("date") ?: ""
-                    val date = LocalDate.parse(dateString)
-                    ScheduleDetailScreen(navController, drawerState, scope, date, scheduleViewModel)
-                }
+            ) { innerPadding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = "home",
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    composable("home") {
+                        Home(navController)
+                    }
+                    composable("schedule") {
+                        ScheduleScreen(navController, scheduleViewModel)
+                    }
+                    composable("addSchedule/{selectedDate}") { backStackEntry ->
+                        val date = backStackEntry.arguments?.getString("selectedDate") ?: ""
+                        AddScheduleScreen(
+                            navController = navController,
+                            selectedDate = date,
+                            scheduleViewModel
+                        )
+                    }
+                    composable("patientList") {
+                        PatientList(navController)
+                    }
+                    composable("scheduleDetail/{date}") { backStackEntry ->
+                        val dateString = backStackEntry.arguments?.getString("date") ?: ""
+                        val date = LocalDate.parse(dateString)
+                        ScheduleDetailScreen(
+                            navController,
+                            date,
+                            scheduleViewModel
+                        )
+                    }
 
-                composable(
-                    "patientDetail/{name}/{age}/{condition}",
-                    arguments = listOf(
-                        navArgument("name") { type = NavType.StringType },
-                        navArgument("age") { type = NavType.IntType },
-                        navArgument("condition") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
-                    val age = backStackEntry.arguments?.getInt("age") ?: 0
-                    val condition = backStackEntry.arguments?.getString("condition") ?: ""
-                    PatientDetailScreen(navController, drawerState, scope, Patient(name, age, condition), )
-                }
+                    composable(
+                        "patientDetail/{name}/{age}/{condition}",
+                        arguments = listOf(
+                            navArgument("name") { type = NavType.StringType },
+                            navArgument("age") { type = NavType.IntType },
+                            navArgument("condition") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val name = backStackEntry.arguments?.getString("name") ?: ""
+                        val age = backStackEntry.arguments?.getInt("age") ?: 0
+                        val condition = backStackEntry.arguments?.getString("condition") ?: ""
+                        PatientDetailScreen(
+                            navController,
+                            Patient(name, age, condition),
+                        )
+                    }
 
-                composable(
-                    "PatientLocationScreen/{name}",
-                    arguments = listOf(
-                        navArgument("name") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
-                    PatientLocationScreen( navController, drawerState, scope, name )
+                    composable(
+                        "PatientLocationScreen/{name}",
+                        arguments = listOf(
+                            navArgument("name") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val name = backStackEntry.arguments?.getString("name") ?: ""
+                        PatientLocationScreen(navController, name)
+                    }
+                    composable("MyPageScreen") {
+                        MyPageScreen(navController)
+                    }
                 }
             }
         }
     }
-
 
