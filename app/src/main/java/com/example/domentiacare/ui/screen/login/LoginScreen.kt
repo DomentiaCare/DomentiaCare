@@ -18,19 +18,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.domentiacare.data.local.CurrentUser
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
 import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.user.UserApiClient
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (String) -> Unit
+    navController: NavController,
+    onLoginSuccess:() -> Unit
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -55,11 +59,22 @@ fun LoginScreen(
                         Log.d("KakaoLogin", "서버 로그인 성공 jwt: ${result?.jwt}")
                         // JWT 저장 및 다음 화면 이동
                         result?.jwt?.let { jwt ->
-                            TokenManager.saveToken(jwt) // 🔐 저장
+                            TokenManager.saveToken(jwt) // 🔐 jwt를 메모리에 저장하여 앱을 다시 켤때 자동 로그인
+                            CurrentUser.user = result?.user  //회원 정보를 로컬 싱글톤 객체에 저장
                             Log.d("KakaoLogin", "JWT 저장 완료: $jwt")
+                            
+                            //매개변수 함수
+                            onLoginSuccess()
                         }
-                        onLoginSuccess(token.accessToken)
-                    } else {
+                    } else if (response.code() == 404) {
+                        val errorBody = response.errorBody()?.string()
+                        val json = JSONObject(errorBody)
+                        val email = json.getString("email")
+                        val nickname = json.getString("nickname")
+                        navController.navigate("RegisterScreen?email=$email&nickname=$nickname") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }else {
                         Log.e("KakaoLogin", "서버 로그인 실패: ${response.code()}")
                     }
                 }

@@ -1,10 +1,7 @@
 package com.example.domentiacare.data.remote.dto
 
-
-data class User(
-    val id: Long,
-//    val email: String,
-//    val nickname: String
+data class RegisterUserRequest(  //회원가입 정보 백엔드로 보내는 DTO
+    // Add other fields as needed
     val email: String,
     val nickname: String,
     val phone: String,
