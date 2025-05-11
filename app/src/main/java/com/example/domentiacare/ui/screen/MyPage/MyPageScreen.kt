@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -148,5 +149,6 @@ fun MenuItem(
         if (trailingText != null) {
             Text(trailingText, color = Color.Gray, fontSize = 12.sp)
         }
+        Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "화살표", tint = Color.Gray)
     }
 }

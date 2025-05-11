@@ -21,10 +21,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
 import com.example.domentiacare.ui.screen.home.Home
+import com.example.domentiacare.ui.screen.login.LoginScreen
+import com.example.domentiacare.ui.screen.login.RegisterScreen
 import com.example.domentiacare.ui.screen.patientCare.Patient
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
@@ -48,6 +51,14 @@ import java.time.LocalDate
         val currentDestination = currentBackStackEntry.value?.destination?.route
         val isMapScreen = currentDestination?.startsWith("PatientLocationScreen") == true
 
+        //jwt 토큰이 없으면 로그인 화면으로 이동
+        val token = TokenManager.getToken()
+        val inintScreen = if (token == null) {
+            "login"
+        } else {
+            "home"
+        }
+
         ModalNavigationDrawer( // ✅ 모든 화면을 감싸도록 이동
             drawerState = drawerState,
             gesturesEnabled = !isMapScreen,
@@ -68,6 +79,13 @@ import java.time.LocalDate
                         navController.navigate("patientList")
                         scope.launch { drawerState.close() }
                     })
+                    NavigationDrawerItem(label = { Text("로그아웃") }, selected = false, onClick = {
+                        navController.navigate("login") {
+                            TokenManager.clearToken()
+                            popUpTo("login") { inclusive = true }
+                        }
+                        scope.launch { drawerState.close() }
+                    })
                 }
             }
         ) {
@@ -86,9 +104,18 @@ import java.time.LocalDate
             ) { innerPadding ->
                 NavHost(
                     navController = navController,
-                    startDestination = "home",
+                    startDestination = inintScreen, //home
                     modifier = Modifier.padding(innerPadding)
                 ) {
+                    composable("login") {
+                        LoginScreen(navController,
+                            onLoginSuccess = {
+                                navController.navigate("home") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                     composable("home") {
                         Home(navController)
                     }
@@ -144,6 +171,21 @@ import java.time.LocalDate
                     }
                     composable("MyPageScreen") {
                         MyPageScreen(navController)
+                    }
+                    composable(
+                        "RegisterScreen?email={email}&nickname={nickname}",
+                        arguments = listOf(
+                            navArgument("email") { type = NavType.StringType },
+                            navArgument("nickname") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val email = backStackEntry.arguments?.getString("email") ?: ""
+                        val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
+                        RegisterScreen(email = email, nickname = nickname, onRegistSuccess ={
+                            navController.navigate("home") {
+                                popUpTo("RegisterScreen") { inclusive = true }
+                            }
+                        } )
                     }
                 }
             }

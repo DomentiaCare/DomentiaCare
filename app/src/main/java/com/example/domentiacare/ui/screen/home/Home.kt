@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,6 +33,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,14 +48,44 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.domentiacare.data.local.CurrentUser
+import com.example.domentiacare.data.local.TokenManager
+import com.example.domentiacare.data.remote.RetrofitClient
+import com.example.domentiacare.data.remote.dto.User
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun Home(navController: NavController
 ) {
+    val context = LocalContext.current
+    var user by remember { mutableStateOf<User?>(null) }
+    LaunchedEffect(Unit) {
+        val jwt = TokenManager.getToken()
+        Log.d("KakaoLogin", "저장되어있던 JWT: $jwt")
+        if (!jwt.isNullOrEmpty()) {
+            RetrofitClient.authApi.getMyInfo("Bearer $jwt")
+                .enqueue(object : Callback<User> {
+                    override fun onResponse(call: Call<User>, response: Response<User>) {
+                        if (response.isSuccessful) {
+                            user = response.body()
+                            CurrentUser.user = user  //회원 정보를 로컬 싱글톤 객체에 저장
+                            Log.d("KakaoLogin", "사용자 정보 로드 완료: ${user}")
+                        } else {
+                            Log.e("KakaoLogin", "사용자 정보 요청 실패: ${response.code()}")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<User>, t: Throwable) {
+                        Log.e("Home", "서버 요청 실패", t)
+                    }
+                })
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////////// 전화걸기
 
-    val context = LocalContext.current
     val phoneNumber = "010-1234-4567" // 전화번호를 여기에 입력하세요.
 
     // 권한 요청 런처 만들기
@@ -91,7 +127,7 @@ fun Home(navController: NavController
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("안녕하세요, 박진호님", fontSize = 18.sp)
+                        Text("안녕하세요, ${user?.nickname} 님", fontSize = 18.sp)
                         Text("오늘도 좋은 하루 보내세요!", fontSize = 14.sp, color = Color.Gray)
                     }
 
