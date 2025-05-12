@@ -1,26 +1,28 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
-        mavenCentral()
         gradlePluginPortal()
-        // ✅ Kakao SDK용 저장소 추가
+        google()
+        mavenCentral()
+        // 프로젝트 전용 리포지토리
         maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
+        maven { url = uri("https://naver.jfrog.io/artifactory/maven/") }
+    }
+    plugins {
+        id("com.android.application")             version "8.7.3"  apply false
+        id("org.jetbrains.kotlin.android")        version "2.0.0"  apply false
+        id("org.jetbrains.kotlin.kapt")           version "2.0.0"  apply false
+        id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"  apply false
+        id("com.google.dagger.hilt.android")      version "2.48"   apply false
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        // ✅ 여기도 Kakao SDK용 저장소 추가
+        // SDK 전용 리포지토리
         maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
-        // ✅ 네이버 지도 SDK용 저장소 추가
         maven { url = uri("https://naver.jfrog.io/artifactory/maven/") }
     }
 }

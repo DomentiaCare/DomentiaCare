@@ -1,13 +1,17 @@
 [versions]
 agp = "8.7.3"
 kotlin = "2.0.0"
+hilt   = "2.51.1"
+kapt = "1.8.10"
+ksp = "1.8.10-1.0.32"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.0"
-composeBom = "2024.04.01"
+composeBom = "2024.10.00"
+composeCompiler = "1.6.0"
 playServicesWearable = "19.0.0"
 composeMaterial = "1.2.1"
 composeFoundation = "1.2.1"
@@ -21,6 +25,8 @@ horologistComposeTools = "0.6.17"
 horologistTiles = "0.6.17"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
 workRuntimeKtx = "2.10.1"
+roomCommonJvm = "2.7.1"
+room = "2.5.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,9 +56,17 @@ horologist-compose-tools = { group = "com.google.android.horologist", name = "ho
 horologist-tiles = { group = "com.google.android.horologist", name = "horologist-tiles", version.ref = "horologistTiles" }
 androidx-watchface-complications-data-source-ktx = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "watchfaceComplicationsDataSourceKtx" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common-jvm", version.ref = "roomCommonJvm" }
+androidx-room-runtime    = { module = "androidx.room:room-runtime",    version.ref = "room" }
+androidx-room-ktx        = { module = "androidx.room:room-ktx",        version.ref = "room" }
+androidx-room-compiler   = { module = "androidx.room:room-compiler",   version.ref = "room" }
 
 [plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-application    = { id = "com.android.application",           version.ref = "agp" }
+kotlin-android         = { id = "org.jetbrains.kotlin.android",      version.ref = "kotlin" }
+kotlin-kapt            = { id = "org.jetbrains.kotlin.kapt",         version.ref = "kotlin" }
+kotlin-compose         = { id = "org.jetbrains.kotlin.plugin.compose",version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+hilt-android           = { id = "com.google.dagger.hilt.android",    version.ref = "hilt" }
 

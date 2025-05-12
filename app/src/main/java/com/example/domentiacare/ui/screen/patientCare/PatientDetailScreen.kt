@@ -88,6 +88,17 @@ fun PatientDetailScreen(navController: NavController,
             ) {
                 Text("일정 보기")
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate("addPlace") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text("장소 추가")
+            }
         }
     }
 

@@ -142,9 +142,9 @@ fun RouteFinderScreen() {
                     modifier = Modifier.weight(1f).height(65.dp),
                     textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
                     singleLine = true,
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color(0xFF4285F4),
-                        unfocusedBorderColor = Color(0xFF9E9E9E)
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color(0xFF4285F4),
+                        unfocusedIndicatorColor = Color(0xFF9E9E9E)
                     )
                 )
                 IconButton(onClick = { requestLocationPermission() }, modifier = Modifier.padding(start = 8.dp).size(48.dp).background(Color(0xFF4285F4), RoundedCornerShape(8.dp))) {
@@ -164,9 +164,9 @@ fun RouteFinderScreen() {
                 leadingIcon = {
                     Icon(Icons.Default.LocationOn, contentDescription = "도착지", tint = Color(0xFFE53935))
                 },
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFF9E9E9E)
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color(0xFF4285F4),
+                    unfocusedIndicatorColor = Color(0xFF9E9E9E)
                 )
             )
 
