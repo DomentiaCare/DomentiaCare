@@ -25,8 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -166,7 +166,7 @@ fun Home(navController: NavController
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     QuickAccessButton("환자관리", Icons.Default.Face, {navController.navigate("patientList")})
-                    QuickAccessButton("설정", Icons.Default.Settings, {})
+                    QuickAccessButton("통화목록", Icons.Default.History, {})
                 }
             }
         }

@@ -10,6 +10,7 @@ if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
 val kakaoKey = localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
+val googleMapKey = localProperties.getProperty("GOOGLE_MAP_KEY") ?: ""
 val naverMapClientId = localProperties.getProperty("NAVER_MAP_CLIENT_ID") ?: ""
 
 plugins {
@@ -43,7 +44,7 @@ android {
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
         buildConfigField("String", "BASE_URL", "\"${baseUrl}\"")
 
-        manifestPlaceholders["GOOGLE_MAP_KEY"] = project.findProperty("GOOGLE_MAP_KEY") ?: ""
+        manifestPlaceholders["GOOGLE_MAP_KEY"] = googleMapKey
     }
 
     buildTypes {
