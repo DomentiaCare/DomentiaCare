@@ -15,11 +15,12 @@ import com.example.domentiacare.ui.theme.GrayDisabled
 fun MyAppButton(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier // 👈 기본값을 Modifier로 지정!
+    modifier: Modifier = Modifier,
+    containerColor: Color = Color(0xFFF49000), // 기본 주황색
 ) {
 
     val colors = ButtonDefaults.buttonColors(
-        containerColor = MaterialTheme.colorScheme.primary,
+        containerColor = containerColor,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         disabledContainerColor = GrayDisabled,
         disabledContentColor = Color.White.copy(alpha = 0.6f)
@@ -32,6 +33,9 @@ fun MyAppButton(
         colors = colors,
         shape = RoundedCornerShape(12.dp)
     ) {
-        Text(text)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

@@ -21,9 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.MyAppButton
 
 @Composable
 fun PatientDetailScreen(navController: NavController,
@@ -92,6 +94,20 @@ fun PatientDetailScreen(navController: NavController,
             ) {
                 Text("일정 보기")
             }
+
+            Text(text = "안녕하세요, 반가워요!", style = MaterialTheme.typography.bodyLarge)
+            Text(text = "안녕하세요, 반가워요!", style = MaterialTheme.typography.bodyMedium)
+
+            MyAppButton(
+                text = "보라색 버튼",
+                onClick = { /* ... */ },
+                containerColor = Color(0xFF8E24AA) // 보라색 배경
+            )
+
+            MyAppButton(
+                text = "기본 버튼",
+                onClick = { /* ... */ }
+            )
         }
     }
 
