@@ -20,13 +20,13 @@ private val LightColorScheme = lightColorScheme(
 //    primary = Purple40,
 //    secondary = PurpleGrey40,
 //    tertiary = Pink40
-    primary = OrangePrimary,             // 버튼, 포인트
-    onPrimary = WhiteBackground,         // 버튼 텍스트
+//    primary = OrangePrimary,             // 버튼, 포인트
+//    onPrimary = WhiteBackground,         // 버튼 텍스트
     background = WhiteBackground,        // 앱 배경
-    onBackground = BlackText,            // 일반 텍스트
-    surface = WhiteBackground,           // 카드/입력창 배경
-    onSurface = BlackText,                // 입력창 안 텍스트 등
-    secondary = GrayDisabled
+//    onBackground = BlackText,            // 일반 텍스트
+//    surface = WhiteBackground,           // 카드/입력창 배경
+//    onSurface = BlackText,                // 입력창 안 텍스트 등
+//    secondary = GrayDisabled
 
 
 

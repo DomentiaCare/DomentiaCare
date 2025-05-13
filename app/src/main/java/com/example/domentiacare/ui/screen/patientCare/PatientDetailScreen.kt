@@ -57,7 +57,11 @@ fun PatientDetailScreen(navController: NavController,
             Card(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     InfoRow(label = "주소", value = "서울시 강남구 역삼동")
