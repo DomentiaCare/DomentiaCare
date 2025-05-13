@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.domentiacare.ui.theme.GrayDisabled
 
 @Composable
 fun MyAppButton(
@@ -20,7 +21,7 @@ fun MyAppButton(
     val colors = ButtonDefaults.buttonColors(
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        disabledContainerColor = Color.Gray,
+        disabledContainerColor = GrayDisabled,
         disabledContentColor = Color.White.copy(alpha = 0.6f)
     )
 

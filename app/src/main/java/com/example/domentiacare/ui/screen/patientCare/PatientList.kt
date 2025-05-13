@@ -127,7 +127,8 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
@@ -154,7 +155,7 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
             Icon(
                 imageVector = icon,
                 contentDescription = "Patient Icon",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(64.dp)
             )
 
