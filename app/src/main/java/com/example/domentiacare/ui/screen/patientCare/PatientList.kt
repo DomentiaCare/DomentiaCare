@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.MyAppButton
 
 data class Patient(
     val name: String,
@@ -71,17 +72,26 @@ fun PatientList(navController: NavController
                 .padding(16.dp)
         ) {
             // 환자 등록 버튼
-            Button(
+//            Button(
+//                onClick = {
+//                    // TODO: 등록 화면 이동
+//                    showDialog = true
+//                },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(48.dp)
+//            ) {
+//                Text(text = "환자 등록")
+//            }
+            MyAppButton(
+                text = "환자 등록",
                 onClick = {
-                    // TODO: 등록 화면 이동
-                    showDialog = true
+                    showDialog = true;
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-            ) {
-                Text(text = "환자 등록")
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
