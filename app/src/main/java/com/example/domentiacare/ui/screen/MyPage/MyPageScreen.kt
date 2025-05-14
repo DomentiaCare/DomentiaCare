@@ -2,6 +2,7 @@ package com.example.domentiacare.ui.screen.MyPage
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.DMT_MenuItem
+import com.example.domentiacare.ui.component.MyAppButton
 
 @Composable
 fun MyPageScreen(navController: NavController
@@ -42,13 +46,13 @@ fun MyPageScreen(navController: NavController
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Color(0xFFFFFFFF))
     ) {
         // 상단 프로필 섹션
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
+                .background(Color(0xFFF49000))
                 .padding(vertical = 32.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -79,76 +83,71 @@ fun MyPageScreen(navController: NavController
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
-            Column {
-                MenuItem(icon = Icons.Default.Settings, title = "웹사이트 기본 정보")
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(16.dp)
+            ) {
+                DMT_MenuItem(icon = Icons.Default.Settings
+                    , title = "웹사이트 기본 정보")
                 Divider()
-                MenuItem(icon = Icons.Default.Storage, title = "백엔드 관리")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 초대 혜택 & 언어
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Column {
-                MenuItem(
+                DMT_MenuItem(icon = Icons.Default.Storage, title = "백엔드 관리")
+                Divider()
+                DMT_MenuItem(
                     icon = Icons.Default.Star,
                     title = "초대 혜택",
                     trailingText = "300포인트 보상"
                 )
                 Divider()
-                MenuItem(
+                DMT_MenuItem(
                     icon = Icons.Default.Language,
                     title = "언어",
                     trailingText = "한국어"
                 )
             }
         }
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+
+//        // 초대 혜택 & 언어
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(horizontal = 16.dp),
+//            shape = RoundedCornerShape(8.dp),
+//            colors = CardDefaults.cardColors(containerColor = Color.White)
+//        ) {
+//            Column {
+//                DMT_MenuItem(
+//                    icon = Icons.Default.Star,
+//                    title = "초대 혜택",
+//                    trailingText = "300포인트 보상"
+//                )
+//                Divider()
+//                DMT_MenuItem(
+//                    icon = Icons.Default.Language,
+//                    title = "언어",
+//                    trailingText = "한국어"
+//                )
+//            }
+//        }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // 하단 버튼
-        Button(
-            onClick = { /* TODO: 웹사이트 전환 기능 */ },
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(bottom = 16.dp), // 아래 여백 설정 가능
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Text("웹사이트 전환")
+            // 하단 버튼
+            MyAppButton(
+                onClick = { /* TODO: 웹사이트 전환 기능 */ },
+                text = "웹사이트 전환"
+            )
         }
-    }
-}
 
-@Composable
-fun MenuItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    trailingText: String? = null
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { /* TODO: 클릭 시 동작 */ }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = title,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(title, modifier = Modifier.weight(1f))
-        if (trailingText != null) {
-            Text(trailingText, color = Color.Gray, fontSize = 12.sp)
-        }
-        Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "화살표", tint = Color.Gray)
     }
 }
