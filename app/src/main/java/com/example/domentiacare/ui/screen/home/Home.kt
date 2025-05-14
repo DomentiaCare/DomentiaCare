@@ -184,7 +184,7 @@ fun Home(navController: NavController
                 Spacer(modifier = Modifier.height(40.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     QuickAccessButton("환자관리", Icons.Default.Face, {navController.navigate("patientList")})
-                    QuickAccessButton("통화목록", Icons.Default.History, {})
+                    QuickAccessButton("통화목록", Icons.Default.History, {navController.navigate("CallLogScreen")})
                 }
             }
         }

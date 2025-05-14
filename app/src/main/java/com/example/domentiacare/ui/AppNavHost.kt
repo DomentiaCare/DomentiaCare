@@ -25,6 +25,7 @@ import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
+import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
@@ -186,6 +187,9 @@ import java.time.LocalDate
                                 popUpTo("RegisterScreen") { inclusive = true }
                             }
                         } )
+                    }
+                    composable("CallLogScreen"){
+                        CallLogScreen(navController)
                     }
                 }
             }
