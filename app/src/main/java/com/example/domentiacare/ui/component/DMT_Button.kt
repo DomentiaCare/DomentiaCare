@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.domentiacare.ui.theme.GrayDisabled
 
 @Composable
-fun MyAppButton(
+fun DMT_Button(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

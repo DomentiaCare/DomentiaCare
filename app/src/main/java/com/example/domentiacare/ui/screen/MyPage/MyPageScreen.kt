@@ -37,8 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.DMT_MenuItem
-import com.example.domentiacare.ui.component.MyAppButton
 
 @Composable
 fun MyPageScreen(navController: NavController
@@ -143,7 +143,7 @@ fun MyPageScreen(navController: NavController
             contentAlignment = Alignment.BottomCenter
         ) {
             // 하단 버튼
-            MyAppButton(
+            DMT_Button(
                 onClick = { /* TODO: 웹사이트 전환 기능 */ },
                 text = "웹사이트 전환"
             )

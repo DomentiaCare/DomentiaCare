@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.MyAppButton
+import com.example.domentiacare.ui.component.DMT_Button
 
 data class Patient(
     val name: String,
@@ -85,7 +85,7 @@ fun PatientList(navController: NavController
 //            ) {
 //                Text(text = "환자 등록")
 //            }
-            MyAppButton(
+            DMT_Button(
                 text = "환자 등록",
                 onClick = {
                     showDialog = true;

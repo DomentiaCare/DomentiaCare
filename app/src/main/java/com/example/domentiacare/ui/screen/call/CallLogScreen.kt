@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,17 +33,23 @@ data class CallLog(
     val name: String,
     val type: String, // "발신", "수신", "부재중"
     val time: String, // 예: "어제", "오전 11:15", "4월 20일"
+    val isSaved : Boolean = false // 저장 여부
 )
 
 @Composable
 fun CallLogScreen(navController: NavController) {
     val callLogs = listOf(
-        CallLog("밤지성", "발신", "오전 11:15"),
-        CallLog("김민서", "부재중", "어제"),
-        CallLog("010-1234-5678", "발신", "어제"),
-        CallLog("최준혁", "수신", "4월 22일"),
-        CallLog("010-9876-5432", "발신", "4월 20일"),
-        CallLog("이서우", "수신", "4월 19일"),
+        CallLog("밤지성", "발신", "오전 11:15", true),
+        CallLog("김민서", "부재중", "어제", true),
+        CallLog("010-1234-5678", "발신", "어제", false),
+        CallLog("최준혁", "수신", "4월 22일", true),
+        CallLog("010-9876-5432", "발신", "4월 20일", true),
+        CallLog("이서우", "수신", "4월 19일", false),
+        CallLog("김민서", "부재중", "어제", true),
+        CallLog("010-1234-5678", "발신", "어제", false),
+        CallLog("최준혁", "수신", "4월 22일", true),
+        CallLog("010-9876-5432", "발신", "4월 20일", true),
+        CallLog("이서우", "수신", "4월 19일", false),
     )
 
     LazyColumn(
@@ -51,14 +58,14 @@ fun CallLogScreen(navController: NavController) {
             .padding(8.dp)
     ) {
         items(callLogs) { call ->
-            CallLogItem(call)
+            CallLogItem(call, navController)
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-fun CallLogItem(call: CallLog) {
+fun CallLogItem(call: CallLog, navController: NavController) {
     val backgroundColor = when (call.type) {
         "부재중" -> Color(0xFFFFCDD2) // red
         else -> Color(0xFFC8E6C9) // green
@@ -68,7 +75,10 @@ fun CallLogItem(call: CallLog) {
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
         shadowElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = {
+            navController.navigate("CallDetailScreen")
+             },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -94,9 +104,9 @@ fun CallLogItem(call: CallLog) {
                 Text(text = "${call.type} ${call.time}", fontSize = 13.sp, color = Color.Gray)
             }
             Icon(
-                imageVector = Icons.Default.Call,
+                imageVector = Icons.Default.DateRange,
                 contentDescription = "통화 아이콘",
-                tint = Color.Gray,
+                tint = if(call.isSaved) Color(0xFFF49000) else Color.LightGray, // 초록색 또는 회색
                 modifier = Modifier.size(24.dp)
             )
         }
