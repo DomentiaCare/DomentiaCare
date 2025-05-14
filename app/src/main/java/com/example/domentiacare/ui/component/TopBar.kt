@@ -9,7 +9,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -21,7 +24,7 @@ fun TopBar(
     scope: CoroutineScope
 ) {
     TopAppBar(
-        title = { Text(text = title) },
+        title = { Text(text = title, fontWeight = FontWeight.Bold) },
         navigationIcon = {
             IconButton(onClick = {
                 scope.launch {
@@ -35,6 +38,10 @@ fun TopBar(
             IconButton(onClick = { /* 검색 */ }) {
                 Icon(Icons.Default.Search, contentDescription = "Search")
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = Color.White // ✅ 배경을 흰색으로 지정
+        )
+
     )
 }
