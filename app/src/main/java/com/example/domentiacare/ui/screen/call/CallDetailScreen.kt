@@ -45,7 +45,7 @@ fun CallDetailScreen(
     navController: NavController
 ) {
     var callLog = CallLog(
-        name = "밤지성",
+        name = "소룡",
         type = "발신",
         time = "오전 11:15"
     )
@@ -54,9 +54,15 @@ fun CallDetailScreen(
             "진호: 나도 일요일 오후 괜찮아. 3시쯤 어때?\n" +
             "소룡: 좋아. 어디서 볼까?\n" +
             "진호: 홍대 쪽 어때? 카페도 많고 걷기도 좋고.\n" +
-            "소룡: 좋지! 그럼 일요일 3시에 홍대에서 보자!\n" +
-            "진호: 오케이~ 그때 보자!"
-    var initialMemo = "홍대 약속"
+            "소룡: 좋지! 그럼 일요일 3시에 혜화에서 보자!\n" +
+            "진호: 오케이~ 그때 보자!\n" +
+            "소룡: 근데 날씨 확인해봤어? 비 온다는 얘기가 있던데.\n" +
+            "진호: 아 맞다, 잠깐만... 음, 오후엔 괜찮다고 나와 있어!\n" +
+            "소룡: 다행이다. 우산은 챙겨가는 게 좋을지도.\n" +
+            "진호: 응, 혹시 모르니까 챙길게.\n" +
+            "소룡: 그럼 우리 혜화역 8번 출구 앞에서 만나자.\n" +
+            "진호: 좋아! 그날 봐~ 기대된다!";
+    var initialMemo = "혜화 약속"
     var initialDate = LocalDateTime.now()
 
     var memo by remember { mutableStateOf(initialMemo) }
@@ -95,7 +101,7 @@ fun CallDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 200.dp)
+                .heightIn(min = 50.dp, max = 700.dp)
                 .border(1.dp, Color.Black, shape = RoundedCornerShape(8.dp))
                 .padding(12.dp)
         ) {
