@@ -2,12 +2,10 @@ package com.example.domentiacare.ui
 
 import ScheduleDetailScreen
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
@@ -25,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.component.BottomNavBar
+import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
 import com.example.domentiacare.ui.screen.call.CallDetailScreen
@@ -41,9 +40,8 @@ import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 
-    @Composable
+@Composable
     fun AppNavHost() {
         val navController = rememberNavController()
         val scheduleViewModel: ScheduleViewModel = viewModel()
@@ -106,7 +104,7 @@ import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
             }
             Scaffold(
                 topBar = {
-                    TopBar(title = "DomenticaCare", drawerState = drawerState, scope = scope)
+                    TopBar(title = "DomentiaCare", drawerState = drawerState, scope = scope)
                 },
                 bottomBar = {
                     BottomNavBar(navController)

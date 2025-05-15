@@ -96,11 +96,11 @@ fun SingleMonthCalendar(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(0.6f)
+                        .aspectRatio(0.5f)
                         .background(
                             color = when {
-                                date == selectedDate -> Color(0xFF2196F3)
-                                date == today -> Color(0xFFBBDEFB)
+                                date == selectedDate -> Color(0xFFF49000)
+                                date == today -> Color(0xFFfbc271)
                                 else -> Color.Transparent
                             },
                             shape = MaterialTheme.shapes.small
@@ -124,7 +124,7 @@ fun SingleMonthCalendar(
                         Box(
                             modifier = Modifier
                                 .background(
-                                    color = if (daySchedule != null) Color(0xFF4C8C4A) else Color.Transparent,
+                                    color = if (daySchedule != null) Color(0xFF2196F3) else Color.Transparent,
                                     shape = MaterialTheme.shapes.small
                                 )
                                 .padding(horizontal = 6.dp, vertical = 2.dp)

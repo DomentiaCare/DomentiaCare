@@ -143,8 +143,8 @@ fun CustomCalendar(
                         .aspectRatio(0.6f) // ✅ 정사각형보다 세로로 길게
                         .background(
                             color = when {
-                                date == selectedDate -> Color(0xFF2196F3)
-                                date == today -> Color(0xFFBBDEFB)
+                                date == selectedDate -> Color(0xFFfbc271)
+                                date == today -> Color(0xFFF49000)
                                 else -> Color.Transparent
                             },
                             shape = MaterialTheme.shapes.small

@@ -11,7 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -209,19 +208,14 @@ fun QuickAccessButton(label: String, icon: ImageVector, onClick: () -> Unit ) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 아이콘 배경 박스
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .background(Color.White, shape = RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
+
             Icon(
                 imageVector = icon,
                 contentDescription = label,
                 tint = Color(0xFFF49000), // 아이콘 진한 파란색
-                modifier = Modifier.size(120.dp)
+                modifier = Modifier.size(70.dp)
             )
-        }
+
 
         Spacer(modifier = Modifier.height(10.dp))
 

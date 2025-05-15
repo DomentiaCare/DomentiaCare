@@ -41,7 +41,7 @@ fun ScheduleScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(0.dp)
     ) {
         PagerCalendar(
             selectedDate = selectedDate,
