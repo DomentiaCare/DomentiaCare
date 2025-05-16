@@ -21,6 +21,7 @@ plugins {
     // ✅ 여기에 추가!!
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -80,6 +81,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -130,5 +132,8 @@ dependencies {
     // ✅ Hilt 의존성 추가
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+    implementation("com.google.firebase:firebase-analytics")
 
 }
