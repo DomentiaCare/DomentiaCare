@@ -1,7 +1,7 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +22,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,11 +35,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.domentiacare.ui.component.MyAppButton
+import com.example.domentiacare.ui.component.DMT_Button
 
 data class Patient(
     val name: String,
@@ -83,7 +85,7 @@ fun PatientList(navController: NavController
 //            ) {
 //                Text(text = "환자 등록")
 //            }
-            MyAppButton(
+            DMT_Button(
                 text = "환자 등록",
                 onClick = {
                     showDialog = true;
@@ -97,13 +99,14 @@ fun PatientList(navController: NavController
 
             // 환자 리스트
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                //verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 itemsIndexed(patients) { index, patient ->
                     PatientCard(patient, index){
                         navController.navigate("patientDetail/${patient.name}/${patient.age}/${patient.condition}")
                     }
+                    Divider()
                 }
             }
             // ✅ 다이얼로그 컴포저블 호출
@@ -125,13 +128,14 @@ fun PatientList(navController: NavController
 @Composable
 fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(0.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        ),
+//        elevation = CardDefaults.cardElevation(
+//            defaultElevation =4.dp
+//        ),
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
@@ -142,6 +146,7 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.White)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -154,7 +159,7 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
             Icon(
                 imageVector = icon,
                 contentDescription = "Patient Icon",
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.size(64.dp)
             )
 

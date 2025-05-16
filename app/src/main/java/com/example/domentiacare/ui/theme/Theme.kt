@@ -8,6 +8,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -17,9 +18,21 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+//    primary = Purple40,
+//    secondary = PurpleGrey40,
+//    tertiary = Pink40
+//    primary = OrangePrimary,             // 버튼, 포인트
+//    onPrimary = WhiteBackground,         // 버튼 텍스트
+    background = WhiteBackground,        // 앱 배경
+//    onBackground = BlackText,            // 일반 텍스트
+//    surface = WhiteBackground,           // 카드/입력창 배경
+//    onSurface = BlackText,                // 입력창 안 텍스트 등
+//    secondary = GrayDisabled
+    surfaceVariant = Color.White,
+    secondaryContainer = Color.White,
+    tertiaryContainer = Color.White,
+    primaryContainer = Color.White
+
 
 
 
@@ -38,7 +51,7 @@ private val LightColorScheme = lightColorScheme(
 fun DomentiaCareTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -53,7 +66,7 @@ fun DomentiaCareTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = AppTypography,
         content = content
     )
 }

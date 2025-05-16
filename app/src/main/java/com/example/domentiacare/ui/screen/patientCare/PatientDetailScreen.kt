@@ -21,9 +21,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.domentiacare.ui.component.DMT_Button
 
 @Composable
 fun PatientDetailScreen(navController: NavController,
@@ -57,7 +59,11 @@ fun PatientDetailScreen(navController: NavController,
             Card(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     InfoRow(label = "주소", value = "서울시 강남구 역삼동")
@@ -88,6 +94,20 @@ fun PatientDetailScreen(navController: NavController,
             ) {
                 Text("일정 보기")
             }
+
+            Text(text = "안녕하세요, 반가워요!", style = MaterialTheme.typography.bodyLarge)
+            Text(text = "안녕하세요, 반가워요!", style = MaterialTheme.typography.bodyMedium)
+
+            DMT_Button(
+                text = "보라색 버튼",
+                onClick = { /* ... */ },
+                containerColor = Color(0xFF8E24AA) // 보라색 배경
+            )
+
+            DMT_Button(
+                text = "기본 버튼",
+                onClick = { /* ... */ }
+            )
         }
     }
 

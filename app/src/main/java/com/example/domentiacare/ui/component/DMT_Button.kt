@@ -9,18 +9,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.domentiacare.ui.theme.GrayDisabled
 
 @Composable
-fun MyAppButton(
+fun DMT_Button(
     text: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier // 👈 기본값을 Modifier로 지정!
+    modifier: Modifier = Modifier,
+    containerColor: Color = Color(0xFFF49000), // 기본 주황색
 ) {
 
     val colors = ButtonDefaults.buttonColors(
-        containerColor = MaterialTheme.colorScheme.primary,
+        containerColor = containerColor,
         contentColor = MaterialTheme.colorScheme.onPrimary,
-        disabledContainerColor = Color.Gray,
+        disabledContainerColor = GrayDisabled,
         disabledContentColor = Color.White.copy(alpha = 0.6f)
     )
 
@@ -31,6 +33,9 @@ fun MyAppButton(
         colors = colors,
         shape = RoundedCornerShape(12.dp)
     ) {
-        Text(text)
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

@@ -11,7 +11,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,10 +39,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -117,7 +120,7 @@ fun Home(navController: NavController
             Card(
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Row(
                     modifier = Modifier
@@ -127,7 +130,19 @@ fun Home(navController: NavController
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("안녕하세요, ${user?.nickname} 님", fontSize = 18.sp)
+                        Text(
+                        buildAnnotatedString {
+                            append("안녕하세요, ")
+
+                            withStyle(style = SpanStyle(color = Color(0xFFF49000))) {
+                                append(user?.nickname ?: "사용자")
+                            }
+
+                            append(" 님")
+                        },
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Text("오늘도 좋은 하루 보내세요!", fontSize = 14.sp, color = Color.Gray)
                     }
 
@@ -155,18 +170,20 @@ fun Home(navController: NavController
             Spacer(modifier = Modifier.height(24.dp))
 
             // 3. Quick Access 텍스트
-            Text("Quick Access", fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
-
+            Row { Spacer(modifier = Modifier.size(24.dp))
+                Text("빠른 메뉴", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(bottom = 8.dp))
+            }
+            Spacer(modifier = Modifier.height(24.dp))
             // 4. 2x2 버튼 그리드
             Column {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     QuickAccessButton("길찾기", Icons.Default.Place, {})
                     QuickAccessButton("일정관리", Icons.Default.DateRange, {navController.navigate("schedule")})
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(40.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     QuickAccessButton("환자관리", Icons.Default.Face, {navController.navigate("patientList")})
-                    QuickAccessButton("통화목록", Icons.Default.History, {})
+                    QuickAccessButton("통화목록", Icons.Default.History, {navController.navigate("CallLogScreen")})
                 }
             }
         }
@@ -179,32 +196,28 @@ fun QuickAccessButton(label: String, icon: ImageVector, onClick: () -> Unit ) {
     Column(
         modifier = Modifier
             .size(160.dp) // 버튼 전체 크기
+            .shadow(6.dp, shape = RoundedCornerShape(20.dp)) // ✅ 그림자
             .background(
-                color = Color(0xFFE3F2FD), // 연한 파란색
+                color = Color.White, // 연한 파란색
                 shape = RoundedCornerShape(20.dp)
             )
             .clickable {onClick() }
             .padding(horizontal = 20.dp, vertical = 25.dp),
 
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // 아이콘 배경 박스
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(Color.White, shape = RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
+
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color(0xFF2196F3), // 아이콘 진한 파란색
-                modifier = Modifier.size(28.dp)
+                tint = Color(0xFFF49000), // 아이콘 진한 파란색
+                modifier = Modifier.size(70.dp)
             )
-        }
 
-        Spacer(modifier = Modifier.height(30.dp))
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         // 텍스트
         Text(

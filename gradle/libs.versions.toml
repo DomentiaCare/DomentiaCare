@@ -22,6 +22,7 @@ horologistTiles = "0.6.17"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
 workRuntimeKtx = "2.10.1"
 
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

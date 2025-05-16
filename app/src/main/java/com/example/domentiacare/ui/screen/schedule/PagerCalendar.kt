@@ -38,6 +38,7 @@ fun PagerCalendar(
     val currentMonth = YearMonth.now().plusMonths((pagerState.currentPage - initialPage).toLong())
 
     // ▶️◀️ 월 이동 버튼 + 현재 월 표시
+    Spacer(modifier = Modifier.height(10.dp))
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -62,9 +63,7 @@ fun PagerCalendar(
             Icon(Icons.Default.ArrowForward, contentDescription = "Next Month")
         }
     }
-
-    Spacer(modifier = Modifier.height(8.dp))
-
+    
     // 👉 HorizontalPager (스와이프 달력)
     HorizontalPager(
         count = Int.MAX_VALUE,

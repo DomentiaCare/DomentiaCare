@@ -6,13 +6,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -23,8 +23,11 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.ui.component.BottomNavBar
+import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
+import com.example.domentiacare.ui.screen.call.CallDetailScreen
+import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
@@ -38,7 +41,7 @@ import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
-    @Composable
+@Composable
     fun AppNavHost() {
         val navController = rememberNavController()
         val scheduleViewModel: ScheduleViewModel = viewModel()
@@ -63,23 +66,28 @@ import java.time.LocalDate
             drawerState = drawerState,
             gesturesEnabled = !isMapScreen,
             drawerContent = {
-                ModalDrawerSheet {
+                ModalDrawerSheet (
+                    drawerContainerColor = Color.White
+                ) {
                     Text("메뉴", modifier = Modifier.padding(16.dp))
-                    NavigationDrawerItem(label = { Text("홈") }, selected = false, onClick = {
+                    DMT_DrawerMenuItem("홈", onClick = {
                         navController.navigate("home") {
                             popUpTo("home") { inclusive = true }
                         }
                         scope.launch { drawerState.close() }
                     })
-                    NavigationDrawerItem(label = { Text("일정관리") }, selected = false, onClick = {
+
+                    DMT_DrawerMenuItem("일정관리", onClick = {
                         navController.navigate("schedule")
                         scope.launch { drawerState.close() }
                     })
-                    NavigationDrawerItem(label = { Text("환자관리") }, selected = false, onClick = {
+
+                    DMT_DrawerMenuItem("환자관리", onClick = {
                         navController.navigate("patientList")
                         scope.launch { drawerState.close() }
                     })
-                    NavigationDrawerItem(label = { Text("로그아웃") }, selected = false, onClick = {
+
+                    DMT_DrawerMenuItem("로그아웃", onClick = {
                         navController.navigate("login") {
                             TokenManager.clearToken()
                             popUpTo("login") { inclusive = true }
@@ -96,7 +104,7 @@ import java.time.LocalDate
             }
             Scaffold(
                 topBar = {
-                    TopBar(title = "DomenticaCare", drawerState = drawerState, scope = scope)
+                    TopBar(title = "DomentiaCare", drawerState = drawerState, scope = scope)
                 },
                 bottomBar = {
                     BottomNavBar(navController)
@@ -186,6 +194,12 @@ import java.time.LocalDate
                                 popUpTo("RegisterScreen") { inclusive = true }
                             }
                         } )
+                    }
+                    composable("CallLogScreen"){
+                        CallLogScreen(navController)
+                    }
+                    composable("CallDetailScreen"){
+                        CallDetailScreen(navController)
                     }
                 }
             }
