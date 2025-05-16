@@ -1,6 +1,7 @@
 package com.example.domentiacare.ui
 
 import ScheduleDetailScreen
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
@@ -22,6 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.data.local.TokenManager
+import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 import com.example.domentiacare.ui.component.TopBar
@@ -38,7 +40,11 @@ import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
 import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.time.LocalDate
 
 @Composable
@@ -120,6 +126,7 @@ import java.time.LocalDate
                             onLoginSuccess = {
                                 navController.navigate("home") {
                                     popUpTo("login") { inclusive = true }
+                                    sendFcmTokenAfterLogin()
                                 }
                             }
                         )
@@ -193,6 +200,7 @@ import java.time.LocalDate
                             navController.navigate("home") {
                                 popUpTo("RegisterScreen") { inclusive = true }
                             }
+                            sendFcmTokenAfterLogin()
                         } )
                     }
                     composable("CallLogScreen"){
@@ -205,4 +213,20 @@ import java.time.LocalDate
             }
         }
     }
+
+fun sendFcmTokenAfterLogin(){
+    FirebaseMessaging.getInstance().token
+        .addOnSuccessListener { token ->
+            val request = mapOf("token" to token)
+            RetrofitClient.authApi.sendFcmToken(request).enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    Log.d("FCM", "✅ 토큰 서버 전송 성공")
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Log.e("FCM", "❌ 토큰 전송 실패", t)
+                }
+            })
+        }
+}
 

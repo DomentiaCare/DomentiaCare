@@ -2,6 +2,7 @@ package com.example.domentiacare.data.remote.api
 
 import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
 import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
+import com.example.domentiacare.data.remote.dto.LocationRequestBody
 import com.example.domentiacare.data.remote.dto.RegisterUserRequest
 import com.example.domentiacare.data.remote.dto.User
 import retrofit2.Call
@@ -28,4 +29,15 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     fun registerUser(
         @Body user: RegisterUserRequest
     ): Call<KakaoLoginResponse>
+
+    // 백엔드로 위치보내는 서비스 api
+    @POST("/api/location")
+    fun sendLocation(@Body location: LocationRequestBody): Call<Void>
+
+    // FCM 토큰 전송
+    @POST("/api/user/fcm-token")
+    fun sendFcmToken(
+        @Body token: Map<String, String>
+    ): Call<Void>
+
 }
