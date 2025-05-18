@@ -105,7 +105,7 @@ fun CallLogItem(call: CallLog, navController: NavController) {
             }
             Icon(
                 imageVector = Icons.Default.DateRange,
-                contentDescription = "통화 아이콘",
+                contentDescription = "달력 아이콘",
                 tint = if(call.isSaved) Color(0xFFF49000) else Color.LightGray, // 초록색 또는 회색
                 modifier = Modifier.size(24.dp)
             )

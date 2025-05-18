@@ -10,7 +10,7 @@
     <!-- 인터넷 사용 권한 설정-->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- GCP Maps 설정 -->`
+    <!-- GCP Maps 설정 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -20,6 +20,10 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--  통화 기록 권한  -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
 
     <application
         android:name=".MyApplication"
@@ -35,10 +39,12 @@
         tools:targetApi="31">
 
 
-        <!-- 👇 ForegroundService 등록 -->
-        <service
-            android:name=".service.LocationForegroundService"
-            android:exported="false" />
+<!--        &lt;!&ndash; 👇 ForegroundService 등록 &ndash;&gt;-->
+<!--        <service-->
+<!--            android:name=".service.LocationForegroundService"-->
+<!--            android:exported="false"-->
+<!--            android:foregroundServiceType="location"-->
+<!--            tools:ignore="ForegroundServicePermission" />-->
         <!-- 👇 Firebase Cloud Messaging Service 등록 -->
         <service
             android:name=".service.MyFirebaseMessagingService"

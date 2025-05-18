@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.domentiacare.service.LocationForegroundService
@@ -24,6 +25,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val viewModel: CallLogViewModel by viewModels()
     private val IS_DEV_MODE = true
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
     private lateinit var finePermissionLauncher: ActivityResultLauncher<String>
@@ -36,6 +38,17 @@ class MainActivity : ComponentActivity() {
             Log.d("Permission", "✅ 알림 권한 허용됨")
         } else {
             Toast.makeText(this, "❌ 알림 권한이 거부되었습니다", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 통화 기록 권한
+    private val requestReadCallLog = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.loadCallLogs()
+        } else {
+            Toast.makeText(this, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
     }
 
