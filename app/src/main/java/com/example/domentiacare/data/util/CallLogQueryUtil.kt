@@ -14,6 +14,8 @@ fun queryCallLogs(context: Context): List<CallLogEntry> {
         CallLog.Calls.DATE,
         CallLog.Calls.DURATION
     )
+
+    // DATE 내림차순 정렬
     val cursor = context.contentResolver.query(
         uri, projection, null, null,
         "${CallLog.Calls.DATE} DESC"
@@ -28,6 +30,7 @@ fun queryCallLogs(context: Context): List<CallLogEntry> {
         val idxDate     = it.getColumnIndexOrThrow(CallLog.Calls.DATE)
         val idxDuration = it.getColumnIndexOrThrow(CallLog.Calls.DURATION)
 
+        // Cursor를 한 줄씩 순회
         while (it.moveToNext()) {
             list += CallLogEntry(
                 id       = it.getString(idxId),
