@@ -56,7 +56,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.domentiacare.data.model.CallLogViewModel
+import com.example.domentiacare.ui.screen.call.CallLogViewModel
+
 @Composable
     fun AppNavHost() {
         val navController = rememberNavController()
@@ -212,9 +213,6 @@ import com.example.domentiacare.data.model.CallLogViewModel
                             }
                             sendFcmTokenAfterLogin()
                         } )
-                    }
-                    composable("CallLogScreen"){
-                        CallLogScreen(navController)
                     }
                     composable("CallDetailScreen"){
                         CallDetailScreen(navController)

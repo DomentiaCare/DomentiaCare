@@ -1,4 +1,4 @@
-package com.example.domentiacare.data.model
+package com.example.domentiacare.ui.screen.call
 
 import android.app.Application
 import androidx.compose.runtime.State

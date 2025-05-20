@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import com.example.domentiacare.service.LocationForegroundService
 import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.theme.DomentiaCareTheme

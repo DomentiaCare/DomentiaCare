@@ -21,12 +21,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 
 data class CallLog(
@@ -37,7 +39,10 @@ data class CallLog(
 )
 
 @Composable
-fun CallLogScreen(navController: NavController) {
+fun CallLogScreen(viewModel: CallLogViewModel,
+                  navController: NavController) {
+    val logs by viewModel.callLogs
+
     val callLogs = listOf(
         CallLog("밤지성", "발신", "오전 11:15", true),
         CallLog("김민서", "부재중", "어제", true),

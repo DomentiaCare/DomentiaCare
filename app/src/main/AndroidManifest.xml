@@ -39,12 +39,12 @@
         tools:targetApi="31">
 
 
-<!--        &lt;!&ndash; 👇 ForegroundService 등록 &ndash;&gt;-->
-<!--        <service-->
-<!--            android:name=".service.LocationForegroundService"-->
-<!--            android:exported="false"-->
-<!--            android:foregroundServiceType="location"-->
-<!--            tools:ignore="ForegroundServicePermission" />-->
+        <!-- 👇 ForegroundService 등록 -->
+        <service
+            android:name=".service.LocationForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            tools:ignore="ForegroundServicePermission" />
         <!-- 👇 Firebase Cloud Messaging Service 등록 -->
         <service
             android:name=".service.MyFirebaseMessagingService"
