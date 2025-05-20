@@ -48,6 +48,17 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.time.LocalDate
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.domentiacare.ui.screen.call.CallLogViewModel
+
 @Composable
     fun AppNavHost() {
         val navController = rememberNavController()
@@ -204,14 +215,50 @@ import java.time.LocalDate
                             sendFcmTokenAfterLogin()
                         } )
                     }
-                    composable("CallLogScreen"){
-                        CallLogScreen(navController)
-                    }
                     composable("CallDetailScreen"){
                         CallDetailScreen(navController)
                     }
                     composable("WhisperScreen"){
                         WhisperScreen()
+                    }
+                      
+                    composable("CallLogScreen") {
+                        // ① Compose 상에서 사용할 Context
+                        val context = LocalContext.current
+                        // ② ViewModel 인스턴스
+                        val viewModel: CallLogViewModel = viewModel()
+                        // ③ 권한 요청 런처 준비
+                        val permissionLauncher =
+                            rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestPermission()
+                            ) { granted ->
+                                if (granted) {
+                                    viewModel.loadCallLogs()
+                                } else {
+                                    Toast
+                                        .makeText(context, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+                            }
+
+                        // ④ 화면 최초 진입 시 권한 체크 & 요청 or 바로 로드
+                        LaunchedEffect(Unit) {
+                            if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.READ_CALL_LOG
+                                ) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                                viewModel.loadCallLogs()
+                            } else {
+                                permissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                            }
+                        }
+
+                        // ⑤ 실제 UI 호출
+                        CallLogScreen(
+                            viewModel = viewModel,
+                            navController = navController
+                        )
                     }
                 }
             }

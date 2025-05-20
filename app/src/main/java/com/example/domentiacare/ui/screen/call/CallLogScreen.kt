@@ -3,6 +3,7 @@ package com.example.domentiacare.ui.screen.call
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,13 +22,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.domentiacare.data.model.CallLogEntry
 
 data class CallLog(
     val name: String,
@@ -37,27 +42,37 @@ data class CallLog(
 )
 
 @Composable
-fun CallLogScreen(navController: NavController) {
-    val callLogs = listOf(
-        CallLog("밤지성", "발신", "오전 11:15", true),
-        CallLog("김민서", "부재중", "어제", true),
-        CallLog("010-1234-5678", "발신", "어제", false),
-        CallLog("최준혁", "수신", "4월 22일", true),
-        CallLog("010-9876-5432", "발신", "4월 20일", true),
-        CallLog("이서우", "수신", "4월 19일", false),
-        CallLog("김민서", "부재중", "어제", true),
-        CallLog("010-1234-5678", "발신", "어제", false),
-        CallLog("최준혁", "수신", "4월 22일", true),
-        CallLog("010-9876-5432", "발신", "4월 20일", true),
-        CallLog("이서우", "수신", "4월 19일", false),
-    )
+fun CallLogScreen(viewModel: CallLogViewModel,
+                  navController: NavController) {
+    val logs by viewModel.callLogs
 
+//    val callLogs = listOf(
+//        CallLog("밤지성", "발신", "오전 11:15", true),
+//        CallLog("김민서", "부재중", "어제", true),
+//        CallLog("010-1234-5678", "발신", "어제", false),
+//        CallLog("최준혁", "수신", "4월 22일", true),
+//        CallLog("010-9876-5432", "발신", "4월 20일", true),
+//        CallLog("이서우", "수신", "4월 19일", false),
+//        CallLog("김민서", "부재중", "어제", true),
+//        CallLog("010-1234-5678", "발신", "어제", false),
+//        CallLog("최준혁", "수신", "4월 22일", true),
+//        CallLog("010-9876-5432", "발신", "4월 20일", true),
+//        CallLog("이서우", "수신", "4월 19일", false),
+//    )
+
+    // 2) 최초 진입 시 한 번만 loadCallLogs() 실행
+    LaunchedEffect(Unit) {
+        viewModel.loadCallLogs()
+    }
+
+    // 3) 실제 LazyColumn에 items(logs) 사용
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
+            .padding(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(callLogs) { call ->
+        items(logs) { call ->
             CallLogItem(call, navController)
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -65,10 +80,24 @@ fun CallLogScreen(navController: NavController) {
 }
 
 @Composable
-fun CallLogItem(call: CallLog, navController: NavController) {
-    val backgroundColor = when (call.type) {
-        "부재중" -> Color(0xFFFFCDD2) // red
-        else -> Color(0xFFC8E6C9) // green
+fun CallLogItem(call: CallLogEntry, navController: NavController) {
+    val backgroundColor : Color = when (call.type) {
+        3 -> {
+            Color(0xFFFFCDD2) // 부재중, red
+        }
+
+        2 -> {
+            Color(0xFFBBDEFB) // 발신, blue
+        }
+
+        1 -> {
+            Color(0xFFC8E6C9) // 수신, green
+        }
+
+        else -> {
+            //투명 색상
+            Color.Transparent
+        }
     }
 
     Surface(
@@ -92,23 +121,26 @@ fun CallLogItem(call: CallLog, navController: NavController) {
                     .background(backgroundColor, shape = MaterialTheme.shapes.small),
                 contentAlignment = Alignment.Center
             ) {
+                // 전화 아이콘
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = null,
                     tint = Color.White
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(16.dp)) // 가로 간격
+
+            // 이름
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = call.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "${call.type} ${call.time}", fontSize = 13.sp, color = Color.Gray)
+                call.name?.let { Text(text = it, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+                Text(text = "${call.callTypeText}    통화시간: ${call.formattedDuration}", fontSize = 13.sp, color = Color.Gray)
             }
-            Icon(
-                imageVector = Icons.Default.DateRange,
-                contentDescription = "통화 아이콘",
-                tint = if(call.isSaved) Color(0xFFF49000) else Color.LightGray, // 초록색 또는 회색
-                modifier = Modifier.size(24.dp)
-            )
+//            Icon(
+//                imageVector = Icons.Default.DateRange,
+//                contentDescription = "달력 아이콘",
+//                tint = if(call.isSaved) Color(0xFFF49000) else Color.LightGray, // 초록색 또는 회색
+//                modifier = Modifier.size(24.dp)
+//            )
         }
     }
 }
