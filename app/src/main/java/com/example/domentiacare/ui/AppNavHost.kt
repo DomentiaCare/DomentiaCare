@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.data.remote.RetrofitClient
+import com.example.domentiacare.service.whisper.WhisperScreen
 import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 import com.example.domentiacare.ui.component.TopBar
@@ -217,7 +218,10 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
                     composable("CallDetailScreen"){
                         CallDetailScreen(navController)
                     }
-
+                    composable("WhisperScreen"){
+                        WhisperScreen()
+                    }
+                      
                     composable("CallLogScreen") {
                         // ① Compose 상에서 사용할 Context
                         val context = LocalContext.current

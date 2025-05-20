@@ -20,6 +20,11 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+
+
 
     <!--  통화 기록 권한  -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
@@ -43,8 +48,7 @@
         <service
             android:name=".service.LocationForegroundService"
             android:exported="false"
-            android:foregroundServiceType="location"
-            tools:ignore="ForegroundServicePermission" />
+            android:foregroundServiceType="location"/>
         <!-- 👇 Firebase Cloud Messaging Service 등록 -->
         <service
             android:name=".service.MyFirebaseMessagingService"

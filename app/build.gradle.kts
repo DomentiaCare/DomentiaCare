@@ -136,4 +136,13 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-analytics")
 
+    //whisper
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    // 선택 사항
+     implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
+     implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+
+    implementation("com.arthenica:ffmpeg-kit-full:5.1")
+
+
 }
