@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.quicinc.chatapp.test" >
+
+    <uses-sdk
+        android:minSdkVersion="31"
+        android:targetSdkVersion="34" />
+
+    <instrumentation
+        android:name="android.test.InstrumentationTestRunner"
+        android:functionalTest="false"
+        android:handleProfiling="false"
+        android:label="Tests for com.quicinc.chatapp"
+        android:targetPackage="com.quicinc.chatapp" />
+
+    <application
+        android:debuggable="true"
+        android:extractNativeLibs="true" >
+        <uses-library android:name="android.test.runner" />
+    </application>
+
+</manifest>

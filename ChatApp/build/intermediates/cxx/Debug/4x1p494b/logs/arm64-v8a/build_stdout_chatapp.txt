@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\bm838\Documents\GitHub\DomentiaCare\ChatApp\.cxx\Debug\4x1p494b\arm64-v8a'
+ninja: no work to do.
