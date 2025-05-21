@@ -139,10 +139,12 @@ dependencies {
     //whisper
     implementation("org.tensorflow:tensorflow-lite:2.13.0")
     // 선택 사항
-     implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
-     implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
 
-    //implementation("com.arthenica:ffmpeg-kit-full:5.1")
+    //implementation(files("libs/ffmpeg-kit-full-6.0-2.aar"))
 
+    // FFmpeg 라이브러리
+    implementation(files("libs/ffmpeg-kit-release.aar"))
 
 }

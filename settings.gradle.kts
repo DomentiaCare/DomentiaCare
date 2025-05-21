@@ -9,19 +9,28 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+
         // ✅ Kakao SDK용 저장소 추가
         maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        // ✅ 여기도 Kakao SDK용 저장소 추가
+
+        // ✅ Kakao SDK 저장소
         maven { url = uri("https://devrepo.kakao.com/nexus/content/groups/public/") }
-        // ✅ 네이버 지도 SDK용 저장소 추가
-        maven { url = uri("https://naver.jfrog.io/artifactory/maven/") }
+
+        // ✅ 로컬 .aar 파일 경로
+        flatDir {
+            dirs("libs") // app/libs 폴더를 가리킴
+        }
+
+        // ✅ JitPack 저장소 (필요한 경우)
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
