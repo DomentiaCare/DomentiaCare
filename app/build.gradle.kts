@@ -144,5 +144,8 @@ dependencies {
 
     //implementation("com.arthenica:ffmpeg-kit-full:5.1")
 
+    implementation("com.qualcomm.qnn:qnn-<some-component>:2.28.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // 예시
+    implementation("org.tensorflow:tensorflow-lite:2.13.0") // 예시
 
 }
