@@ -12,7 +12,6 @@
 
     <!-- GCP Maps 설정 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
@@ -30,7 +29,9 @@
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
 
+    <!-- 퀄컴 xml 내용들 -->
     <application
+        android:largeHeap="true"
         android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -42,6 +43,15 @@
         android:theme="@style/Theme.DomentiaCare"
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
+
+        <!-- Qualcomm uses-native-library 이종범-->
+        <uses-native-library
+            android:name="libadsprpc.so"
+            android:required="false" />
+        <uses-native-library
+            android:name="libcdsprpc.so"
+            android:required="false" />
+
 
 
         <!-- 👇 ForegroundService 등록 -->
@@ -74,6 +84,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
+        <!-- 퀄컴 Conversation 액티비티 경로 변경필요 ★★★★★★★★★★★★★★★★★★★★★★★-->
+        <activity
+            android:name="com.example.domentiacare.service.llama.Conversation"
+            android:parentActivityName="com.example.domentiacare.service.llama.Conversation" >
+        </activity>
+
+
 
         <!-- ✅ 카카오 로그인 처리용 액티비티 (반드시 있어야 함!) -->
         <activity
