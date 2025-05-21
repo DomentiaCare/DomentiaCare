@@ -142,7 +142,7 @@ dependencies {
      implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
      implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
 
-    implementation("com.arthenica:ffmpeg-kit-full:5.1")
+    //implementation("com.arthenica:ffmpeg-kit-full:5.1")
 
 
 }
