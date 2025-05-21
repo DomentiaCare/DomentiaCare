@@ -140,16 +140,16 @@ class MainActivity : ComponentActivity() {
 //        }
 //    }
 
-//    private val requestAudioPermission = registerForActivityResult(
-//        ActivityResultContracts.RequestPermission()
-//    ) { isGranted ->
-//        if (isGranted) {
-//            Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
-//            // 여기에 녹음 파일 가져오는 코드 호출 가능
-//        } else {
-//            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-//        }
-//    }
+    private val requestAudioPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
+            // 여기에 녹음 파일 가져오는 코드 호출 가능
+        } else {
+            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun hasFineLocationPermission(): Boolean {
         return ActivityCompat.checkSelfPermission(
