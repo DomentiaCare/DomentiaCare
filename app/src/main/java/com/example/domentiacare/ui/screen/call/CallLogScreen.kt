@@ -1,5 +1,6 @@
 package com.example.domentiacare.ui.screen.call
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.domentiacare.data.model.CallLogEntry
+import com.example.domentiacare.data.util.getCallRecordingFiles
 
 data class CallLog(
     val name: String,
@@ -77,6 +79,7 @@ fun CallLogScreen(viewModel: CallLogViewModel,
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
+
 }
 
 @Composable

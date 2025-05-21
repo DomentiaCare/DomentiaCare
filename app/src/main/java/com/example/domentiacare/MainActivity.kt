@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -16,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.domentiacare.data.util.getCallRecordingFiles
 import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import com.example.domentiacare.service.LocationForegroundService
 import com.example.domentiacare.ui.AppNavHost
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
     private lateinit var finePermissionLauncher: ActivityResultLauncher<String>
     private lateinit var backgroundPermissionLauncher: ActivityResultLauncher<String>
+
     // 🔹 POST_NOTIFICATIONS 권한 요청 런처
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -59,6 +62,13 @@ class MainActivity : ComponentActivity() {
         // ✅ Android 13 이상일 경우 알림 권한 요청
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             askNotificationPermission()
+        }
+
+        // ✅ 오디오 권한 요청
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestAudioPermission.launch(Manifest.permission.READ_MEDIA_AUDIO)
+        } else {
+            requestAudioPermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
         finePermissionLauncher = registerForActivityResult(
@@ -102,6 +112,44 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    // 녹음 파일 접근 권한 테스트
+//    private val requestAudioPermission = registerForActivityResult(
+//        ActivityResultContracts.RequestPermission()
+//    ) { isGranted ->
+//        if (isGranted) {
+//            val recordings = getCallRecordingFiles()
+//
+//            if (recordings.isNotEmpty()) {
+//                val firstFile = recordings.first()
+//                AlertDialog.Builder(this)
+//                    .setTitle("📁 녹음 파일 확인")
+//                    .setMessage("총 ${recordings.size}개의 녹음 파일이 있습니다.\n\n가장 최신 파일:\n${firstFile.name}")
+//                    .setPositiveButton("확인", null)
+//                    .show()
+//            } else {
+//                AlertDialog.Builder(this)
+//                    .setTitle("🔍 녹음 파일 없음")
+//                    .setMessage("녹음된 통화 파일을 찾을 수 없습니다.")
+//                    .setPositiveButton("확인", null)
+//                    .show()
+//            }
+//
+//        } else {
+//            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+//        }
+//    }
+
+//    private val requestAudioPermission = registerForActivityResult(
+//        ActivityResultContracts.RequestPermission()
+//    ) { isGranted ->
+//        if (isGranted) {
+//            Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
+//            // 여기에 녹음 파일 가져오는 코드 호출 가능
+//        } else {
+//            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+//        }
+//    }
 
     private fun hasFineLocationPermission(): Boolean {
         return ActivityCompat.checkSelfPermission(
