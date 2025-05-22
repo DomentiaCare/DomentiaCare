@@ -57,6 +57,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.ui.screen.call.CallLogViewModel
 
 @Composable
@@ -226,14 +227,14 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
                         // ① Compose 상에서 사용할 Context
                         val context = LocalContext.current
                         // ② ViewModel 인스턴스
-                        val viewModel: CallLogViewModel = viewModel()
+                        val viewModel: CallRecordingViewModel = viewModel()
                         // ③ 권한 요청 런처 준비
                         val permissionLauncher =
                             rememberLauncherForActivityResult(
                                 ActivityResultContracts.RequestPermission()
                             ) { granted ->
                                 if (granted) {
-                                    viewModel.loadCallLogs()
+                                    viewModel.loadRecordings()
                                 } else {
                                     Toast
                                         .makeText(context, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT)
@@ -248,7 +249,7 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
                                     Manifest.permission.READ_CALL_LOG
                                 ) == PackageManager.PERMISSION_GRANTED
                             ) {
-                                viewModel.loadCallLogs()
+                                viewModel.loadRecordings()
                             } else {
                                 permissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
                             }

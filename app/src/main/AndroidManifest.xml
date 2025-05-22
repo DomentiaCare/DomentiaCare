@@ -32,6 +32,9 @@
 
     <!-- Android 13 이상 (SDK 33+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!--    저장소 읽기  -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:name=".MyApplication"

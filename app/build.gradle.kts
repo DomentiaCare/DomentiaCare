@@ -144,7 +144,8 @@ dependencies {
 
     //implementation(files("libs/ffmpeg-kit-full-6.0-2.aar"))
 
-    // FFmpeg 라이브러리
-    implementation(files("libs/ffmpeg-kit-release.aar"))
+//    // FFmpeg 라이브러리
+//    implementation(files("libs/ffmpeg-kit-release.aar"))
+//    implementation(files("libs/smart-exception-java-0.2.1.jar"))
 
 }
