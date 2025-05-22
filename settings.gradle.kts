@@ -35,5 +35,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "DomentiaCare"
+
 include(":app")
 include(":domentiacarewatch")
+include(":ChatApp")
