@@ -45,9 +45,9 @@ class WhisperWrapper(private val context: Context) {
     fun isRunning(): Boolean = whisper.isInProgress
 
     fun copyWaveFile() {
-        val dest = File(context.filesDir, "english_test_3_bili.wav")
+        val dest = File(context.filesDir, "test.wav")
         if (!dest.exists()) {
-            context.assets.open("english_test_3_bili.wav").use { input ->
+            context.assets.open("test.wav").use { input ->
                 dest.outputStream().use { output -> input.copyTo(output) }
             }
         }

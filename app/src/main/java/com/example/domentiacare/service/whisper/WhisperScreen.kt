@@ -48,7 +48,7 @@ fun WhisperScreen() {
             if (!isTranscribing) {
                 result = "STT 시작..."
 
-                val wavePath = File(context.filesDir, "english_test_3_bili.wav").absolutePath
+                val wavePath = File(context.filesDir, "test.wav").absolutePath
                 isTranscribing = true
 
                 coroutineScope.launch(Dispatchers.IO) {

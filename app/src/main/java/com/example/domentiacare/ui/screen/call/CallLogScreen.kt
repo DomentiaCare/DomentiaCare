@@ -41,7 +41,7 @@ import androidx.navigation.NavController
 import com.example.domentiacare.data.model.CallLogEntry
 import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.data.model.RecordingFile
-import com.example.domentiacare.data.util.convertM4aToWav
+import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import com.example.domentiacare.data.util.getCallRecordingFiles
 import java.io.File
 import java.text.SimpleDateFormat
@@ -133,7 +133,7 @@ fun RecordingLogItem(
                 val outputDir = File("/sdcard/Recordings/wav/")
                 if (!outputDir.exists()) outputDir.mkdirs()
                 val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
-                convertM4aToWav(m4aFile, outputWavFile)
+                convertM4aToWavForWhisper(m4aFile, outputWavFile)
                 Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
             }
     ) {
