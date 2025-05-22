@@ -1,5 +1,6 @@
 package com.example.domentiacare.ui.screen.call
 
+import PythonConverter.convertM4aFileToWav
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -114,6 +115,7 @@ fun RecordingLogItem(
     file: RecordingFile,
     navController: NavController
 ) {
+    val context = LocalContext.current
     val backgroundColor = Color(0xFFE3F2FD) // 파란 계열 배경(원하는 색상 변경 가능)
     val formattedDate = rememberFormattedDate(file.lastModified)
 
@@ -126,6 +128,10 @@ fun RecordingLogItem(
             .clickable {
                 // 상세 화면 등으로 이동하거나 변환 처리
                 // navController.navigate("RecordingDetailScreen/${file.path}")
+                // 변환 함수 호출 (파일 전체 객체 넘김)
+                val m4aFile = File(file.path)
+                val outputWavName = m4aFile.nameWithoutExtension + ".wav"
+                convertM4aFileToWav(context, m4aFile, outputWavName)
                 Log.d("RecordingLogItem", "파일 클릭됨: ${file.path}")
             }
     ) {
