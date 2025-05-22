@@ -24,6 +24,7 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+
 android {
     namespace = "com.example.domentiacare"
     compileSdk = 35
@@ -31,6 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.example.domentiacare"
         minSdk = 31
+
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -57,13 +59,16 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -93,56 +98,25 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation ("androidx.compose.material:material-icons-extended")
-    implementation ("com.google.android.gms:play-services-maps:18.2.0")
-    implementation ("com.google.android.libraries.places:places:3.3.0")
-
-    //navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-
-    //viewmodel
-    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
-
-    //화면 전환 애니메이션
-    implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
-
-    //캘린더 라이브러리
-    implementation("com.kizitonwose.calendar:compose:2.0.3")
-
-    //달력 화면전환 스와이프 형식으로 하게하는거
-    implementation("com.google.accompanist:accompanist-pager:0.30.1")
-
-
-    // 네이버 지도 SDK
-    //implementation ("com.naver.maps:map-sdk:3.16.2")
-
-    implementation ("com.google.android.gms:play-services-maps:18.2.0")
-    implementation ("com.google.android.gms:play-services-location:21.0.1")
-
-    // 구글 지도 SDK
-    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.libraries.places:places:3.3.0")
 
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
+    implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
+    implementation("com.kizitonwose.calendar:compose:2.0.3")
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:maps-compose:2.11.4")
 
-    // Retrofit 및 네트워크 통신 라이브러리 (API 호출용)
-    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
-
-    // ✅ Hilt 의존성 추가
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
 
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
     implementation("com.google.firebase:firebase-analytics")
 
-    //whisper
     implementation("org.tensorflow:tensorflow-lite:2.13.0")
-    // 선택 사항
-     implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
-     implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
-
-    //implementation("com.arthenica:ffmpeg-kit-full:5.1")
-
-
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
 }

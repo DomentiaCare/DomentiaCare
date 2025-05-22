@@ -21,6 +21,8 @@ fun queryCallLogs(context: Context): List<CallLogEntry> {
         "${CallLog.Calls.DATE} DESC"
     ) ?: return emptyList()
 
+    var count = 0 //
+    val maxCount = 50 // 최근 50개만 가져오기
     val list = mutableListOf<CallLogEntry>()
     cursor.use {
         val idxId       = it.getColumnIndexOrThrow(CallLog.Calls._ID)
@@ -31,7 +33,7 @@ fun queryCallLogs(context: Context): List<CallLogEntry> {
         val idxDuration = it.getColumnIndexOrThrow(CallLog.Calls.DURATION)
 
         // Cursor를 한 줄씩 순회
-        while (it.moveToNext()) {
+        while (it.moveToNext() && count < maxCount) {
             list += CallLogEntry(
                 id       = it.getString(idxId),
                 name     = it.getString(idxName),
@@ -40,6 +42,7 @@ fun queryCallLogs(context: Context): List<CallLogEntry> {
                 date     = it.getLong(idxDate),
                 duration = it.getLong(idxDuration)
             )
+            count++
         }
     }
     return list

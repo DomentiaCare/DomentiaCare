@@ -48,7 +48,7 @@ fun WhisperScreen() {
             if (!isTranscribing) {
                 result = "STT 시작..."
 
-                val wavePath = File(context.filesDir, "english_test_3_bili.wav").absolutePath
+                val wavePath = File(context.filesDir, "test.wav").absolutePath
                 isTranscribing = true
 
                 coroutineScope.launch(Dispatchers.IO) {
@@ -89,6 +89,20 @@ fun WhisperScreen() {
 
         }) {
             Text("STT 실행")
+        }
+
+        Button(onClick = {
+
+//            // 파일 변환 테스트
+//            val inputPath = "/sdcard/Recordings/sample.m4a"
+//            val wavPath = AudioConverter.convertM4aToWav(context, inputPath) // 변환
+//
+//            if (wavPath != null) {
+//                // 변환 성공 → wavPath 파일 Whisper에 넘기면 됨
+//                resultText.value = "변환 성공: $wavPath"
+//            }
+        }) {
+            Text("녹음 파일 가져오기테스트")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

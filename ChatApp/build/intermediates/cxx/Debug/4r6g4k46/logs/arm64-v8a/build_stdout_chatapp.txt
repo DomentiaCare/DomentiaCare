@@ -1,0 +1,2 @@
+ninja: Entering directory `C:\Users\bm838\Desktop\application\ai-hub-apps\apps\android\ChatApp\.cxx\Debug\4r6g4k46\arm64-v8a'
+ninja: no work to do.
