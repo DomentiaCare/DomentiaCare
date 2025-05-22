@@ -2,7 +2,7 @@
   {
     "level_": 0,
     "message_": "Start JSON generation. Platform version: 31 min SDK version: arm64-v8a",
-    "file_": "C:\\Users\\bm838\\Documents\\GitHub\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
     "tag_": "debug|arm64-v8a",
     "diagnosticCode_": 0,
     "memoizedIsInitialized": 1,
@@ -14,8 +14,138 @@
   },
   {
     "level_": 0,
-    "message_": "JSON \u0027C:\\Users\\bm838\\Documents\\GitHub\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\\android_gradle_build.json\u0027 was up-to-date",
-    "file_": "C:\\Users\\bm838\\Documents\\GitHub\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "message_": "rebuilding JSON C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\\android_gradle_build.json due to:",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "- no fingerprint file, will remove stale configuration folder",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "removing stale contents from \u0027C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\u0027",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "created folder \u0027C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\u0027",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "executing cmake @echo off\n\"C:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\cmake\\\\3.22.1\\\\bin\\\\cmake.exe\" ^\n  \"-HC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\src\\\\main\\\\cpp\" ^\n  \"-DCMAKE_SYSTEM_NAME\u003dAndroid\" ^\n  \"-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON\" ^\n  \"-DCMAKE_SYSTEM_VERSION\u003d31\" ^\n  \"-DANDROID_PLATFORM\u003dandroid-31\" ^\n  \"-DANDROID_ABI\u003darm64-v8a\" ^\n  \"-DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a\" ^\n  \"-DANDROID_NDK\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\" ^\n  \"-DCMAKE_ANDROID_NDK\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\" ^\n  \"-DCMAKE_TOOLCHAIN_FILE\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\\\\build\\\\cmake\\\\android.toolchain.cmake\" ^\n  \"-DCMAKE_MAKE_PROGRAM\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\cmake\\\\3.22.1\\\\bin\\\\ninja.exe\" ^\n  \"-DCMAKE_CXX_FLAGS\u003d-std\u003dc++17\" ^\n  \"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003dC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\build\\\\intermediates\\\\cxx\\\\Debug\\\\4x1p494b\\\\obj\\\\arm64-v8a\" ^\n  \"-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003dC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\build\\\\intermediates\\\\cxx\\\\Debug\\\\4x1p494b\\\\obj\\\\arm64-v8a\" ^\n  \"-DCMAKE_BUILD_TYPE\u003dDebug\" ^\n  \"-BC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\.cxx\\\\Debug\\\\4x1p494b\\\\arm64-v8a\" ^\n  -GNinja ^\n  \"-DQNN_SDK_ROOT_PATH\u003dC:\\\\Qualcomm\\\\AIStack\\\\QAIRT\\\\2.32.6.250402\"\n",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "@echo off\n\"C:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\cmake\\\\3.22.1\\\\bin\\\\cmake.exe\" ^\n  \"-HC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\src\\\\main\\\\cpp\" ^\n  \"-DCMAKE_SYSTEM_NAME\u003dAndroid\" ^\n  \"-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON\" ^\n  \"-DCMAKE_SYSTEM_VERSION\u003d31\" ^\n  \"-DANDROID_PLATFORM\u003dandroid-31\" ^\n  \"-DANDROID_ABI\u003darm64-v8a\" ^\n  \"-DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a\" ^\n  \"-DANDROID_NDK\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\" ^\n  \"-DCMAKE_ANDROID_NDK\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\" ^\n  \"-DCMAKE_TOOLCHAIN_FILE\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\ndk\\\\27.0.12077973\\\\build\\\\cmake\\\\android.toolchain.cmake\" ^\n  \"-DCMAKE_MAKE_PROGRAM\u003dC:\\\\Users\\\\KIM So Ryong\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\cmake\\\\3.22.1\\\\bin\\\\ninja.exe\" ^\n  \"-DCMAKE_CXX_FLAGS\u003d-std\u003dc++17\" ^\n  \"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003dC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\build\\\\intermediates\\\\cxx\\\\Debug\\\\4x1p494b\\\\obj\\\\arm64-v8a\" ^\n  \"-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003dC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\build\\\\intermediates\\\\cxx\\\\Debug\\\\4x1p494b\\\\obj\\\\arm64-v8a\" ^\n  \"-DCMAKE_BUILD_TYPE\u003dDebug\" ^\n  \"-BC:\\\\Projects\\\\DomentiaCare\\\\ChatApp\\\\.cxx\\\\Debug\\\\4x1p494b\\\\arm64-v8a\" ^\n  -GNinja ^\n  \"-DQNN_SDK_ROOT_PATH\u003dC:\\\\Qualcomm\\\\AIStack\\\\QAIRT\\\\2.32.6.250402\"\n",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "Received process result: 0",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "Exiting generation of C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\\compile_commands.json.bin normally",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "done executing cmake",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "deleted unexpected build output C:\\Projects\\DomentiaCare\\ChatApp\\build\\intermediates\\cxx\\Debug\\4x1p494b\\obj\\arm64-v8a\\libGenie.so in incremental regenerate",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "tag_": "debug|arm64-v8a",
+    "diagnosticCode_": 0,
+    "memoizedIsInitialized": 1,
+    "unknownFields": {
+      "fields": {}
+    },
+    "memoizedSize": -1,
+    "memoizedHashCode": 0
+  },
+  {
+    "level_": 0,
+    "message_": "hard linked C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\Debug\\4x1p494b\\arm64-v8a\\compile_commands.json to C:\\Projects\\DomentiaCare\\ChatApp\\.cxx\\tools\\debug\\arm64-v8a\\compile_commands.json",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
     "tag_": "debug|arm64-v8a",
     "diagnosticCode_": 0,
     "memoizedIsInitialized": 1,
@@ -28,7 +158,7 @@
   {
     "level_": 0,
     "message_": "JSON generation completed without problems",
-    "file_": "C:\\Users\\bm838\\Documents\\GitHub\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
+    "file_": "C:\\Projects\\DomentiaCare\\ChatApp\\src\\main\\cpp\\CMakeLists.txt",
     "tag_": "debug|arm64-v8a",
     "diagnosticCode_": 0,
     "memoizedIsInitialized": 1,

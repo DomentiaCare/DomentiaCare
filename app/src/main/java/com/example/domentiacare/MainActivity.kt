@@ -26,10 +26,6 @@ import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
 import dagger.hilt.android.AndroidEntryPoint
 
-//wav파일 변환 테스트 (이종범)
-import com.chaquo.python.Python
-import java.io.File
-
 
 
 @AndroidEntryPoint

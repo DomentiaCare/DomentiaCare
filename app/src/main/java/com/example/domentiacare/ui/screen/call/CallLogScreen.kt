@@ -1,6 +1,5 @@
 package com.example.domentiacare.ui.screen.call
 
-import PythonConverter.convertM4aFileToWav
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,7 +41,6 @@ import com.example.domentiacare.data.model.CallLogEntry
 import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.data.model.RecordingFile
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
-import com.example.domentiacare.data.util.getCallRecordingFiles
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
