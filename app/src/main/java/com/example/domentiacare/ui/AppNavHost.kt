@@ -59,6 +59,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.ui.screen.call.CallLogViewModel
+import java.net.URLDecoder
 
 @Composable
     fun AppNavHost() {
@@ -216,8 +217,15 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
                             sendFcmTokenAfterLogin()
                         } )
                     }
-                    composable("CallDetailScreen"){
-                        CallDetailScreen(navController)
+//                    composable("CallDetailScreen"){
+//                        CallDetailScreen(navController)
+//                    }
+                    composable(
+                        "CallDetailScreen/{filePath}",
+                        arguments = listOf(navArgument("filePath") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val filePath = URLDecoder.decode(backStackEntry.arguments?.getString("filePath") ?: "", "utf-8")
+                        CallDetailScreen(filePath, navController)
                     }
                     composable("WhisperScreen"){
                         WhisperScreen()

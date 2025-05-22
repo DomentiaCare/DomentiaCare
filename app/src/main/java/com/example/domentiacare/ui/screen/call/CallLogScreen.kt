@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,11 +41,12 @@ import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.data.model.RecordingFile
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import java.io.File
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-data class CallLog(
+data class RecordLog(
     val name: String,
     val type: String, // "발신", "수신", "부재중"
     val time: String, // 예: "어제", "오전 11:15", "4월 20일"
@@ -124,15 +124,9 @@ fun RecordingLogItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // 상세 화면 등으로 이동하거나 변환 처리
-                // navController.navigate("RecordingDetailScreen/${file.path}")
-                // 변환 함수 호출 (파일 전체 객체 넘김)
-                val m4aFile = File(file.path)
-                val outputDir = File("/sdcard/Recordings/wav/")
-                if (!outputDir.exists()) outputDir.mkdirs()
-                val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
-                convertM4aToWavForWhisper(m4aFile, outputWavFile)
-                Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
+                // 파일 경로 인코딩 후 navigate
+                val encodedPath = URLEncoder.encode(file.path, "utf-8")
+                navController.navigate("CallDetailScreen/$encodedPath")
             }
     ) {
         Row(

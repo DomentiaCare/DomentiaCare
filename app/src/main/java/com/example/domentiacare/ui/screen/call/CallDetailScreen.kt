@@ -28,35 +28,50 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.domentiacare.data.model.RecordingFile
+import com.example.domentiacare.data.util.convertM4aToWavForWhisper
+import com.example.domentiacare.service.whisper.WhisperWrapper
 import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.SimpleDropdown
+import java.io.File
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.util.*
 
 @Composable
 fun CallDetailScreen(
+    filePath: String,
     navController: NavController
 ) {
-    var callLog = CallLog(
-        name = "밤지성",
-        type = "발신",
-        time = "오전 11:15"
+    // 예시: 파일명에서 정보 추출, 또는 ViewModel에서 정보를 가져오도록 변경
+    val file = remember(filePath) {
+        // 파일 객체 생성
+        val f = File(filePath)
+        RecordingFile(
+            name = f.name,
+            path = filePath,
+            lastModified = f.lastModified(),
+            size = f.length()
+        )
+    }
+    // 예시: 파일명에 따라 상대 이름/타입/시간 결정
+    val recordLog = RecordLog(
+        name = file.name.substringBeforeLast('.'),
+        type = "발신", // 예시: 실제 타입 추출 로직으로 대체
+        time = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified))
     )
-    var transcript = "진호: 이번 주말에 시간 어때?\n" +
-            "소룡: 토요일은 좀 힘들고, 일요일 오후는 괜찮아. 너는?\n" +
-            "진호: 나도 일요일 오후 괜찮아. 3시쯤 어때?\n" +
-            "소룡: 좋아. 어디서 볼까?\n" +
-            "진호: 홍대 쪽 어때? 카페도 많고 걷기도 좋고.\n" +
-            "소룡: 좋지! 그럼 일요일 3시에 홍대에서 보자!\n" +
-            "진호: 오케이~ 그때 보자!"
-    var initialMemo = "홍대 약속"
+
+    var initialMemo = "" // 일정 분석 후 자동 추가하도록 수정
     var initialDate = LocalDateTime.now()
 
     var memo by remember { mutableStateOf(initialMemo) }
@@ -76,13 +91,16 @@ fun CallDetailScreen(
     val scrollState = rememberScrollState()  //일정 박스 스크롤
     val scrennScrollState = rememberScrollState()  //화면 스크롤
 
+    var transcript by remember { mutableStateOf("") } // 통화 텍스트
+    var isLoading by remember { mutableStateOf(false) } // 로딩 여부
+
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(16.dp)
         .verticalScroll(scrennScrollState) ) {
         // 통화 정보
-        Text("통화 상대: ${callLog.name}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Text("${callLog.type} ${callLog.time}", fontSize = 14.sp, color = Color.Gray)
+        Text("${recordLog.name}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Text("${recordLog.type} ${recordLog.time}", fontSize = 14.sp, color = Color.Gray)
         Spacer(modifier = Modifier.height(16.dp))
 
         // 오디오
@@ -91,11 +109,56 @@ fun CallDetailScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 텍스트 대화
-        Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
+            val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+
+            // Whisper 변환 버튼
+            DMT_Button(
+                text = if (isLoading) "변환중..." else "STT 변환",
+                onClick = {
+                    Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
+
+                    // 1. wav 변환
+                    val m4aFile = File(file.path)
+                    val outputDir = File("/sdcard/Recordings/wav/")
+                    if (!outputDir.exists()) outputDir.mkdirs()
+                    val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
+                    convertM4aToWavForWhisper(m4aFile, outputWavFile)
+                    Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
+
+                    // 2. Whisper 변환
+                    Log.d("Whisper 변환 시작", "파일 경로: ${outputWavFile.absolutePath}")
+
+                    val whisper = WhisperWrapper(context)
+                    whisper.copyModelFiles()
+                    whisper.initModel()
+                    whisper.transcribe(
+                        wavPath = outputWavFile.absolutePath,
+                        onResult = { result ->
+                            transcript = result
+                            isLoading = false
+                        },
+                        onUpdate = { logLine ->
+                            // 필요시 중간 상태 로그
+                        }
+                    )
+
+                    // 3. DB에 저장
+                },
+                modifier = Modifier
+            )
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 200.dp)
+                .heightIn(min = 50.dp, max = 100.dp)
                 .border(1.dp, Color.Black, shape = RoundedCornerShape(8.dp))
                 .padding(12.dp)
         ) {
@@ -106,7 +169,25 @@ fun CallDetailScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 일정 내용 수정
-        Text("일정", fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("일정", fontWeight = FontWeight.SemiBold)
+            val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
+
+            // llama 변환 버튼
+            DMT_Button(
+                text = "일정 분석",
+                onClick = {
+
+                },
+                modifier = Modifier
+            )
+        }
         OutlinedTextField(
             value = memo,
             onValueChange = { memo = it },
