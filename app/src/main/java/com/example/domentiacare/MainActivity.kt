@@ -111,38 +111,13 @@ class MainActivity : ComponentActivity() {
         }
 
         enableEdgeToEdge()
-//        setContent  {
-//            DomentiaCareTheme {
-//                //wav 변환 테스팅 (이종범)
-//                // 임시 변환 버튼
-//                androidx.compose.material3.Button(
-//                    onClick = { convertLatestCallRecordingToWav() }
-//                ) {
-//                    androidx.compose.material3.Text("통화녹음 WAV 변환")
-//                }
-//                //wav 변환 테스팅 (이종범) ↑
-//
-//                if (IS_DEV_MODE) {
-//                    AppNavHost()
-//                }
-//            }
-//        }
-        setContent {
+        setContent  {
             DomentiaCareTheme {
-                androidx.compose.foundation.layout.Column {
-                    androidx.compose.material3.Button(
-                        onClick = { convertLatestCallRecordingToWav() },
-                        modifier = androidx.compose.ui.Modifier.padding(16.dp)
-                    ) {
-                        androidx.compose.material3.Text("통화녹음 WAV 변환")
-                    }
-                    if (IS_DEV_MODE) {
-                        AppNavHost()
-                    }
+                if (IS_DEV_MODE) {
+                    AppNavHost()
                 }
             }
         }
-
     }
 
     // 녹음 파일 접근 권한 테스트
@@ -238,58 +213,5 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    // wav파일 변환 테스트 (이종범)
-    // 최신 m4a 파일 찾기
-    fun findLatestCallRecording(): File? {
-        val callDir = File("/sdcard/Recordings/Call/")
-        if (callDir.exists() && callDir.isDirectory) {
-            val allFiles = callDir.listFiles()
-            if (allFiles == null) {
-                Log.d("통화녹음", "폴더는 있지만 파일이 없음 또는 접근 불가!")
-            } else {
-                allFiles.forEach { Log.d("통화녹음", "파일: ${it.name}") }
-            }
-            val m4aFiles = allFiles?.filter { it.name.endsWith(".m4a") }
-            Log.d("통화녹음", "M4A 파일 수: ${m4aFiles?.size}")
-            return m4aFiles?.maxByOrNull { it.lastModified() }
-        } else {
-            Log.d("통화녹음", "폴더가 없거나 디렉터리가 아님!")
-        }
-        return null
-    }
 
-
-    // 앱 내부로 파일 복사
-    fun copyToAppStorage(src: File, destName: String): File {
-        val dest = File(filesDir, destName)
-        src.inputStream().use { input ->
-            dest.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        return dest
-    }
-
-    // m4a → wav 변환 실행 (버튼 클릭 또는 원하는 위치에서 호출)
-    fun convertLatestCallRecordingToWav() {
-        val latestM4a = findLatestCallRecording()
-        if (latestM4a != null) {
-            val copiedM4a = copyToAppStorage(latestM4a, "call_audio.m4a")
-            val wavFile = File(filesDir, "call_audio.wav")
-
-            val py = Python.getInstance()
-            val module = py.getModule("convert")
-            module.callAttr("convert_m4a_to_wav", copiedM4a.absolutePath, wavFile.absolutePath)
-
-            // 검증(optional)
-            val isValid = module.callAttr("check_wav_format", wavFile.absolutePath).toBoolean()
-            if (isValid) {
-                Toast.makeText(this, "변환 성공! $wavFile", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "변환 실패!", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            Toast.makeText(this, "통화녹음 파일을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
 }
