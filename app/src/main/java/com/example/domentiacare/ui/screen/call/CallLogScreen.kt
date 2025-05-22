@@ -130,7 +130,9 @@ fun RecordingLogItem(
                 // navController.navigate("RecordingDetailScreen/${file.path}")
                 // 변환 함수 호출 (파일 전체 객체 넘김)
                 val m4aFile = File(file.path)
-                val outputWavFile = File(m4aFile.parentFile, m4aFile.nameWithoutExtension + ".wav")
+                val outputDir = File("/sdcard/Recordings/wav/")
+                if (!outputDir.exists()) outputDir.mkdirs()
+                val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
                 convertM4aToWav(m4aFile, outputWavFile)
                 Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
             }
