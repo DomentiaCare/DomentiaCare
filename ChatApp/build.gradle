@@ -39,6 +39,13 @@ android {
         }
         signingConfig signingConfigs.debug
     }
+
+    // 🔧 이 부분을 추가 (buildTypes 앞에)
+    buildFeatures {
+        aidl true
+    }
+
+
     buildTypes {
         release {
             minifyEnabled false

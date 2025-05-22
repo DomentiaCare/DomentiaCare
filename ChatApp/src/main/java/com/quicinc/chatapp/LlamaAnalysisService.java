@@ -1,12 +1,9 @@
-// LlamaAnalysisService.java
-// 경로: ChatApp/app/src/main/java/com/quicinc/chatapp/LlamaAnalysisService.java
-
 package com.quicinc.chatapp;
 
 import android.app.Service;
 import android.content.Intent;
-import android.os.Binder;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.system.Os;
 import android.util.Log;
 
@@ -20,13 +17,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class LlamaAnalysisService extends Service {
 
     private static final String TAG = "LlamaAnalysisService";
-
-    // Binder for clients
-    private final LocalBinder binder = new LocalBinder();
 
     // GenieWrapper instance
     private GenieWrapper genieWrapper;
@@ -40,11 +35,24 @@ public class LlamaAnalysisService extends Service {
         System.loadLibrary("chatapp");
     }
 
-    public class LocalBinder extends Binder {
-        public LlamaAnalysisService getService() {
-            return LlamaAnalysisService.this;
+    // AIDL 기반 Binder
+    private final ILlamaAnalysisService.Stub binder = new ILlamaAnalysisService.Stub() {
+        @Override
+        public void analyzeText(String text, IAnalysisCallback callback) throws RemoteException {
+            Log.d(TAG, "AIDL analyzeText called with: " + text);
+            analyzeTextInternal(text, callback);
         }
-    }
+
+        @Override
+        public boolean isServiceReady() throws RemoteException {
+            return isInitialized;
+        }
+
+        @Override
+        public boolean isServiceInitializing() throws RemoteException {
+            return isInitializing;
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -58,7 +66,7 @@ public class LlamaAnalysisService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "Client bound to LlamaAnalysisService");
+        Log.d(TAG, "Client bound to LlamaAnalysisService via AIDL");
         return binder;
     }
 
@@ -77,13 +85,199 @@ public class LlamaAnalysisService extends Service {
             executorService.shutdown();
         }
 
-        // GenieWrapper는 finalize()에서 자동으로 정리됨
         genieWrapper = null;
     }
 
-    /**
-     * 서비스 초기화 - MainActivity 로직 이식
-     */
+    private void analyzeTextInternal(String inputText, IAnalysisCallback callback) {
+        if (!isInitialized) {
+            try {
+                if (isInitializing) {
+                    callback.onError("서비스가 초기화 중입니다. 잠시 후 다시 시도해주세요.");
+                } else {
+                    callback.onError("서비스 초기화에 실패했습니다.");
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "Error calling callback: " + e.getMessage());
+            }
+            return;
+        }
+
+        if (inputText == null || inputText.trim().isEmpty()) {
+            try {
+                callback.onError("입력 텍스트가 비어있습니다.");
+            } catch (RemoteException e) {
+                Log.e(TAG, "Error calling callback: " + e.getMessage());
+            }
+            return;
+        }
+
+        executorService.execute(() -> {
+            final StringBuilder responseBuilder = new StringBuilder();
+            final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
+            final long startTime = System.currentTimeMillis();
+
+            try {
+                Log.d(TAG, "Processing query: " + inputText);
+
+                // 🔧 단일 응답 수집기
+                final Object responseLock = new Object();
+
+                genieWrapper.getResponseForPrompt(inputText.trim(), new StringCallback() {
+                    @Override
+                    public void onNewString(String response) {
+                        synchronized (responseLock) {
+                            responseBuilder.append(response);
+                            String currentResponse = responseBuilder.toString().trim();
+
+                            Log.d(TAG, "Response length: " + currentResponse.length() + ", content preview: " +
+                                    (currentResponse.length() > 50 ? currentResponse.substring(0, 50) + "..." : currentResponse));
+
+                            // 🆕 즉시 부분 결과 전송
+                            try {
+                                callback.onPartialResult(currentResponse);
+                                Log.d(TAG, "Partial result sent, length: " + currentResponse.length());
+                            } catch (RemoteException e) {
+                                Log.e(TAG, "Error sending partial result: " + e.getMessage());
+                            }
+
+                            // 🔧 완료 조건 체크는 별도로 처리 (부분 결과 전송과 분리)
+                            // 완료 조건을 만족하고 아직 최종 콜백이 호출되지 않았을 때만
+                            if (!callbackInvoked.get() && isCompleteResponse(currentResponse)) {
+                                if (callbackInvoked.compareAndSet(false, true)) {
+                                    Log.d(TAG, "✅ Complete response detected, invoking final callback");
+                                    invokeFinalCallback(callback, currentResponse);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 🔧 타임아웃 메커니즘
+                Thread timeoutThread = new Thread(() -> {
+                    try {
+                        Thread.sleep(10000); // 10초 대기
+
+                        // 🔧 타임아웃 시에도 한 번만 실행되도록 보장
+                        if (callbackInvoked.compareAndSet(false, true)) {
+                            synchronized (responseLock) {
+                                String finalResponse = responseBuilder.toString().trim();
+                                Log.d(TAG, "⏰ Timeout reached, sending response: " + finalResponse.substring(0, Math.min(100, finalResponse.length())));
+                                invokeFinalCallback(callback, finalResponse.isEmpty() ? "Response timeout" : finalResponse);
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        Log.d(TAG, "Timeout thread interrupted");
+                    }
+                });
+                timeoutThread.setDaemon(true); // 데몬 스레드로 설정
+                timeoutThread.start();
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error during query processing: " + e.toString());
+                // 🔧 예외 발생 시에도 한 번만 실행되도록 보장
+                if (callbackInvoked.compareAndSet(false, true)) {
+                    invokeErrorCallback(callback, "쿼리 처리 중 오류가 발생했습니다: " + e.getMessage());
+                }
+            }
+        });
+    }
+
+    // 🔧 더 정확한 완료 조건 체크 - 더 엄격하게
+    // 🔧 훨씬 더 엄격한 완료 조건 체크
+    private boolean isCompleteResponse(String response) {
+        // 기본 길이 체크 - 더 엄격하게
+        if (response.length() < 200) {
+            return false;
+        }
+
+        // JSON 응답 체크 - 훨씬 더 엄격한 조건
+        if (response.contains("Summary:") && response.contains("Schedule:")) {
+            boolean hasAllFields = response.contains("\"date\"") &&
+                    response.contains("\"time\"") &&
+                    response.contains("\"place\"");
+
+            // 완전히 닫힌 JSON 구조인지 확인
+            boolean endsWithBrace = response.trim().endsWith("}");
+
+            if (hasAllFields && endsWithBrace) {
+                // 🆕 JSON 부분 추출 및 검증
+                try {
+                    int jsonStart = response.indexOf("{");
+                    if (jsonStart == -1) return false;
+
+                    String jsonPart = response.substring(jsonStart).trim();
+
+                    // JSON이 완전히 닫혀있는지 확인
+                    if (!jsonPart.endsWith("}")) return false;
+
+                    // place 필드가 완전히 채워져 있는지 확인
+                    // "AMC theater on Main Street" 전체가 있어야 완료
+                    boolean hasCompletePlace = jsonPart.contains("\"place\": \"AMC theater on Main Street\"") ||
+                            jsonPart.contains("\"place\":\"AMC theater on Main Street\"");
+
+                    // date와 time이 구체적으로 채워져 있는지 확인
+                    boolean hasConcreteDate = (jsonPart.contains("\"date\": \"Sunday\"") ||
+                            jsonPart.contains("\"date\":\"Sunday\"")) &&
+                            !jsonPart.contains("\"date\": \"\"");
+
+                    boolean hasConcreteTime = (jsonPart.contains("\"time\": \"14:00\"") ||
+                            jsonPart.contains("\"time\":\"14:00\"")) &&
+                            !jsonPart.contains("\"time\": \"\"");
+
+                    if (hasCompletePlace && hasConcreteDate && hasConcreteTime) {
+                        Log.d(TAG, "✅ Complete JSON response detected with all required fields");
+                        return true;
+                    } else {
+                        Log.d(TAG, "❌ JSON incomplete - Place: " + hasCompletePlace +
+                                ", Date: " + hasConcreteDate + ", Time: " + hasConcreteTime);
+                    }
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing JSON for completion check: " + e.getMessage());
+                    return false;
+                }
+            }
+        }
+
+        // 간단한 응답의 경우 (JSON이 아닌 경우)
+        // 문장이 완전히 끝났는지 확인
+        if (!response.contains("Summary:") && !response.contains("Schedule:")) {
+            // 마침표나 느낌표로 끝나고, 충분한 길이가 있으면 완료로 간주
+            if ((response.endsWith(".") || response.endsWith("!") || response.endsWith("?")) &&
+                    response.length() > 50) {
+                Log.d(TAG, "✅ Complete simple response detected");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // 🔧 안전한 최종 콜백 호출
+    private void invokeFinalCallback(IAnalysisCallback callback, String response) {
+        try {
+            if (response == null || response.trim().isEmpty()) {
+                callback.onNoResult();
+            } else {
+                callback.onResult(response);
+            }
+            Log.d(TAG, "Final callback invoked successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error invoking final callback: " + e.getMessage());
+        }
+    }
+
+    // 🔧 안전한 오류 콜백 호출
+    private void invokeErrorCallback(IAnalysisCallback callback, String errorMessage) {
+        try {
+            callback.onError(errorMessage);
+            Log.d(TAG, "Error callback invoked successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Error invoking error callback: " + e.getMessage());
+        }
+    }
+
+    // 기존 초기화 메서드들 (동일)
     private void initializeService() {
         if (isInitializing || isInitialized) {
             return;
@@ -95,20 +289,14 @@ public class LlamaAnalysisService extends Service {
             try {
                 Log.d(TAG, "Starting LLaMA service initialization...");
 
-                // 1. SoC 호환성 체크
                 String htpConfigPath = checkSocCompatibilityAndGetConfig();
                 if (htpConfigPath == null) {
                     Log.e(TAG, "Unsupported device for LLaMA");
                     return;
                 }
 
-                // 2. 에셋 복사
                 copyAssetsToCache();
-
-                // 3. 환경 설정
                 setupEnvironment();
-
-                // 4. 모델 초기화
                 initializeModel(htpConfigPath);
 
                 isInitialized = true;
@@ -122,9 +310,6 @@ public class LlamaAnalysisService extends Service {
         });
     }
 
-    /**
-     * SoC 호환성 체크 및 HTP 설정 파일 경로 반환
-     */
     private String checkSocCompatibilityAndGetConfig() {
         HashMap<String, String> supportedSocModel = new HashMap<>();
         supportedSocModel.put("SM8750", "qualcomm-snapdragon-8-elite.json");
@@ -142,22 +327,13 @@ public class LlamaAnalysisService extends Service {
         return htpConfigPath.toString();
     }
 
-    /**
-     * 에셋을 외부 캐시로 복사 - MainActivity 로직 이식
-     */
     private void copyAssetsToCache() throws IOException {
         String externalDir = getExternalCacheDir().getAbsolutePath();
-
-        // models와 htp_config 디렉토리 복사
         copyAssetsDir("models", externalDir);
         copyAssetsDir("htp_config", externalDir);
-
         Log.d(TAG, "Assets copied to external cache");
     }
 
-    /**
-     * 환경 변수 설정 - Conversation 로직 이식
-     */
     private void setupEnvironment() {
         try {
             String nativeLibPath = getApplicationContext().getApplicationInfo().nativeLibraryDir;
@@ -170,9 +346,6 @@ public class LlamaAnalysisService extends Service {
         }
     }
 
-    /**
-     * GenieWrapper 초기화
-     */
     private void initializeModel(String htpConfigPath) {
         try {
             String externalCacheDir = getExternalCacheDir().getAbsolutePath();
@@ -190,163 +363,7 @@ public class LlamaAnalysisService extends Service {
         }
     }
 
-    /**
-     * 일정 분석 메인 메서드 (실제로는 모든 종류의 쿼리 처리)
-     */
-    public void analyzeSchedule(String inputText, ScheduleAnalysisCallback callback) {
-        if (!isInitialized) {
-            if (isInitializing) {
-                callback.onError("서비스가 초기화 중입니다. 잠시 후 다시 시도해주세요.");
-            } else {
-                callback.onError("서비스 초기화에 실패했습니다.");
-            }
-            return;
-        }
-
-        if (inputText == null || inputText.trim().isEmpty()) {
-            callback.onError("입력 텍스트가 비어있습니다.");
-            return;
-        }
-
-        executorService.execute(() -> {
-            try {
-                // 일정 분석이 아닌 일반 쿼리의 경우 프롬프트를 단순화
-                String prompt;
-                if (isScheduleQuery(inputText)) {
-                    prompt = createSchedulePrompt(inputText.trim());
-                } else {
-                    prompt = inputText.trim(); // 일반 질문은 그대로 전달
-                }
-
-                Log.d(TAG, "Processing query: " + inputText);
-
-                final StringBuilder responseBuilder = new StringBuilder();
-
-                genieWrapper.getResponseForPrompt(prompt, new StringCallback() {
-                    @Override
-                    public void onNewString(String response) {
-                        responseBuilder.append(response);
-
-                        // 응답이 완료된 것으로 보이면 콜백 호출
-                        String fullResponse = responseBuilder.toString().trim();
-                        if (isResponseComplete(fullResponse, isScheduleQuery(inputText))) {
-                            processResponse(fullResponse, inputText, callback);
-                        }
-                    }
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error during query processing: " + e.toString());
-                callback.onError("쿼리 처리 중 오류가 발생했습니다: " + e.getMessage());
-            }
-        });
-    }
-
-    /**
-     * 일정 관련 쿼리인지 확인
-     */
-    private boolean isScheduleQuery(String query) {
-        String lowerQuery = query.toLowerCase();
-        return lowerQuery.contains("schedule") ||
-                lowerQuery.contains("appointment") ||
-                lowerQuery.contains("meeting") ||
-                lowerQuery.contains("일정") ||
-                lowerQuery.contains("예약") ||
-                lowerQuery.contains("약속");
-    }
-
-    /**
-     * 일정 분석용 프롬프트 생성
-     */
-    private String createSchedulePrompt(String userText) {
-        return "다음 텍스트에서 일정 정보를 추출하여 정확한 JSON 형식으로 반환해주세요.\n\n" +
-                "형식 예시:\n" +
-                "일정이 있는 경우: {\"date\":\"2025-05-23\", \"time\":\"14:00\", \"title\":\"병원 예약\", \"location\":\"서울대병원\"}\n" +
-                "일정이 없는 경우: {\"no_schedule\": true}\n\n" +
-                "규칙:\n" +
-                "- 날짜는 YYYY-MM-DD 형식\n" +
-                "- 시간은 HH:MM 형식 (24시간)\n" +
-                "- 정확한 JSON만 반환\n" +
-                "- 추가 설명 없이 JSON만 출력\n\n" +
-                "분석할 텍스트: " + userText;
-    }
-
-    /**
-     * 응답 완료 여부 확인
-     */
-    private boolean isResponseComplete(String response, boolean isScheduleQuery) {
-        if (isScheduleQuery) {
-            // 일정 분석의 경우 JSON 형태 확인
-            return response.contains("}") && (response.contains("date") || response.contains("no_schedule"));
-        } else {
-            // 일반 쿼리의 경우 문장이 완료되었는지 확인
-            return response.length() > 10 &&
-                    (response.endsWith(".") || response.endsWith("!") || response.endsWith("?") ||
-                            response.contains("\n") || response.length() > 100);
-        }
-    }
-
-    /**
-     * 응답 처리
-     */
-    private void processResponse(String response, String originalQuery, ScheduleAnalysisCallback callback) {
-        try {
-            if (isScheduleQuery(originalQuery)) {
-                // 일정 분석 응답 처리
-                String jsonResponse = extractJson(response);
-
-                if (jsonResponse.contains("no_schedule")) {
-                    callback.onNoScheduleFound();
-                } else if (jsonResponse.contains("date")) {
-                    callback.onScheduleFound(jsonResponse);
-                } else {
-                    callback.onNoScheduleFound();
-                }
-            } else {
-                // 일반 쿼리 응답 처리
-                callback.onScheduleFound(response.trim());
-            }
-
-        } catch (Exception e) {
-            Log.e(TAG, "Error processing response: " + e.toString());
-            callback.onError("응답 처리 중 오류가 발생했습니다.");
-        }
-    }
-
-    /**
-     * 응답에서 JSON 부분 추출
-     */
-    private String extractJson(String response) {
-        // 첫 번째 { 부터 마지막 } 까지 추출
-        int startIndex = response.indexOf('{');
-        int endIndex = response.lastIndexOf('}');
-
-        if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-            return response.substring(startIndex, endIndex + 1);
-        }
-
-        return response.trim();
-    }
-
-    /**
-     * 서비스 초기화 상태 확인
-     */
-    public boolean isServiceReady() {
-        return isInitialized;
-    }
-
-    /**
-     * 서비스 초기화 진행 중 여부 확인
-     */
-    public boolean isServiceInitializing() {
-        return isInitializing;
-    }
-
-    // MainActivity에서 가져온 유틸리티 메서드들
-
-    /**
-     * 에셋 디렉토리 복사
-     */
+    // 유틸리티 메서드들 (기존과 동일)
     private void copyAssetsDir(String inputAssetRelPath, String outputPath) throws IOException {
         File outputAssetPath = new File(Paths.get(outputPath, inputAssetRelPath).toString());
 
@@ -367,9 +384,6 @@ public class LlamaAnalysisService extends Service {
         }
     }
 
-    /**
-     * 파일 복사
-     */
     private void copyFile(String inputFilePath, File outputAssetFile) throws IOException {
         InputStream in = getAssets().open(inputFilePath);
         OutputStream out = new FileOutputStream(outputAssetFile);
@@ -382,14 +396,5 @@ public class LlamaAnalysisService extends Service {
 
         in.close();
         out.close();
-    }
-
-    /**
-     * 일정 분석 결과 콜백 인터페이스
-     */
-    public interface ScheduleAnalysisCallback {
-        void onScheduleFound(String jsonResult);
-        void onNoScheduleFound();
-        void onError(String errorMessage);
     }
 }

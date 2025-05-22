@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.example.domentiacare.service.llama.LlamaServiceManager
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 
 class TestLlamaActivity : ComponentActivity() {
 
@@ -178,9 +179,23 @@ fun TestLlamaScreen(
 
                                 try {
                                     Log.d("TestLlamaActivity", "Sending query: $queryText")
-                                    val result = llamaServiceManager.sendQuery(queryText)
-                                    response = result
-                                    Log.d("TestLlamaActivity", "Received response: $result")
+
+                                    // 🆕 실시간 스트리밍 방식으로 변경
+                                    val result = llamaServiceManager.sendQuery(queryText) { partialText ->
+                                        // 실시간 UI 업데이트 - 메인 스레드에서 실행 보장
+                                        Log.d("TestLlamaActivity", "Received partial result: ${partialText.length} chars")
+                                        scope.launch(Dispatchers.Main) {
+                                            response = partialText
+                                            Log.d("TestLlamaActivity", "UI state updated with: ${partialText.take(50)}...")
+                                        }
+                                    }
+
+                                    // 최종 결과도 설정 (혹시 부분 결과가 안 왔을 경우 대비)
+                                    if (response.isEmpty()) {
+                                        response = result
+                                    }
+
+                                    Log.d("TestLlamaActivity", "Received final response: $result")
                                 } catch (e: Exception) {
                                     response = "Error: ${e.message}"
                                     Log.e("TestLlamaActivity", "Error sending query", e)
@@ -206,7 +221,7 @@ fun TestLlamaScreen(
                 }
             }
 
-            // 응답 표시 섹션
+            // 응답 표시 섹션 - 실시간 업데이트 표시 추가
             if (response.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -215,10 +230,28 @@ fun TestLlamaScreen(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "🤖 LLaMA Response",
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "🤖 LLaMA Response",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                            if (isLoading) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Generating...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
@@ -228,6 +261,14 @@ fun TestLlamaScreen(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
+
+                        // 응답 길이 표시 (디버깅용)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Length: ${response.length} characters",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
                     }
                 }
             }
@@ -249,7 +290,21 @@ fun TestLlamaScreen(
                         "What is 25 + 17?",
                         "Explain AI in simple terms",
                         "What day is today?",
-                        "Count from 1 to 10"
+                        "Count from 1 to 10",
+                        """Please analyze the following phone conversation and extract schedule information. Summarize the conversation briefly and output the schedule details in JSON format with exactly these three variables: date, time, place.
+
+Phone conversation:
+"Hello? Hey Sarah! It's Mike. Are you free to talk? Hi Mike! Yeah, what's up? I was wondering if you'd like to go see a movie this Sunday? There's that new action movie everyone's talking about. This Sunday? That sounds great! What time were you thinking? How about we meet at 2 PM at the cinema downtown? The movie starts at 2:30. Perfect! Which movie theater exactly? The AMC theater on Main Street. You know, the one near the coffee shop we went to last month. Oh yes, I know that place. Should we grab lunch before the movie? Good idea! There's a nice restaurant right next to the theater. We could eat around 12:30 and then catch the movie. Sounds like a plan! So Sunday at 12:30 for lunch, then the 2:30 movie? Exactly! I'll buy the tickets online tonight. Great! I'm looking forward to it. See you Sunday! See you then! Bye! Bye!"
+
+Instructions:
+1. Provide a brief summary of the conversation
+2. Extract schedule information and format as JSON with these exact keys: "date", "time", "place"
+3. If multiple times are mentioned, prioritize the main event time
+4. Output only the summary and JSON, nothing else
+
+Format:
+Summary: [brief description]
+Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}"""
                     )
 
                     sampleQueries.forEach { query ->

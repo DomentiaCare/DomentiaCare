@@ -1,4 +1,4 @@
-com.quicinc.chatapp.test.ChatApp-androidTest-0 C:\Users\bm838\Desktop\ai-hub-apps\apps\android\ChatApp\build\generated\res\resValues\androidTest\debug
-com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-1 C:\Users\bm838\Desktop\ai-hub-apps\apps\android\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-2 C:\Users\bm838\Desktop\ai-hub-apps\apps\android\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.quicinc.chatapp.test.ChatApp-debugAndroidTest-3 C:\Users\bm838\Desktop\ai-hub-apps\apps\android\ChatApp\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources
+com.quicinc.chatapp.test.ChatApp-androidTest-0 C:\Users\bm838\Documents\GitHub\DomentiaCare\ChatApp\build\generated\res\resValues\androidTest\debug
+com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-1 C:\Users\bm838\Documents\GitHub\DomentiaCare\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-2 C:\Users\bm838\Documents\GitHub\DomentiaCare\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.quicinc.chatapp.test.ChatApp-debugAndroidTest-3 C:\Users\bm838\Documents\GitHub\DomentiaCare\ChatApp\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

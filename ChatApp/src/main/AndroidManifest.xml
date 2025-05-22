@@ -31,14 +31,14 @@
             android:parentActivityName="com.quicinc.chatapp.MainActivity">
         </activity>
 
-        <!-- 새로 추가된 LlamaAnalysisService -->
+         <!--새로 추가된 LlamaAnalysisService-->
         <service
             android:name="com.quicinc.chatapp.LlamaAnalysisService"
             android:exported="true"
             android:enabled="true"
             android:process=":llama_service">
 
-            <!-- 명시적 Intent 필터 -->
+<!--             명시적 Intent 필터-->
             <intent-filter>
                 <action android:name="com.quicinc.chatapp.LLAMA_ANALYSIS_SERVICE" />
                 <category android:name="android.intent.category.DEFAULT" />
