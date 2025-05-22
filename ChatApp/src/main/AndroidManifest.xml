@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 필요한 권한들 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:largeHeap="true"
         android:allowBackup="true"
@@ -11,6 +15,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ChatApp">
+
+        <!-- 기존 Activity들 -->
         <activity
             android:name="com.quicinc.chatapp.MainActivity"
             android:exported="true">
@@ -22,9 +28,29 @@
 
         <activity
             android:name="com.quicinc.chatapp.Conversation"
-            android:parentActivityName="com.quicinc.chatapp.MainActivity" >
+            android:parentActivityName="com.quicinc.chatapp.MainActivity">
         </activity>
 
+        <!-- 새로 추가된 LlamaAnalysisService -->
+        <service
+            android:name="com.quicinc.chatapp.LlamaAnalysisService"
+            android:exported="true"
+            android:enabled="true"
+            android:process=":llama_service">
+
+            <!-- 명시적 Intent 필터 -->
+            <intent-filter>
+                <action android:name="com.quicinc.chatapp.LLAMA_ANALYSIS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- 서비스 메타데이터 -->
+            <meta-data
+                android:name="service_description"
+                android:value="LLaMA AI Analysis Service for Schedule Extraction" />
+        </service>
+
+        <!-- 기존 네이티브 라이브러리들 -->
         <uses-native-library
             android:name="libadsprpc.so"
             android:required="false" />
@@ -32,4 +58,5 @@
             android:name="libcdsprpc.so"
             android:required="false" />
     </application>
+
 </manifest>

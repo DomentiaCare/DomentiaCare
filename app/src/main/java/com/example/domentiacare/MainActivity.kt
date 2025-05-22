@@ -15,7 +15,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -24,9 +28,8 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import com.example.domentiacare.service.LocationForegroundService
 import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
+import com.example.domentiacare.ui.test.TestLlamaActivity  // 추가된 import
 import dagger.hilt.android.AndroidEntryPoint
-
-
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -107,41 +110,73 @@ class MainActivity : ComponentActivity() {
         }
 
         enableEdgeToEdge()
-        setContent  {
+        setContent {
             DomentiaCareTheme {
                 if (IS_DEV_MODE) {
+                    // 🆕 개발 모드일 때 메인 컨텐츠 위에 LLaMA 테스트 버튼 추가
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // LLaMA 테스트 버튼을 상단에 고정
+                        LlamaTestButton()
+
+                        // 기존 앱 네비게이션
+                        Box(modifier = Modifier.weight(1f)) {
+                            AppNavHost()
+                        }
+                    }
+                } else {
+                    // 정식 릴리즈에서는 기존 UI만 표시
                     AppNavHost()
                 }
             }
         }
     }
 
-    // 녹음 파일 접근 권한 테스트
-//    private val requestAudioPermission = registerForActivityResult(
-//        ActivityResultContracts.RequestPermission()
-//    ) { isGranted ->
-//        if (isGranted) {
-//            val recordings = getCallRecordingFiles()
-//
-//            if (recordings.isNotEmpty()) {
-//                val firstFile = recordings.first()
-//                AlertDialog.Builder(this)
-//                    .setTitle("📁 녹음 파일 확인")
-//                    .setMessage("총 ${recordings.size}개의 녹음 파일이 있습니다.\n\n가장 최신 파일:\n${firstFile.name}")
-//                    .setPositiveButton("확인", null)
-//                    .show()
-//            } else {
-//                AlertDialog.Builder(this)
-//                    .setTitle("🔍 녹음 파일 없음")
-//                    .setMessage("녹음된 통화 파일을 찾을 수 없습니다.")
-//                    .setPositiveButton("확인", null)
-//                    .show()
-//            }
-//
-//        } else {
-//            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-//        }
-//    }
+    // 🆕 LLaMA 테스트 버튼 컴포넌트
+    @Composable
+    private fun LlamaTestButton() {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "🤖 LLaMA Test",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        text = "ChatApp 연동 테스트",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Button(
+                    onClick = {
+                        Log.d("MainActivity", "Opening LLaMA test activity")
+                        startActivity(Intent(this@MainActivity, TestLlamaActivity::class.java))
+                    },
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("Test")
+                }
+            }
+        }
+    }
+
+    // 기존 메서드들은 그대로 유지...
 
     private val requestAudioPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -207,7 +242,4 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-
-
-
 }
