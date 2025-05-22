@@ -15,7 +15,7 @@ class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         // Kakao SDK 초기화 (네이티브 앱 키 사용)
-        KakaoSdk.init(this,  BuildConfig.KAKAO_NATIVE_APP_KEY)
+        KakaoSdk.init(this, BuildConfig.KAKAO_NATIVE_APP_KEY)
         getKeyHash(this)
         TokenManager.init(this) // ← MyApplication.kt 안에서
     }

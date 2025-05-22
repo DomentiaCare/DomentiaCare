@@ -22,6 +22,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt")
     id("com.google.gms.google-services")
+    id("com.chaquo.python")
 }
 
 // --------------------- QNN SDK 설정 추가 ---------------------
@@ -39,6 +40,10 @@ android {
     defaultConfig {
         applicationId = "com.example.domentiacare"
         minSdk = 31
+        // python ndk 명시 (이종범)
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -74,12 +79,7 @@ android {
         jvmTarget = "11"
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
+
 
     packagingOptions {
         jniLibs.useLegacyPackaging = true
@@ -89,52 +89,59 @@ android {
         noCompress += listOf("bin", "json")
     }
 
-    tasks.named("preBuild").configure {
-        doFirst {
-            if (!file(qnnSDKLocalPath).exists()) {
-                throw GradleException("QNN SDK does not exist at $qnnSDKLocalPath. Please set `qnnSDKLocalPath` correctly.")
-            }
-
-            if (!file("$qnnSDKLocalPath/lib/aarch64-android/libGenie.so").exists()) {
-                throw GradleException("libGenie does not exist. Please set `qnnSDKLocalPath` correctly.")
-            }
-
-            models.forEach { model ->
-                if (!file("$relAssetsPath$model/genie-config.json").exists()) {
-                    throw GradleException("Missing genie-config.json for $model.")
-                }
-                if (!file("$relAssetsPath$model/tokenizer.json").exists()) {
-                    throw GradleException("Missing tokenizer.json for $model.")
-                }
-            }
-
-            val libsABIDir = File(qnnBuildDir.get().asFile, "libs/arm64-v8a")
-
-            copy {
-                from(qnnSDKLocalPath)
-                include("**/lib/aarch64-android/libQnnHtp.so")
-                include("**/lib/aarch64-android/libQnnHtpPrepare.so")
-                include("**/lib/aarch64-android/libQnnSystem.so")
-                include("**/lib/aarch64-android/libQnnSaver.so")
-                include("**/lib/hexagon-v**/unsigned/libQnnHtpV**Skel.so")
-                include("**/lib/aarch64-android/libQnnHtpV**Stub.so")
-                into(libsABIDir)
-                eachFile {
-                    path = name
-                }
-                includeEmptyDirs = false
-            }
-        }
-    }
+    // Llama 부분 주석처리
+//    tasks.named("preBuild").configure {
+//        doFirst {
+//            if (!file(qnnSDKLocalPath).exists()) {
+//                throw GradleException("QNN SDK does not exist at $qnnSDKLocalPath. Please set `qnnSDKLocalPath` correctly.")
+//            }
+//
+//            if (!file("$qnnSDKLocalPath/lib/aarch64-android/libGenie.so").exists()) {
+//                throw GradleException("libGenie does not exist. Please set `qnnSDKLocalPath` correctly.")
+//            }
+//
+//            models.forEach { model ->
+//                if (!file("$relAssetsPath$model/genie-config.json").exists()) {
+//                    throw GradleException("Missing genie-config.json for $model.")
+//                }
+//                if (!file("$relAssetsPath$model/tokenizer.json").exists()) {
+//                    throw GradleException("Missing tokenizer.json for $model.")
+//                }
+//            }
+//
+//            val libsABIDir = File(qnnBuildDir.get().asFile, "libs/arm64-v8a")
+//
+//            copy {
+//                from(qnnSDKLocalPath)
+//                include("**/lib/aarch64-android/libQnnHtp.so")
+//                include("**/lib/aarch64-android/libQnnHtpPrepare.so")
+//                include("**/lib/aarch64-android/libQnnSystem.so")
+//                include("**/lib/aarch64-android/libQnnSaver.so")
+//                include("**/lib/hexagon-v**/unsigned/libQnnHtpV**Skel.so")
+//                include("**/lib/aarch64-android/libQnnHtpV**Stub.so")
+//                into(libsABIDir)
+//                eachFile {
+//                    path = name
+//                }
+//                includeEmptyDirs = false
+//            }
+//        }
+//    }
 
     buildFeatures {
         compose = true
         buildConfig = true
     }
 }
+// python 오류 발생 requirements.txt파일로 변경 (이종범)
+//python {
+//    pip {
+//        install("pydub")
+//    }
+//}
+
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

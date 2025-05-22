@@ -155,7 +155,6 @@
         "rootBuildGradleFolder": "C:\\Users\\bm838\\Documents\\GitHub\\DomentiaCare",
         "sdkFolder": "C:\\Users\\bm838\\AppData\\Local\\Android\\Sdk",
         "isBuildOnlyTargetAbiEnabled": true,
-        "ideBuildTargetAbi": "arm64-v8a",
         "isCmakeBuildCohabitationEnabled": false,
         "isPrefabEnabled": false
       },
