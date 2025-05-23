@@ -20,48 +20,63 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import com.example.domentiacare.MyApplication
 import com.example.domentiacare.service.llama.LlamaServiceManager
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 
 class TestLlamaActivity : ComponentActivity() {
-
-    private lateinit var llamaServiceManager: LlamaServiceManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        llamaServiceManager = LlamaServiceManager()
-
         setContent {
             MaterialTheme {
                 TestLlamaScreen(
-                    llamaServiceManager = llamaServiceManager,
                     onBackPressed = { finish() }
                 )
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        llamaServiceManager.disconnect(this)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TestLlamaScreen(
-    llamaServiceManager: LlamaServiceManager,
     onBackPressed: () -> Unit
 ) {
-    var connectionStatus by remember { mutableStateOf("Not Connected") }
+    // 전역 LlamaServiceManager 사용
+    val llamaServiceManager = MyApplication.llamaServiceManager
+
+    var connectionStatus by remember { mutableStateOf("Checking...") }
     var queryText by remember { mutableStateOf("Hello, how are you?") }
     var response by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // 🆕 연결 상태 모니터링
+    DisposableEffect(Unit) {
+        val callback: (Boolean) -> Unit = { isReady ->
+            connectionStatus = if (isReady) {
+                "Connected & Ready"
+            } else if (llamaServiceManager.isConnected()) {
+                "Connected (Initializing...)"
+            } else if (llamaServiceManager.isConnecting()) {
+                "Connecting..."
+            } else {
+                "Not Connected"
+            }
+        }
+
+        MyApplication.addConnectionCallback(callback)
+
+        onDispose {
+            MyApplication.removeConnectionCallback(callback)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -89,10 +104,10 @@ fun TestLlamaScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = when (connectionStatus) {
-                        "Connected & Ready" -> MaterialTheme.colorScheme.primaryContainer
-                        "Connected (Initializing...)" -> MaterialTheme.colorScheme.secondaryContainer
-                        "Connecting..." -> MaterialTheme.colorScheme.tertiaryContainer
+                    containerColor = when {
+                        connectionStatus.contains("Connected & Ready") -> MaterialTheme.colorScheme.primaryContainer
+                        connectionStatus.contains("Connected") -> MaterialTheme.colorScheme.secondaryContainer
+                        connectionStatus.contains("Connecting") || connectionStatus.contains("Checking") -> MaterialTheme.colorScheme.tertiaryContainer
                         else -> MaterialTheme.colorScheme.errorContainer
                     }
                 )
@@ -101,7 +116,7 @@ fun TestLlamaScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "📡 Connection Status",
+                        text = "📡 Connection Status (Global)",
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
@@ -111,11 +126,20 @@ fun TestLlamaScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    Text(
+                        text = "ℹ️ Connection is managed globally by the app. No manual connection needed!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 수동 연결 버튼 (비상시 사용)
                     Button(
                         onClick = {
                             scope.launch {
-                                connectionStatus = "Connecting..."
-                                Log.d("TestLlamaActivity", "Attempting to connect to ChatApp...")
+                                connectionStatus = "Manual Connecting..."
+                                Log.d("TestLlamaActivity", "🔄 Manual connection attempt...")
 
                                 val connected = llamaServiceManager.connectToService(context)
                                 Log.d("TestLlamaActivity", "Connection result: $connected")
@@ -134,17 +158,19 @@ fun TestLlamaScreen(
                                 Log.d("TestLlamaActivity", "Final status: $connectionStatus")
                             }
                         },
-                        enabled = !llamaServiceManager.isConnecting(),
+                        enabled = !llamaServiceManager.isConnecting() &&
+                                !connectionStatus.contains("Connecting"),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (llamaServiceManager.isConnecting()) {
+                        if (llamaServiceManager.isConnecting() ||
+                            connectionStatus.contains("Connecting")) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
-                        Text("Connect to ChatApp")
+                        Text("Manual Reconnect")
                     }
                 }
             }
@@ -174,11 +200,20 @@ fun TestLlamaScreen(
                     Button(
                         onClick = {
                             scope.launch {
+                                // 🆕 이미 로딩 중이면 중복 요청 방지
+                                if (isLoading) {
+                                    Log.w("TestLlamaActivity", "Request ignored: Already processing")
+                                    return@launch
+                                }
+
                                 isLoading = true
                                 response = ""
 
                                 try {
                                     Log.d("TestLlamaActivity", "Sending query: $queryText")
+
+                                    // 🆕 약간의 지연으로 이전 요청 정리 시간 확보
+                                    delay(500)
 
                                     // 🆕 실시간 스트리밍 방식으로 변경
                                     val result = llamaServiceManager.sendQuery(queryText) { partialText ->
@@ -204,7 +239,7 @@ fun TestLlamaScreen(
                                 }
                             }
                         },
-                        enabled = !isLoading && llamaServiceManager.isConnected() && queryText.isNotBlank(),
+                        enabled = !isLoading && connectionStatus.contains("Connected & Ready") && queryText.isNotBlank(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (isLoading) {
@@ -346,24 +381,6 @@ Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "l
                         text = "Service Ready: ${llamaServiceManager.isServiceReady()}",
                         style = MaterialTheme.typography.bodySmall
                     )
-                }
-            }
-
-            // 연결 상태 실시간 업데이트
-            LaunchedEffect(llamaServiceManager) {
-                while (true) {
-                    if (llamaServiceManager.isConnected()) {
-                        connectionStatus = if (llamaServiceManager.isServiceReady()) {
-                            "Connected & Ready"
-                        } else {
-                            "Connected (Initializing...)"
-                        }
-                    } else if (llamaServiceManager.isConnecting()) {
-                        connectionStatus = "Connecting..."
-                    } else {
-                        connectionStatus = "Not Connected"
-                    }
-                    kotlinx.coroutines.delay(2000) // 2초마다 업데이트
                 }
             }
         }

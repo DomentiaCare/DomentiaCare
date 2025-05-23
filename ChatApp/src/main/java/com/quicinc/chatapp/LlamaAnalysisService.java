@@ -31,6 +31,10 @@ public class LlamaAnalysisService extends Service {
     // Service initialization state
     private boolean isInitializing = false;
 
+    // 🆕 현재 처리 중인 요청 추적
+    private volatile boolean isProcessing = false;
+    private Thread currentTimeoutThread = null;
+
     static {
         System.loadLibrary("chatapp");
     }
@@ -85,6 +89,11 @@ public class LlamaAnalysisService extends Service {
             executorService.shutdown();
         }
 
+        // 🆕 타임아웃 스레드 정리
+        if (currentTimeoutThread != null && !currentTimeoutThread.isInterrupted()) {
+            currentTimeoutThread.interrupt();
+        }
+
         genieWrapper = null;
     }
 
@@ -102,6 +111,17 @@ public class LlamaAnalysisService extends Service {
             return;
         }
 
+        // 🆕 이전 요청이 처리 중이면 거부
+        if (isProcessing) {
+            try {
+                callback.onError("이전 요청이 처리 중입니다. 잠시 후 다시 시도해주세요.");
+                Log.w(TAG, "Request rejected: Previous request still processing");
+            } catch (RemoteException e) {
+                Log.e(TAG, "Error calling callback: " + e.getMessage());
+            }
+            return;
+        }
+
         if (inputText == null || inputText.trim().isEmpty()) {
             try {
                 callback.onError("입력 텍스트가 비어있습니다.");
@@ -111,7 +131,16 @@ public class LlamaAnalysisService extends Service {
             return;
         }
 
+        // 🆕 이전 타임아웃 스레드 정리
+        if (currentTimeoutThread != null && !currentTimeoutThread.isInterrupted()) {
+            currentTimeoutThread.interrupt();
+            Log.d(TAG, "Interrupted previous timeout thread");
+        }
+
         executorService.execute(() -> {
+            // 🆕 처리 상태 설정
+            isProcessing = true;
+
             final StringBuilder responseBuilder = new StringBuilder();
             final AtomicBoolean callbackInvoked = new AtomicBoolean(false);
             final long startTime = System.currentTimeMillis();
@@ -132,45 +161,42 @@ public class LlamaAnalysisService extends Service {
                             Log.d(TAG, "Response length: " + currentResponse.length() + ", content preview: " +
                                     (currentResponse.length() > 50 ? currentResponse.substring(0, 50) + "..." : currentResponse));
 
-                            // 🆕 즉시 부분 결과 전송
+                            // 🆕 즉시 부분 결과 전송 (완료 조건 체크 없이)
                             try {
                                 callback.onPartialResult(currentResponse);
-                                Log.d(TAG, "Partial result sent, length: " + currentResponse.length());
+                                Log.d(TAG, "✅ Partial result sent, length: " + currentResponse.length());
                             } catch (RemoteException e) {
                                 Log.e(TAG, "Error sending partial result: " + e.getMessage());
                             }
 
-                            // 🔧 완료 조건 체크는 별도로 처리 (부분 결과 전송과 분리)
-                            // 완료 조건을 만족하고 아직 최종 콜백이 호출되지 않았을 때만
-                            if (!callbackInvoked.get() && isCompleteResponse(currentResponse)) {
-                                if (callbackInvoked.compareAndSet(false, true)) {
-                                    Log.d(TAG, "✅ Complete response detected, invoking final callback");
-                                    invokeFinalCallback(callback, currentResponse);
-                                }
-                            }
+                            // 🔧 완료 조건 체크 완전히 제거 - 타임아웃에만 의존
+                            // (완료 조건이 문제를 일으키고 있으므로 비활성화)
                         }
                     }
                 });
 
-                // 🔧 타임아웃 메커니즘
-                Thread timeoutThread = new Thread(() -> {
+                // 🔧 타임아웃 메커니즘 (20초로 증가)
+                currentTimeoutThread = new Thread(() -> {
                     try {
-                        Thread.sleep(10000); // 10초 대기
+                        Thread.sleep(20000); // 20초 대기
 
-                        // 🔧 타임아웃 시에도 한 번만 실행되도록 보장
+                        // 🔧 타임아웃 시에만 최종 콜백 호출
                         if (callbackInvoked.compareAndSet(false, true)) {
                             synchronized (responseLock) {
                                 String finalResponse = responseBuilder.toString().trim();
-                                Log.d(TAG, "⏰ Timeout reached, sending response: " + finalResponse.substring(0, Math.min(100, finalResponse.length())));
+                                Log.d(TAG, "⏰ Timeout reached, sending final response: " + finalResponse.substring(0, Math.min(100, finalResponse.length())));
                                 invokeFinalCallback(callback, finalResponse.isEmpty() ? "Response timeout" : finalResponse);
                             }
                         }
                     } catch (InterruptedException e) {
-                        Log.d(TAG, "Timeout thread interrupted");
+                        Log.d(TAG, "Timeout thread interrupted - this is normal for new requests");
+                    } finally {
+                        // 🆕 처리 완료 표시
+                        isProcessing = false;
                     }
                 });
-                timeoutThread.setDaemon(true); // 데몬 스레드로 설정
-                timeoutThread.start();
+                currentTimeoutThread.setDaemon(true); // 데몬 스레드로 설정
+                currentTimeoutThread.start();
 
             } catch (Exception e) {
                 Log.e(TAG, "Error during query processing: " + e.toString());
@@ -178,79 +204,10 @@ public class LlamaAnalysisService extends Service {
                 if (callbackInvoked.compareAndSet(false, true)) {
                     invokeErrorCallback(callback, "쿼리 처리 중 오류가 발생했습니다: " + e.getMessage());
                 }
+                // 🆕 처리 완료 표시
+                isProcessing = false;
             }
         });
-    }
-
-    // 🔧 더 정확한 완료 조건 체크 - 더 엄격하게
-    // 🔧 훨씬 더 엄격한 완료 조건 체크
-    private boolean isCompleteResponse(String response) {
-        // 기본 길이 체크 - 더 엄격하게
-        if (response.length() < 200) {
-            return false;
-        }
-
-        // JSON 응답 체크 - 훨씬 더 엄격한 조건
-        if (response.contains("Summary:") && response.contains("Schedule:")) {
-            boolean hasAllFields = response.contains("\"date\"") &&
-                    response.contains("\"time\"") &&
-                    response.contains("\"place\"");
-
-            // 완전히 닫힌 JSON 구조인지 확인
-            boolean endsWithBrace = response.trim().endsWith("}");
-
-            if (hasAllFields && endsWithBrace) {
-                // 🆕 JSON 부분 추출 및 검증
-                try {
-                    int jsonStart = response.indexOf("{");
-                    if (jsonStart == -1) return false;
-
-                    String jsonPart = response.substring(jsonStart).trim();
-
-                    // JSON이 완전히 닫혀있는지 확인
-                    if (!jsonPart.endsWith("}")) return false;
-
-                    // place 필드가 완전히 채워져 있는지 확인
-                    // "AMC theater on Main Street" 전체가 있어야 완료
-                    boolean hasCompletePlace = jsonPart.contains("\"place\": \"AMC theater on Main Street\"") ||
-                            jsonPart.contains("\"place\":\"AMC theater on Main Street\"");
-
-                    // date와 time이 구체적으로 채워져 있는지 확인
-                    boolean hasConcreteDate = (jsonPart.contains("\"date\": \"Sunday\"") ||
-                            jsonPart.contains("\"date\":\"Sunday\"")) &&
-                            !jsonPart.contains("\"date\": \"\"");
-
-                    boolean hasConcreteTime = (jsonPart.contains("\"time\": \"14:00\"") ||
-                            jsonPart.contains("\"time\":\"14:00\"")) &&
-                            !jsonPart.contains("\"time\": \"\"");
-
-                    if (hasCompletePlace && hasConcreteDate && hasConcreteTime) {
-                        Log.d(TAG, "✅ Complete JSON response detected with all required fields");
-                        return true;
-                    } else {
-                        Log.d(TAG, "❌ JSON incomplete - Place: " + hasCompletePlace +
-                                ", Date: " + hasConcreteDate + ", Time: " + hasConcreteTime);
-                    }
-
-                } catch (Exception e) {
-                    Log.e(TAG, "Error parsing JSON for completion check: " + e.getMessage());
-                    return false;
-                }
-            }
-        }
-
-        // 간단한 응답의 경우 (JSON이 아닌 경우)
-        // 문장이 완전히 끝났는지 확인
-        if (!response.contains("Summary:") && !response.contains("Schedule:")) {
-            // 마침표나 느낌표로 끝나고, 충분한 길이가 있으면 완료로 간주
-            if ((response.endsWith(".") || response.endsWith("!") || response.endsWith("?")) &&
-                    response.length() > 50) {
-                Log.d(TAG, "✅ Complete simple response detected");
-                return true;
-            }
-        }
-
-        return false;
     }
 
     // 🔧 안전한 최종 콜백 호출

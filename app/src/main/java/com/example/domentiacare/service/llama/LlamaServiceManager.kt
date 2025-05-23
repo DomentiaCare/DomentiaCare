@@ -108,6 +108,9 @@ class LlamaServiceManager {
     /**
      * 텍스트 쿼리 전송 (AIDL 방식) - 실시간 스트리밍 지원
      */
+    /**
+     * 텍스트 쿼리 전송 (AIDL 방식) - 실시간 스트리밍 지원
+     */
     suspend fun sendQuery(
         query: String,
         onPartialUpdate: ((String) -> Unit)? = null
@@ -121,6 +124,7 @@ class LlamaServiceManager {
         return suspendCoroutine { continuation ->
             // 🔧 중복 응답 방지를 위한 AtomicBoolean
             val responseCalled = AtomicBoolean(false)
+            var lastResponse = ""
 
             try {
                 val callback = object : IAnalysisCallback.Stub() {
@@ -128,6 +132,7 @@ class LlamaServiceManager {
                         // 🆕 실시간 부분 결과 처리
                         partialText?.let { partial ->
                             Log.d(TAG, "Received partial result via AIDL, length: ${partial.length}")
+                            lastResponse = partial
                             try {
                                 onPartialUpdate?.invoke(partial)
                             } catch (e: Exception) {
@@ -137,12 +142,27 @@ class LlamaServiceManager {
                     }
 
                     override fun onResult(result: String?) {
-                        // 🔧 한 번만 응답하도록 보장
-                        if (responseCalled.compareAndSet(false, true)) {
-                            Log.d(TAG, "Received final result via AIDL: $result")
-                            continuation.resume(result ?: "Empty response")
-                        } else {
-                            Log.d(TAG, "Duplicate final result ignored: $result")
+                        result?.let {
+                            Log.d(TAG, "Received result via AIDL, length: ${it.length}, treating as partial")
+                            lastResponse = it
+
+                            // 🆕 onResult도 부분 결과로 처리 (responseCalled 체크 없이)
+                            try {
+                                onPartialUpdate?.invoke(it)
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error in result->partial update callback: ${e.message}")
+                            }
+                        }
+
+                        // 최종 완료는 타임아웃에서만 처리하지 않고 여기서도 처리
+                        // 단, 첫 번째가 아닌 경우에만
+                        if (result != null && result.length > 100) {
+                            if (responseCalled.compareAndSet(false, true)) {
+                                Log.d(TAG, "Final result accepted: $result")
+                                continuation.resume(result)
+                            } else {
+                                Log.d(TAG, "Duplicate final result ignored: $result")
+                            }
                         }
                     }
 
@@ -168,12 +188,12 @@ class LlamaServiceManager {
                 llamaService!!.analyzeText(query, callback)
                 Log.d(TAG, "Query sent to service successfully")
 
-                // 🔧 타임아웃 처리 (30초)
+                // 🔧 타임아웃 처리 (20초)
                 CoroutineScope(Dispatchers.Main).launch {
-                    delay(30000)
+                    delay(20000)
                     if (responseCalled.compareAndSet(false, true)) {
-                        Log.w(TAG, "Query timeout after 30 seconds")
-                        continuation.resume("Error: Response timeout")
+                        Log.w(TAG, "Query timeout after 20 seconds, using last response")
+                        continuation.resume(if (lastResponse.isNotEmpty()) lastResponse else "Error: Response timeout")
                     }
                 }
 
