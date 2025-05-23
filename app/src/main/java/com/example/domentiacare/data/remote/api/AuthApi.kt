@@ -3,13 +3,17 @@ package com.example.domentiacare.data.remote.api
 import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
 import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
 import com.example.domentiacare.data.remote.dto.LocationRequestBody
+import com.example.domentiacare.data.remote.dto.Patient
+import com.example.domentiacare.data.remote.dto.Phone
 import com.example.domentiacare.data.remote.dto.RegisterUserRequest
 import com.example.domentiacare.data.remote.dto.User
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근할 수 있는 api 백엔드의 SecurityConfig를 참고하면됨
     //kakao에서 받은 token을 백엔드로 보냄
@@ -40,4 +44,23 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
         @Body token: Map<String, String>
     ): Call<Void>
 
+    //환자 목록 조회
+    @GET("/api/patients/select")
+    suspend fun getPatients(
+
+    ): List<Patient>
+
+    //환자 등록
+    @POST("/api/patients/insert")
+    suspend fun addPatients(
+        @Body phone: Phone
+    ): Response<Unit>
+
+    // 환자 위치 Redis에서 받아오기
+    @GET("/api/location/select/{patientId}")
+    fun getCurrentLocation(@Path("patientId") patientId: Long): Call<LocationRequestBody>
+
+    // 백엔드로 위치보내는 서비스 api
+    @POST("/api/location/save")
+    fun saveDBLocation(@Body location: LocationRequestBody): Call<Void>
 }

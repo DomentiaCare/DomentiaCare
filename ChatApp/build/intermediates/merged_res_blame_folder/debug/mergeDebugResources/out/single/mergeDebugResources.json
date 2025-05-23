@@ -1,110 +1,110 @@
 [
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxhdpi_ic_launcher.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxhdpi/ic_launcher.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/drawable_bot_response.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/drawable/bot_response.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxhdpi/ic_launcher_foreground.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/drawable_text_rounded_corner.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/drawable/text_rounded_corner.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/xml_backup_rules.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/xml/backup_rules.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/drawable_ic_launcher_background.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/drawable/ic_launcher_background.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/drawable_text_rounded_corner.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/drawable/text_rounded_corner.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/layout_activity_main.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/layout/activity_main.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-mdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-mdpi/ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/layout_chat.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/layout/chat.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xhdpi/ic_launcher.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-hdpi_ic_launcher.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-hdpi/ic_launcher.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/layout_chat.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/layout/chat.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xhdpi_ic_launcher_foreground.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xhdpi/ic_launcher_foreground.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-hdpi/ic_launcher.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxxhdpi_ic_launcher.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxxhdpi/ic_launcher.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xhdpi/ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxhdpi/ic_launcher_round.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxxhdpi/ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/drawable_user_input.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/drawable/user_input.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-hdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-hdpi/ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-mdpi_ic_launcher_round.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-mdpi/ic_launcher_round.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxhdpi/ic_launcher.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxxhdpi/ic_launcher.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/xml_data_extraction_rules.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/xml/data_extraction_rules.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxxhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxxhdpi_ic_launcher_round.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxxhdpi/ic_launcher_round.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/layout_chat_row.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/layout/chat_row.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-mdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-hdpi_ic_launcher_foreground.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-hdpi/ic_launcher_foreground.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/layout_activity_main.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/layout/activity_main.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-mdpi_ic_launcher.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-mdpi/ic_launcher.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-hdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/xml_backup_rules.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/xml/backup_rules.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/drawable_user_input.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/drawable/user_input.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-hdpi_ic_launcher_round.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-hdpi/ic_launcher_round.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-mdpi_ic_launcher_foreground.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-mdpi/ic_launcher_foreground.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/xml_data_extraction_rules.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/xml/data_extraction_rules.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/drawable/ic_launcher_foreground.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/drawable/ic_launcher_foreground.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xhdpi_ic_launcher_round.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xhdpi/ic_launcher_round.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/drawable/ic_launcher_background.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xxxhdpi/ic_launcher_foreground.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-anydpi-v26/ic_launcher.xml"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/mipmap-xhdpi_ic_launcher.webp.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/mipmap-xhdpi/ic_launcher.webp"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxhdpi_ic_launcher_foreground.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxhdpi/ic_launcher_foreground.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/layout_chat_row.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/layout/chat_row.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-xxhdpi/ic_launcher_round.webp"
     },
     {
-        "merged": "com.quicinc.chatapp.ChatApp-debug-31:/drawable_bot_response.xml.flat",
-        "source": "com.quicinc.chatapp.ChatApp-main-33:/drawable/bot_response.xml"
+        "merged": "com.quicinc.chatapp.ChatApp-debug-4:/mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "com.quicinc.chatapp.ChatApp-main-6:/mipmap-mdpi/ic_launcher.webp"
     }
 ]
