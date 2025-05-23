@@ -72,34 +72,6 @@ fun CallLogScreen(viewModel: CallRecordingViewModel = viewModel(),
             .padding(8.dp),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-
-        // ✅ 상단 고정 아이템 (예: 헤더, 설명 등)
-        item {
-            Surface(
-                tonalElevation = 4.dp,
-                shadowElevation = 4.dp,
-                color = Color(0xFFF1F1F1),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                onClick = {
-
-                    //
-                    Log.d("CallLogScreen", "상단 고정 아이템 클릭됨")
-                }
-            ) {
-                Text(
-                    text = "wav 파일을 Whisper에 전송 테스트",
-                    modifier = Modifier.padding(16.dp),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-//        items(logs) { call ->
-//            CallLogItem(call, navController)
-//            Spacer(modifier = Modifier.height(8.dp))
-//        }
         items(recordings) { file ->
             RecordingLogItem(file = file, navController = navController)
             Spacer(modifier = Modifier.height(8.dp))

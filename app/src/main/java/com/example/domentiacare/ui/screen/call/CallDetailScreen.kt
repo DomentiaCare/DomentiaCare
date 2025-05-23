@@ -246,20 +246,52 @@ fun CallDetailScreen(
         DMT_Button(
             text = "저장",
             onClick = {
-                val selectedDateTime = LocalDateTime.of(
-                    selectedYear.toInt(),
-                    selectedMonth.toInt(),
-                    selectedDay.toInt(),
-                    selectedHour.toInt(),
-                    selectedMinute.toInt()
-                )
-                //onSave(memo, selectedDateTime)
-                Log.d("CallDetailScreen", "저장된 메모: $memo 일시: $selectedDateTime ")
+                // TODO
+                // 1. 데이터 연결이 안 되어있을 경우
+                // 1.1. 디렉터리에 wav 파일 저장
+
+                // 1.2. Llama 프롬프트 및 답변 저장
+
+                // 2. 데이터 연결되어있을 경우
+                // 2.1. DB에 전송
+                // 2.2. 디렉터리 비우기
+
+
+
+
+
+
+//                val selectedDateTime = LocalDateTime.of(
+//                    selectedYear.toInt(),
+//                    selectedMonth.toInt(),
+//                    selectedDay.toInt(),
+//                    selectedHour.toInt(),
+//                    selectedMinute.toInt()
+//                )
+//                //onSave(memo, selectedDateTime)
+//                Log.d("CallDetailScreen", "저장된 메모: $memo 일시: $selectedDateTime ")
             },
             modifier = Modifier.fillMaxWidth()
         )
     }
-    }
+}
+
+// Wav 파일 저장
+@Composable
+fun saveWavFile() {
+    // 저장 경로 지정
+}
+
+@Composable
+fun saveLlamaResponse() {
+    // 프롬프트 및 답변 저장
+}
+
+@Composable
+fun sendDataToServer() {
+    //
+}
+
 
 
 @Composable
