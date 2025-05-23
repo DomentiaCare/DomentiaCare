@@ -1,9 +1,11 @@
 package com.example.domentiacare.data.model
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.domentiacare.data.repository.CallRepository
+import com.example.domentiacare.data.repository.CallRepositoryImpl
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import com.example.domentiacare.service.whisper.WhisperWrapper
 import com.example.domentiacare.ui.screen.call.RecordLog
@@ -18,12 +20,59 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 // Composable 함수는 상태를 표시하고 이벤트를 전달하는 역할만 담당
-class CallDetailViewModel(
-    private val repository: CallRepository,
+class CallDetailViewModel : ViewModel() {
+    // 내부에서 직접 초기화
+    private val repository: CallRepository = object : CallRepository {
+        override fun isNetworkAvailable(): Boolean {
+            return false // 기본적으로 네트워크 연결 없음으로 설정
+        }
+
+        override suspend fun analyzeLlama(transcript: String): String {
+            // 실제 Llama 분석 대신 간단한 텍스트 반환
+            return "일정: ${transcript.take(30)}... 에 대한 분석 결과입니다."
+        }
+
+        override suspend fun saveWavFileLocally(wavFile: File) {
+            // 로그만 출력하고 실제 저장은 하지 않음
+            android.util.Log.d("CallDetailViewModel", "WAV 파일 저장: ${wavFile.absolutePath}")
+        }
+
+        override suspend fun saveLlamaDataLocally(prompt: String, response: String) {
+            // 로그만 출력하고 실제 저장은 하지 않음
+            android.util.Log.d("CallDetailViewModel", "Llama 데이터 저장: $prompt, $response")
+        }
+
+        override suspend fun saveCallMetadataLocally(
+            fileName: String,
+            transcript: String,
+            memo: String,
+            dateTime: LocalDateTime
+        ) {
+            // 로그만 출력하고 실제 저장은 하지 않음
+            android.util.Log.d("CallDetailViewModel", "통화 메타데이터 저장: $fileName, $memo, $dateTime")
+        }
+
+        override suspend fun sendDataToServer(
+            wavFile: File,
+            transcript: String,
+            memo: String,
+            dateTime: LocalDateTime
+        ) {
+            // 로그만 출력하고 실제 서버 전송은 하지 않음
+            android.util.Log.d("CallDetailViewModel", "서버로 데이터 전송: ${wavFile.absolutePath}, $memo")
+        }
+
+        override suspend fun clearLocalTempFiles() {
+            // 로그만 출력하고 실제 파일 삭제는 하지 않음
+            android.util.Log.d("CallDetailViewModel", "임시 파일 삭제")
+        }
+    }
     private val dispatchers: CoroutineDispatchers = DefaultCoroutineDispatchers()
-) : ViewModel() {
+
     data class CallDetailUiState(
         val recordingFile: RecordingFile? = null,
         val recordLog: RecordLog? = null,
@@ -83,29 +132,40 @@ class CallDetailViewModel(
             try {
                 // 1. wav 변환
                 val wavFile = convertToWav(currentFile.path)
+                Log.d("CallDetailViewModel", "WAV 파일 생성: ${wavFile.absolutePath}")
+                Log.d("CallDetailViewModel", "WAV 파일 크기: ${wavFile.length()} bytes")
 
                 // 2. Whisper 모델 실행
                 val whisper = WhisperWrapper(context)
                 whisper.copyModelFiles()
                 whisper.initModel()
 
-                whisper.transcribe(
-                    wavPath = wavFile.absolutePath,
-                    onResult = { result ->
-                        _uiState.update {
-                            it.copy(
-                                transcript = result,
-                                isLoading = false
-                            )
+                // 3. 콜백을 사용하지 말고 직접 호출
+                launch(Dispatchers.Main) {
+                    whisper.transcribe(
+                        wavPath = wavFile.absolutePath,
+                        onResult = { result ->
+                            Log.d("CallDetailViewModel", "Whisper 결과: '$result'")
+                            _uiState.update {
+                                it.copy(
+                                    transcript = if (result.isBlank()) "음성을 인식할 수 없습니다." else result,
+                                    isLoading = false
+                                )
+                            }
+                        },
+                        onUpdate = { logLine ->
+                            Log.d("CallDetailViewModel", "Whisper 진행: $logLine")
                         }
-                    },
-                    onUpdate = { logLine ->
-                        // 중간 로그 처리
-                    }
-                )
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false) }
-                // 에러 처리
+                Log.e("CallDetailViewModel", "Transcription 오류", e)
+                _uiState.update {
+                    it.copy(
+                        transcript = "오류: ${e.message}",
+                        isLoading = false
+                    )
+                }
             }
         }
     }
@@ -213,4 +273,51 @@ class DefaultCoroutineDispatchers : CoroutineDispatchers {
     override val main: CoroutineDispatcher = Dispatchers.Main
     override val io: CoroutineDispatcher = Dispatchers.IO
     override val default: CoroutineDispatcher = Dispatchers.Default
+}
+
+// CallDetailViewModel 내부에 임시 구현체 추가
+private val repository: CallRepository = object : CallRepository {
+    override fun isNetworkAvailable(): Boolean {
+        return false // 기본적으로 네트워크 연결 없음으로 설정
+    }
+
+    override suspend fun analyzeLlama(transcript: String): String {
+        // 실제 Llama 분석 대신 간단한 텍스트 반환
+        return "일정: ${transcript.take(30)}... 에 대한 분석 결과입니다."
+    }
+
+    override suspend fun saveWavFileLocally(wavFile: File) {
+        // 로그만 출력하고 실제 저장은 하지 않음
+        android.util.Log.d("CallDetailViewModel", "WAV 파일 저장: ${wavFile.absolutePath}")
+    }
+
+    override suspend fun saveLlamaDataLocally(prompt: String, response: String) {
+        // 로그만 출력하고 실제 저장은 하지 않음
+        android.util.Log.d("CallDetailViewModel", "Llama 데이터 저장: $prompt, $response")
+    }
+
+    override suspend fun saveCallMetadataLocally(
+        fileName: String,
+        transcript: String,
+        memo: String,
+        dateTime: LocalDateTime
+    ) {
+        // 로그만 출력하고 실제 저장은 하지 않음
+        android.util.Log.d("CallDetailViewModel", "통화 메타데이터 저장: $fileName, $memo, $dateTime")
+    }
+
+    override suspend fun sendDataToServer(
+        wavFile: File,
+        transcript: String,
+        memo: String,
+        dateTime: LocalDateTime
+    ) {
+        // 로그만 출력하고 실제 서버 전송은 하지 않음
+        android.util.Log.d("CallDetailViewModel", "서버로 데이터 전송: ${wavFile.absolutePath}, $memo")
+    }
+
+    override suspend fun clearLocalTempFiles() {
+        // 로그만 출력하고 실제 파일 삭제는 하지 않음
+        android.util.Log.d("CallDetailViewModel", "임시 파일 삭제")
+    }
 }

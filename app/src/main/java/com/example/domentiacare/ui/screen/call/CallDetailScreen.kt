@@ -1,6 +1,7 @@
 package com.example.domentiacare.ui.screen.call
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +40,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.domentiacare.data.model.CallDetailViewModel
 import com.example.domentiacare.data.model.RecordingFile
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import com.example.domentiacare.service.whisper.WhisperWrapper
@@ -47,255 +52,308 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
-
 @Composable
 fun CallDetailScreen(
     filePath: String,
-    navController: NavController
+    navController: NavController,
+    viewModel: CallDetailViewModel = hiltViewModel() // Hilt로 ViewModel 주입
 ) {
-    // 예시: 파일명에서 정보 추출, 또는 ViewModel에서 정보를 가져오도록 변경
-    val file = remember(filePath) {
-        // 파일 객체 생성
-        val f = File(filePath)
-        RecordingFile(
-            name = f.name,
-            path = filePath,
-            lastModified = f.lastModified(),
-            size = f.length()
-        )
+    // ViewModel에서 상태 수집
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    // 초기 데이터 로드
+    LaunchedEffect(filePath) {
+        viewModel.loadRecordingFile(filePath)
     }
-    // 예시: 파일명에 따라 상대 이름/타입/시간 결정
-    val recordLog = RecordLog(
-        name = file.name.substringBeforeLast('.'),
-        type = "발신", // 예시: 실제 타입 추출 로직으로 대체
-        time = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified))
+
+    // 저장 상태에 따른 처리
+    LaunchedEffect(uiState.saveStatus) {
+        when (uiState.saveStatus) {
+            CallDetailViewModel.SaveStatus.SUCCESS -> {
+                // 성공 메시지 표시
+                Toast.makeText(context, "저장되었습니다", Toast.LENGTH_SHORT).show()
+                navController.popBackStack() // 이전 화면으로 돌아가기
+            }
+            CallDetailViewModel.SaveStatus.ERROR -> {
+                // 에러 메시지 표시
+                Toast.makeText(context, "저장 중 오류가 발생했습니다", Toast.LENGTH_SHORT).show()
+            }
+            else -> { /* 다른 상태 처리 */ }
+        }
+    }
+
+    // UI 렌더링
+    CallDetailContent(
+        recordLog = uiState.recordLog,
+        transcript = uiState.transcript,
+        memo = uiState.memo,
+        selectedDateTime = uiState.selectedDateTime,
+        isLoading = uiState.isLoading,
+        onTranscribeClick = { viewModel.transcribeAudio(context) },
+        onAnalyzeClick = { viewModel.analyzeSchedule() },
+        onMemoChange = { viewModel.updateMemo(it) },
+        onDateTimeChange = { year, month, day, hour, minute ->
+            viewModel.updateDateTime(year, month, day, hour, minute)
+        },
+        onSaveClick = { viewModel.saveData() }
     )
+}
 
-    var initialMemo = "" // 일정 분석 후 자동 추가하도록 수정
-    var initialDate = LocalDateTime.now()
+@Composable
+fun CallDetailContent(
+    recordLog: RecordLog?,
+    transcript: String,
+    memo: String,
+    selectedDateTime: LocalDateTime,
+    isLoading: Boolean,
+    onTranscribeClick: () -> Unit,
+    onAnalyzeClick: () -> Unit,
+    onMemoChange: (String) -> Unit,
+    onDateTimeChange: (Int, Int, Int, Int, Int) -> Unit,
+    onSaveClick: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+    val screenScrollState = rememberScrollState()
 
-    var memo by remember { mutableStateOf(initialMemo) }
-    var selectedYear by remember { mutableStateOf(LocalDateTime.now().year.toString()) }
-    var selectedMonth by remember { mutableStateOf(LocalDateTime.now().monthValue.toString().padStart(2, '0')) }
-    var selectedDay by remember { mutableStateOf(LocalDateTime.now().dayOfMonth.toString().padStart(2, '0')) }
-    var selectedHour by remember { mutableStateOf(LocalDateTime.now().hour.toString().padStart(2, '0')) }
-    var selectedMinute by remember { mutableStateOf(LocalDateTime.now().minute.toString().padStart(2, '0')) }
+    // 날짜 선택용 상태들
+    var selectedYear by remember { mutableStateOf(selectedDateTime.year.toString()) }
+    var selectedMonth by remember { mutableStateOf(selectedDateTime.monthValue.toString().padStart(2, '0')) }
+    var selectedDay by remember { mutableStateOf(selectedDateTime.dayOfMonth.toString().padStart(2, '0')) }
+    var selectedHour by remember { mutableStateOf(selectedDateTime.hour.toString().padStart(2, '0')) }
+    var selectedMinute by remember { mutableStateOf(selectedDateTime.minute.toString().padStart(2, '0')) }
 
-
+    // 날짜 옵션 리스트
     val years = (2023..2027).map { it.toString() }
     val months = (1..12).map { it.toString().padStart(2, '0') }
     val days = (1..31).map { it.toString().padStart(2, '0') }
     val hours = (0..23).map { it.toString().padStart(2, '0') }
     val minutes = (0..59).map { it.toString().padStart(2, '0') }
 
-    val scrollState = rememberScrollState()  //일정 박스 스크롤
-    val scrennScrollState = rememberScrollState()  //화면 스크롤
+    // 날짜 변경 감지 및 콜백 호출
+    LaunchedEffect(selectedYear, selectedMonth, selectedDay, selectedHour, selectedMinute) {
+        onDateTimeChange(
+            selectedYear.toInt(),
+            selectedMonth.toInt(),
+            selectedDay.toInt(),
+            selectedHour.toInt(),
+            selectedMinute.toInt()
+        )
+    }
 
-    var transcript by remember { mutableStateOf("") } // 통화 텍스트
-    var isLoading by remember { mutableStateOf(false) } // 로딩 여부
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)
-        .verticalScroll(scrennScrollState) ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(screenScrollState)
+    ) {
         // 통화 정보
-        Text("${recordLog.name}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Text("${recordLog.type} ${recordLog.time}", fontSize = 14.sp, color = Color.Gray)
+        recordLog?.let {
+            Text(it.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text("${it.type} ${it.time}", fontSize = 14.sp, color = Color.Gray)
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 오디오
+        // 오디오 플레이어
         Text("통화 녹음", fontWeight = FontWeight.SemiBold)
-        AudioPlayerStub()
+        AudioPlayerComposable()
         Spacer(modifier = Modifier.height(16.dp))
 
         // 텍스트 대화
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
-
-            // Whisper 변환 버튼
-            DMT_Button(
-                text = if (isLoading) "변환중..." else "STT 변환",
-                onClick = {
-                    Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
-
-                    // 1. wav 변환
-                    val m4aFile = File(file.path)
-                    val outputDir = File("/sdcard/Recordings/wav/")
-                    if (!outputDir.exists()) outputDir.mkdirs()
-                    val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
-                    convertM4aToWavForWhisper(m4aFile, outputWavFile)
-                    Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
-
-                    // 2. Whisper 변환
-                    Log.d("Whisper 변환 시작", "파일 경로: ${outputWavFile.absolutePath}")
-
-                    val whisper = WhisperWrapper(context)
-                    whisper.copyModelFiles()
-                    whisper.initModel()
-                    whisper.transcribe(
-                        wavPath = outputWavFile.absolutePath,
-                        onResult = { result ->
-                            transcript = result
-                            isLoading = false
-                        },
-                        onUpdate = { logLine ->
-                            // 필요시 중간 상태 로그
-                        }
-                    )
-
-                    // 3. DB에 저장
-                },
-                modifier = Modifier
-            )
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 50.dp, max = 100.dp)
-                .border(1.dp, Color.Black, shape = RoundedCornerShape(8.dp))
-                .padding(12.dp)
-        ) {
-            Column(modifier = Modifier.verticalScroll(scrollState)) {
-                Text(transcript, fontSize = 14.sp, color = Color.Black)
-            }
-        }
+        TranscriptSection(
+            transcript = transcript,
+            isLoading = isLoading,
+            onTranscribeClick = onTranscribeClick
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 일정 내용 수정
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("일정", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
-
-            // llama 변환 버튼
-            DMT_Button(
-                text = "일정 분석",
-                onClick = {
-
-                },
-                modifier = Modifier
-            )
-        }
-        OutlinedTextField(
-            value = memo,
-            onValueChange = { memo = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("예: 재통화 예정") },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFFF49000)
-            )
+        // 일정 분석
+        MemoSection(
+            memo = memo,
+            isLoading = isLoading,
+            onMemoChange = onMemoChange,
+            onAnalyzeClick = onAnalyzeClick
         )
         Spacer(modifier = Modifier.height(16.dp))
 
         // 날짜 시간 선택
-        Text("일시", fontWeight = FontWeight.SemiBold)
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                SimpleDropdown(
-                    "년",
-                    years,
-                    selectedYear,
-                    { selectedYear = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                SimpleDropdown(
-                    "월",
-                    months,
-                    selectedMonth,
-                    { selectedMonth = it },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                SimpleDropdown("일", days, selectedDay, { selectedDay = it }, modifier = Modifier.fillMaxWidth())
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                SimpleDropdown("시", hours, selectedHour, { selectedHour = it }, modifier = Modifier.fillMaxWidth())
-            }
-            Box(modifier = Modifier.weight(1f)) {
-                SimpleDropdown("분", minutes, selectedMinute, { selectedMinute = it }, modifier = Modifier.fillMaxWidth())
-            }
-        }
-
+        DateTimeSelection(
+            selectedYear = selectedYear,
+            selectedMonth = selectedMonth,
+            selectedDay = selectedDay,
+            selectedHour = selectedHour,
+            selectedMinute = selectedMinute,
+            onYearChange = { selectedYear = it },
+            onMonthChange = { selectedMonth = it },
+            onDayChange = { selectedDay = it },
+            onHourChange = { selectedHour = it },
+            onMinuteChange = { selectedMinute = it },
+            years = years,
+            months = months,
+            days = days,
+            hours = hours,
+            minutes = minutes
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         // 저장 버튼
         DMT_Button(
             text = "저장",
-            onClick = {
-                // TODO
-                // 1. 데이터 연결이 안 되어있을 경우
-                // 1.1. 디렉터리에 wav 파일 저장
-
-                // 1.2. Llama 프롬프트 및 답변 저장
-
-                // 2. 데이터 연결되어있을 경우
-                // 2.1. DB에 전송
-                // 2.2. 디렉터리 비우기
-
-
-
-
-
-
-//                val selectedDateTime = LocalDateTime.of(
-//                    selectedYear.toInt(),
-//                    selectedMonth.toInt(),
-//                    selectedDay.toInt(),
-//                    selectedHour.toInt(),
-//                    selectedMinute.toInt()
-//                )
-//                //onSave(memo, selectedDateTime)
-//                Log.d("CallDetailScreen", "저장된 메모: $memo 일시: $selectedDateTime ")
-            },
-            modifier = Modifier.fillMaxWidth()
+            onClick = onSaveClick,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         )
     }
 }
 
-// Wav 파일 저장
 @Composable
-fun saveWavFile() {
-    // 저장 경로 지정
+fun TranscriptSection(
+    transcript: String,
+    isLoading: Boolean,
+    onTranscribeClick: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
+        DMT_Button(
+            text = if (isLoading) "변환중..." else "STT 변환",
+            onClick = onTranscribeClick,
+            enabled = !isLoading
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 50.dp, max = 100.dp)
+            .border(1.dp, Color.Black, shape = RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        Column(modifier = Modifier.verticalScroll(scrollState)) {
+            Text(transcript, fontSize = 14.sp, color = Color.Black)
+        }
+    }
 }
 
 @Composable
-fun saveLlamaResponse() {
-    // 프롬프트 및 답변 저장
+fun MemoSection(
+    memo: String,
+    isLoading: Boolean,
+    onMemoChange: (String) -> Unit,
+    onAnalyzeClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("일정", fontWeight = FontWeight.SemiBold)
+        DMT_Button(
+            text = "일정 분석",
+            onClick = onAnalyzeClick,
+            enabled = !isLoading
+        )
+    }
+
+    OutlinedTextField(
+        value = memo,
+        onValueChange = onMemoChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text("예: 재통화 예정") },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFFF49000)
+        )
+    )
 }
 
 @Composable
-fun sendDataToServer() {
-    //
+fun DateTimeSelection(
+    selectedYear: String,
+    selectedMonth: String,
+    selectedDay: String,
+    selectedHour: String,
+    selectedMinute: String,
+    onYearChange: (String) -> Unit,
+    onMonthChange: (String) -> Unit,
+    onDayChange: (String) -> Unit,
+    onHourChange: (String) -> Unit,
+    onMinuteChange: (String) -> Unit,
+    years: List<String>,
+    months: List<String>,
+    days: List<String>,
+    hours: List<String>,
+    minutes: List<String>
+) {
+    Text("일시", fontWeight = FontWeight.SemiBold)
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            SimpleDropdown(
+                "년",
+                years,
+                selectedYear,
+                onYearChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            SimpleDropdown(
+                "월",
+                months,
+                selectedMonth,
+                onMonthChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            SimpleDropdown(
+                "일",
+                days,
+                selectedDay,
+                onDayChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            SimpleDropdown(
+                "시",
+                hours,
+                selectedHour,
+                onHourChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            SimpleDropdown(
+                "분",
+                minutes,
+                selectedMinute,
+                onMinuteChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
 }
 
-
-
 @Composable
-fun AudioPlayerStub() {
+fun AudioPlayerComposable() {
+    // 기존 AudioPlayerStub을 그대로 사용
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFfef7e7))

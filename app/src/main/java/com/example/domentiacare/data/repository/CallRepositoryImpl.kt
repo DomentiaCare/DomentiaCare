@@ -1,7 +1,9 @@
 package com.example.domentiacare.data.repository
+import com.example.domentiacare.data.api.CallApiService
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import java.io.File
 import java.time.LocalDateTime
 

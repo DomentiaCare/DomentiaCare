@@ -17,6 +17,7 @@ fun DMT_Button(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = Color(0xFFF49000), // 기본 주황색
+    enabled: Boolean = true // enabled 매개변수 추가
 ) {
 
     val colors = ButtonDefaults.buttonColors(
@@ -31,7 +32,8 @@ fun DMT_Button(
         onClick = onClick,
         modifier = modifier, // 외부에서 받은 modifier 사용
         colors = colors,
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        enabled = enabled // enabled 속성 전달
     ) {
         Text(
             text,
