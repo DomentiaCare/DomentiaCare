@@ -92,6 +92,7 @@
             </intent-filter>
         </activity>
 
+        <!-- 삭제하면 안됨!!!!!! (이종범) 라마 오류시 디버깅 위해 필요한 부분임-->
         <!-- AndroidManifest.xml의 application 태그 안에 추가 -->
         <activity
             android:name=".ui.test.TestLlamaActivity"

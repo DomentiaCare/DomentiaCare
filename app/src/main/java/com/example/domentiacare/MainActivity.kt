@@ -118,7 +118,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         // LLaMA 테스트 버튼을 상단에 고정
-                        LlamaTestButton()
+
+                        // 해당 부분 지우면 안됨!! (이종범) 라마 오류시 디버깅 해야함.
+                        //LlamaTestButton()
 
                         // 기존 앱 네비게이션
                         Box(modifier = Modifier.weight(1f)) {

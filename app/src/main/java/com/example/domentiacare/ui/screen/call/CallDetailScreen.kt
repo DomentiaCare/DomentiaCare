@@ -48,6 +48,11 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util.*
 
+
+//import LlamaServiceManager
+import com.example.domentiacare.MyApplication
+import kotlinx.coroutines.launch
+
 @Composable
 fun CallDetailScreen(
     filePath: String,
@@ -93,6 +98,11 @@ fun CallDetailScreen(
 
     var transcript by remember { mutableStateOf("") } // 통화 텍스트
     var isLoading by remember { mutableStateOf(false) } // 로딩 여부
+
+
+    // LlamaServiceManager 연결 상태 확인
+    val llamaServiceManager = MyApplication.llamaServiceManager
+    var isAnalyzing by remember { mutableStateOf(false) } // 분석 중 여부
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -181,9 +191,52 @@ fun CallDetailScreen(
 
             // llama 변환 버튼
             DMT_Button(
-                text = "일정 분석",
+                text = if (isAnalyzing) "분석중..." else "일정 분석",
                 onClick = {
+                    if (isAnalyzing || transcript.isBlank()) return@DMT_Button
 
+                    isAnalyzing = true
+                    memo = ""
+
+                    val prompt = """
+                        Please analyze the following phone conversation and extract schedule information. Summarize the conversation briefly and output the schedule details in JSON format with exactly these three variables: date, time, place.
+
+                        Phone conversation:
+                        "$transcript"
+
+                        Instructions:
+                        1. Provide a brief summary of the conversation
+                        2. Extract schedule information and format as JSON with these exact keys: "date", "time", "place"
+                        3. If multiple times are mentioned, prioritize the main event time
+                        4. Output only the summary and JSON, nothing else
+
+                        Format:
+                        Summary: [brief description]
+                        Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}
+                    """.trimIndent()
+
+                    coroutineScope.launch {
+                        try {
+                            // Llama에게 프롬프트 전송 (부분 결과 실시간 반영)
+                            val result = llamaServiceManager.sendQuery(prompt) { partialText ->
+                                memo = partialText
+                            }
+                            // (최종 결과가 memo에 없으면 대입)
+                            if (memo.isEmpty()) memo = result
+
+                            // ✅ 여기서 result 혹은 memo에 대해 JSON 파싱을 수행하면 됨
+                            // --- [파싱 및 일정 정보 추출은 다음 단계에서 이 위치에 추가] ---
+                            // 예시:
+                            // val scheduleInfo = parseScheduleJson(result)
+                            // memo = scheduleInfo.summary
+                            // (필요하면 날짜, 시간, 장소 변수에도 바로 대입)
+
+                        } catch (e: Exception) {
+                            memo = "일정 분석 중 오류 발생: ${e.message}"
+                        } finally {
+                            isAnalyzing = false
+                        }
+                    }
                 },
                 modifier = Modifier
             )
