@@ -1,8 +1,13 @@
 package com.example.domentiacare.ui
 
 import ScheduleDetailScreen
+import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
@@ -11,10 +16,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,6 +32,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.data.local.TokenManager
+import com.example.domentiacare.data.model.CallRecordingViewModel
+import com.example.domentiacare.data.model.PatientViewModel
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.service.whisper.WhisperScreen
 import com.example.domentiacare.ui.component.BottomNavBar
@@ -34,7 +45,6 @@ import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
-import com.example.domentiacare.ui.screen.patientCare.Patient
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
 import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
@@ -47,18 +57,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.time.LocalDate
-
-import android.Manifest
-import android.content.pm.PackageManager
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.domentiacare.data.model.CallRecordingViewModel
-import com.example.domentiacare.ui.screen.call.CallLogViewModel
 
 @Composable
     fun AppNavHost() {
@@ -172,30 +170,34 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
                     }
 
                     composable(
-                        "patientDetail/{name}/{age}/{condition}",
+                        "patientDetail/{patientId}",
                         arguments = listOf(
-                            navArgument("name") { type = NavType.StringType },
-                            navArgument("age") { type = NavType.IntType },
-                            navArgument("condition") { type = NavType.StringType }
+                            navArgument("patientId") { type = NavType.LongType }
                         )
                     ) { backStackEntry ->
-                        val name = backStackEntry.arguments?.getString("name") ?: ""
-                        val age = backStackEntry.arguments?.getInt("age") ?: 0
-                        val condition = backStackEntry.arguments?.getString("condition") ?: ""
-                        PatientDetailScreen(
-                            navController,
-                            Patient(name, age, condition),
-                        )
+                        val patientId = backStackEntry.arguments?.getLong("patientId")
+                        val parentEntry = remember(backStackEntry) {
+                            navController.getBackStackEntry("patientList")
+                        }
+                        val viewModel: PatientViewModel = viewModel(parentEntry)
+                        val patient = viewModel.patientList.find { it.patientId == patientId }
+                        if (patient != null) {
+                            PatientDetailScreen(navController, patient)
+                        } else {
+                            Text("환자 정보를 찾을 수 없습니다.")
+                        }
                     }
 
                     composable(
-                        "PatientLocationScreen/{name}",
+                        "PatientLocationScreen/{name}/{id}",
                         arguments = listOf(
-                            navArgument("name") { type = NavType.StringType }
+                            navArgument("name") { type = NavType.StringType },
+                            navArgument("id") { type = NavType.LongType }
                         )
                     ) { backStackEntry ->
                         val name = backStackEntry.arguments?.getString("name") ?: ""
-                        PatientLocationScreen(navController, name)
+                        val id = backStackEntry.arguments?.getLong("id") ?: -1L
+                        PatientLocationScreen(navController, name, id)
                     }
                     composable("MyPageScreen") {
                         MyPageScreen(navController)

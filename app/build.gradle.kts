@@ -46,6 +46,7 @@ android {
         manifestPlaceholders["naverMapClientId"] = naverMapClientId
         buildConfigField("String", "NAVER_MAP_CLIENT_ID", "\"$naverMapClientId\"")
         buildConfigField("String", "BASE_URL", "\"${baseUrl}\"")
+        buildConfigField("String", "IP_ADDRESS", "\"${localIpAddress}\"")
 
         manifestPlaceholders["GOOGLE_MAP_KEY"] = googleMapKey
     }
@@ -119,4 +120,12 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite:2.13.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
     implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+
+    // ✅ WebSocket
+    implementation ("org.java-websocket:Java-WebSocket:1.5.2")
+    implementation ("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
+
+
+
 }

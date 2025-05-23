@@ -30,6 +30,8 @@ import retrofit2.Response
 @AndroidEntryPoint
 class LocationForegroundService : Service() {
 
+    private var lastSavedTime = 0L
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate() {
@@ -62,6 +64,12 @@ class LocationForegroundService : Service() {
                 result.lastLocation?.let {
                     Log.d("LocationService", "위도: ${it.latitude}, 경도: ${it.longitude}")
                     sendLocationToServer(it.latitude, it.longitude)
+
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastSavedTime > 5 * 60 * 1000) {  // 5분 경과
+                        saveLocationToDatabase(it.latitude, it.longitude)
+                        lastSavedTime = currentTime
+                    }
                 }
             }
         }
@@ -85,6 +93,24 @@ class LocationForegroundService : Service() {
 
             override fun onFailure(call: Call<Void>, t: Throwable) {
                 Log.e("LocationService", "위치 전송 실패", t)
+            }
+        })
+    }
+
+    private fun saveLocationToDatabase(lat: Double, lng: Double) {
+        val token = TokenManager.getToken()
+        if (token.isNullOrBlank()) {
+            Log.d("LocationDBService", "❌ JWT 없음 → 위치 전송 생략")
+            return
+        }
+        val request = LocationRequestBody(lat, lng)
+        RetrofitClient.authApi.saveDBLocation(request).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                Log.d("LocationDBService", "위치 전송 성공")
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("LocationDBService", "위치 전송 실패", t)
             }
         })
     }

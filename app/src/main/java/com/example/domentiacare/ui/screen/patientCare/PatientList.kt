@@ -1,7 +1,9 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,16 +21,16 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,24 +39,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.domentiacare.data.model.PatientViewModel
+import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.ui.component.DMT_Button
+import com.example.domentiacare.ui.component.DMT_GrayButton
 
-data class Patient(
-    val name: String,
-    val age: Int,
-    val condition: String
-)
 
 @Composable
 fun PatientList(navController: NavController
 ) {
+    val viewModel: PatientViewModel = viewModel() // ← 지역변수처럼 선언
+    val patients = viewModel.patientList
+    val isLoading = viewModel.isLoading
+
+    val context = LocalContext.current
+
+
+    LaunchedEffect(Unit) {
+        viewModel.loadPatients()
+    }
+
     // ✅ 다이얼로그 표시 여부 관리
     var showDialog by remember { mutableStateOf(false) }
 
-    val patients = listOf(
+/*    val patients = listOf(
         Patient("김철수", 75, "치매 초기"),
         Patient("박영희", 80, "치매 중기"),
         Patient("이민수", 77, "치매 초기"),
@@ -63,10 +76,18 @@ fun PatientList(navController: NavController
         Patient("박영희", 80, "치매 중기"),
         Patient("이민수", 77, "치매 초기"),
         Patient("최지은", 82, "치매 말기")
-    )
+    )*/
 
-
-
+    //로딩
+    if (isLoading) {
+        // ✅ 로딩 UI 예시
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    }
 
         Column(
             modifier = Modifier
@@ -104,7 +125,7 @@ fun PatientList(navController: NavController
             ) {
                 itemsIndexed(patients) { index, patient ->
                     PatientCard(patient, index){
-                        navController.navigate("patientDetail/${patient.name}/${patient.age}/${patient.condition}")
+                        navController.navigate("patientDetail/${patient.patientId}")
                     }
                     Divider()
                 }
@@ -113,10 +134,19 @@ fun PatientList(navController: NavController
             if (showDialog) {
                 RegisterPatientDialog(
                     onDismiss = { showDialog = false },
-                    onConfirm = { enteredId ->
+                    onConfirm = { phoneNumber ->
                         // TODO: 여기서 enteredId를 저장하거나 처리
-                        println("입력한 ID: $enteredId")
-                        showDialog = false
+                        println("입력한 전화번호: $phoneNumber")
+                        viewModel.addPatient(phoneNumber) { success ->
+                            if (success) {
+                                showDialog = false
+                                Toast.makeText(context, "환자 등록 완료", Toast.LENGTH_SHORT).show()
+                                viewModel.loadPatients()
+                            }
+                            else{
+                                Toast.makeText(context, "등록 실패", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 )
             }
@@ -169,7 +199,7 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = patient.name,
+                    text = patient.patientName,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -184,7 +214,7 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = patient.condition,
+                text = patient.gender,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -197,7 +227,7 @@ fun RegisterPatientDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var patientId by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -206,25 +236,24 @@ fun RegisterPatientDialog(
         },
         text = {
             OutlinedTextField(
-                value = patientId,
-                onValueChange = { patientId = it },
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
                 label = { Text("ID") },
                 modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
-            Button(
-                onClick = { onConfirm(patientId) }
-            ) {
-                Text("등록")
-            }
+            DMT_Button(
+                text = "등록",
+                onClick = { onConfirm(phoneNumber) }
+            )
         },
         dismissButton = {
-            OutlinedButton(
+            DMT_GrayButton(
+                text = "취소",
                 onClick = onDismiss
-            ) {
-                Text("취소")
-            }
-        }
+            )
+        },
+        containerColor = Color.White
     )
 }

@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.quicinc.chatapp.ChatApp-mergeDebugResources-29:/values-w600dp-land-v13/values-w600dp-land-v13.xml",
+            "outputFile": "com.quicinc.chatapp.ChatApp-mergeDebugResources-2:/values-w600dp-land-v13/values-w600dp-land-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\bm838\\.gradle\\caches\\8.9\\transforms\\922d1d3ca6b92133fb856197e8500143\\transformed\\material-1.12.0\\res\\values-w600dp-land-v13\\values-w600dp-land-v13.xml",
+                    "source": "C:\\Users\\hsooo\\.gradle\\caches\\8.9\\transforms\\e5d3caa041973251355e935da6bb4b87\\transformed\\material-1.12.0\\res\\values-w600dp-land-v13\\values-w600dp-land-v13.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

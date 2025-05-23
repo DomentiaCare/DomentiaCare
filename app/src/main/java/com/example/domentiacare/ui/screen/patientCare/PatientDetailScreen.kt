@@ -25,11 +25,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.ui.component.DMT_Button
 
 @Composable
 fun PatientDetailScreen(navController: NavController,
-                        patient: Patient) {
+                        patient: Patient
+) {
 
         Column(
             modifier = Modifier
@@ -48,7 +50,7 @@ fun PatientDetailScreen(navController: NavController,
 
             // 이름
             Text(
-                text = patient.name,
+                text = patient.patientName,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -66,9 +68,9 @@ fun PatientDetailScreen(navController: NavController,
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    InfoRow(label = "주소", value = "서울시 강남구 역삼동")
-                    InfoRow(label = "생년월일", value = "1948-05-12" )
-                    InfoRow(label = "성별", value = "남")
+                    InfoRow(label = "주소", value = "${patient.addressDetail1}")
+                    InfoRow(label = "나이", value = "${patient.age}세" )
+                    InfoRow(label = "성별", value = "${patient.gender}")
                 }
             }
 
@@ -76,7 +78,7 @@ fun PatientDetailScreen(navController: NavController,
 
             // 버튼 2개
             Button(
-                onClick = { navController.navigate("PatientLocationScreen/${patient.name}") },
+                onClick = { navController.navigate("PatientLocationScreen/${patient.patientName}/${patient.patientId}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
