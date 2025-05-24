@@ -1,5 +1,6 @@
 package com.example.domentiacare
 
+import com.example.domentiacare.service.CallRecordAnalyzeService
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
@@ -64,6 +65,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
+        ContextCompat.startForegroundService(this, serviceIntent)
+
 
         // ✅ Android 13 이상일 경우 알림 권한 요청
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

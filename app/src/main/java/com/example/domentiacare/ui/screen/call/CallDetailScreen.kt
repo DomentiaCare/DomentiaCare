@@ -180,7 +180,7 @@ fun CallDetailScreen(
 
                     val prompt = """
                         Please analyze the following phone conversation and extract schedule information.
-                        Output only two sections in the following format:
+                        Output only two sections in the following format. . **Do NOT use Markdown or any formatting.**
                         Summary: [A representative title for the schedule, extracted from the conversation.]
                         Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}
             

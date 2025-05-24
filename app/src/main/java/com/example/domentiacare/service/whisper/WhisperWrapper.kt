@@ -40,6 +40,18 @@ class WhisperWrapper(private val context: Context) {
         whisper.start()
     }
 
+    fun transcribeBlocking(audioPath: String): String {
+        var result = ""
+        val latch = java.util.concurrent.CountDownLatch(1)
+        transcribe(audioPath, onResult = {
+            result = it
+            latch.countDown()
+        }, onUpdate = {})
+        latch.await()
+        return result
+    }
+
+
     fun stop() = whisper.stop()
 
     fun isRunning(): Boolean = whisper.isInProgress

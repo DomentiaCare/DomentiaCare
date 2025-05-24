@@ -24,6 +24,10 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
+    <!-- 백그라운드 서비스 권한 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+
     <!--  통화 기록 권한  -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
@@ -66,6 +70,12 @@
             android:name=".service.LocationForegroundService"
             android:exported="false"
             android:foregroundServiceType="location"/>
+
+        <!-- 통화 녹음 자동 분석 포그라운드 서비스 등록 -->
+        <service
+            android:name=".service.CallRecordAnalyzeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <!-- 👇 Firebase Cloud Messaging Service 등록 -->
         <service

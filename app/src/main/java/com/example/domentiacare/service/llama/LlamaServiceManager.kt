@@ -146,7 +146,6 @@ class LlamaServiceManager {
                             Log.d(TAG, "Received result via AIDL, length: ${it.length}, treating as partial")
                             lastResponse = it
 
-                            // 🆕 onResult도 부분 결과로 처리 (responseCalled 체크 없이)
                             try {
                                 onPartialUpdate?.invoke(it)
                             } catch (e: Exception) {
@@ -154,14 +153,24 @@ class LlamaServiceManager {
                             }
                         }
 
-                        // 최종 완료는 타임아웃에서만 처리하지 않고 여기서도 처리
-                        // 단, 첫 번째가 아닌 경우에만
-                        if (result != null && result.length > 100) {
-                            if (responseCalled.compareAndSet(false, true)) {
-                                Log.d(TAG, "Final result accepted: $result")
-                                continuation.resume(result)
-                            } else {
-                                Log.d(TAG, "Duplicate final result ignored: $result")
+                        // 수정된 최종 완료 조건: JSON이 완성되었을 때만 종료
+                        if (result != null && result.contains("Summary:") && result.contains("Schedule:") &&
+                            result.trim().endsWith("}") && result.length > 50) {
+
+                            // JSON 유효성 추가 검증
+                            try {
+                                val scheduleIndex = result.indexOf("Schedule:")
+                                if (scheduleIndex != -1) {
+                                    val jsonPart = result.substring(scheduleIndex + "Schedule:".length).trim()
+                                    org.json.JSONObject(jsonPart) // JSON 파싱 테스트
+
+                                    if (responseCalled.compareAndSet(false, true)) {
+                                        Log.d(TAG, "Final result accepted: $result")
+                                        continuation.resume(result)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.d(TAG, "JSON incomplete, waiting for more: ${e.message}")
                             }
                         }
                     }
@@ -210,6 +219,21 @@ class LlamaServiceManager {
             }
         }
     }
+
+    fun sendQueryBlocking(prompt: String): String {
+        var result = ""
+        val latch = java.util.concurrent.CountDownLatch(1)
+        // runBlocking으로 블로킹 호출 (Main 스레드 X)
+        kotlinx.coroutines.runBlocking {
+            result = sendQuery(prompt)
+            latch.countDown()
+        }
+        latch.await()
+        return result
+    }
+
+
+
 
     /**
      * 간단한 쿼리 전송 (기존 호환성 유지)
