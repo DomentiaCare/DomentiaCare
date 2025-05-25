@@ -32,6 +32,8 @@ import com.example.domentiacare.ui.theme.DomentiaCareTheme
 import com.example.domentiacare.ui.test.TestLlamaActivity  // 추가된 import
 import dagger.hilt.android.AndroidEntryPoint
 
+import com.example.domentiacare.service.androidtts.TTSServiceManager
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
@@ -65,6 +67,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+
+//        // TTS 서비스 테스트
+//        TTSServiceManager.init(this){
+//            // 2. 두 번째 목소리로 고정해서 이후 speak할 때 사용
+//            TTSServiceManager.speak("이 목소리는 두 번째 한국어 voice입니다.")
+//
+//            // 필요시 tts shutdown
+//            // TTSServiceManager.shutdown()
+//        }
+
+
 
         val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
