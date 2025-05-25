@@ -2,6 +2,7 @@
 package com.example.domentiacare.network
 
 import android.util.Log
+import com.example.domentiacare.BuildConfig
 import com.example.domentiacare.network.dto.ScheduleCreateRequest
 import com.example.domentiacare.network.dto.ScheduleResponse
 import com.google.gson.GsonBuilder
@@ -32,7 +33,7 @@ interface ScheduleApi {
 }
 
 object ScheduleApiService {
-    private const val BASE_URL = "http://223.194.158.248:8080/"
+    private const val BASE_URL = BuildConfig.BASE_URL
 
     private val loggingInterceptor = HttpLoggingInterceptor { message ->
         Log.d("HTTP_DEBUG", message)

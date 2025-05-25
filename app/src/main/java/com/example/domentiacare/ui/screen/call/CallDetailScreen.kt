@@ -26,9 +26,10 @@ import com.example.domentiacare.service.whisper.WhisperWrapper
 import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.SimpleDropdown
 import com.example.domentiacare.MyApplication
+import com.example.domentiacare.data.local.SimpleSchedule
+import com.example.domentiacare.data.sync.SimpleSyncManager
 import com.example.domentiacare.network.ScheduleApiService
 import com.example.domentiacare.data.util.UserPreferences
-import com.example.domentiacare.network.dto.ScheduleCreateRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -371,53 +372,45 @@ fun CallDetailScreen(
                     return@DMT_Button
                 }
 
+                // 간단한 Offline-First 저장 로직 (Room 대신 SharedPreferences 사용)
                 isSaving = true
                 saveMessage = ""
 
-                // 서버로 일정 저장 요청
                 coroutineScope.launch {
                     try {
-                        // Swagger에서 성공한 형식에 맞춰 요청 생성
-                        val scheduleRequest = ScheduleCreateRequest(
+                        // 간단한 일정 객체 생성
+                        val simpleSchedule = SimpleSchedule(
+                            localId = UUID.randomUUID().toString(),
                             userId = currentUserId,
-                            title = memo.ifBlank { "통화에서 추출된 일정" }, // 빈 제목 방지
-                            description = "통화 녹음에서 추출된 일정${if (selectedPlace.isNotEmpty()) " - 장소: $selectedPlace" else ""}",
-                            startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), // Swagger 형식에 맞춤
-                            endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), // 1시간 후로 설정
-                            isAi = true // AI로 생성된 일정으로 표시
+                            title = if (memo.isBlank()) "Call Schedule" else memo,
+                            description = "Call recording extracted schedule${if (selectedPlace.isNotEmpty()) " - Location: $selectedPlace" else ""}",
+                            startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+                            endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+                            isAi = true
                         )
 
-                        Log.d("CallDetailScreen", "전송할 요청 데이터: $scheduleRequest")
-
-                        // 실제 서버 사용 (서버 정상 작동 확인됨)
-                        val response = ScheduleApiService.createSchedule(scheduleRequest, context)
-                        // val response = MockScheduleApiService.createSchedule(scheduleRequest, context)
+                        // SimpleSyncManager를 통한 Offline-First 저장
+                        val syncManager = SimpleSyncManager.getInstance(context)
+                        val result = syncManager.saveSchedule(simpleSchedule)
 
                         withContext(Dispatchers.Main) {
-                            saveMessage = "일정이 성공적으로 저장되었습니다."
-                            Log.d("CallDetailScreen", "일정 저장 성공: ${response.id}")
+                            if (result.isSuccess) {
+                                saveMessage = "✅ 일정이 저장되었습니다."
+                                Log.d("CallDetailScreen", "로컬 저장 성공: ${result.getOrNull()?.localId}")
 
-                            // 저장 성공 후 이전 화면으로 이동
-                            kotlinx.coroutines.delay(1500)
-                            navController.popBackStack()
-                        }
-
-                    } catch (e: HttpException) {
-                        withContext(Dispatchers.Main) {
-                            val errorMessage = when (e.code()) {
-                                400 -> "잘못된 요청입니다. 입력 내용을 확인해주세요."
-                                401 -> "로그인이 필요합니다."
-                                403 -> "권한이 없습니다."
-                                500 -> "서버 오류가 발생했습니다."
-                                else -> "네트워크 오류가 발생했습니다. (${e.code()})"
+                                // 성공 후 이전 화면으로 이동
+                                delay(1500)
+                                navController.popBackStack()
+                            } else {
+                                saveMessage = "❌ 저장 실패: ${result.exceptionOrNull()?.message}"
+                                Log.e("CallDetailScreen", "저장 실패", result.exceptionOrNull())
                             }
-                            saveMessage = errorMessage
-                            Log.e("CallDetailScreen", "일정 저장 실패: ${e.message()}")
                         }
+
                     } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
-                            saveMessage = "일정 저장 중 오류가 발생했습니다: ${e.message}"
-                            Log.e("CallDetailScreen", "일정 저장 예외: ", e)
+                            saveMessage = "❌ 저장 중 오류 발생: ${e.message}"
+                            Log.e("CallDetailScreen", "저장 예외", e)
                         }
                     } finally {
                         withContext(Dispatchers.Main) {
