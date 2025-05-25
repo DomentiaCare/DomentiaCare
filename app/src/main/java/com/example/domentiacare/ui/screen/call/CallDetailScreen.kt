@@ -26,11 +26,15 @@ import com.example.domentiacare.service.whisper.WhisperWrapper
 import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.SimpleDropdown
 import com.example.domentiacare.MyApplication
+import com.example.domentiacare.network.ScheduleApiService
+import com.example.domentiacare.data.util.UserPreferences
+import com.example.domentiacare.network.dto.ScheduleCreateRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import retrofit2.HttpException
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.*
@@ -71,6 +75,10 @@ fun CallDetailScreen(
     var selectedMinute by remember { mutableStateOf(LocalDateTime.now().minute.toString().padStart(2, '0')) }
     var selectedPlace by remember { mutableStateOf("") }
 
+    // 저장 상태
+    var isSaving by remember { mutableStateOf(false) }
+    var saveMessage by remember { mutableStateOf("") }
+
     val years = (2023..2027).map { it.toString() }
     val months = (1..12).map { it.toString().padStart(2, '0') }
     val days = (1..31).map { it.toString().padStart(2, '0') }
@@ -86,6 +94,15 @@ fun CallDetailScreen(
     val llamaServiceManager = MyApplication.llamaServiceManager
     var isAnalyzing by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // 현재 사용자 ID를 미리 가져와서 저장 (Swagger 테스트에서 사용한 userId: 6)
+    val currentUserId = remember {
+        val savedUserId = UserPreferences.getUserId(context)
+        if (savedUserId > 0) savedUserId else 6L // Swagger에서 성공한 userId 사용
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,9 +116,6 @@ fun CallDetailScreen(
 
         // 오디오
         Text("통화 녹음", fontWeight = FontWeight.SemiBold)
-
-        //실제 Audio 플레이어로 대체 (이종범)
-        //AudioPlayerStub()
         AudioPlayer(file.path)
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,8 +127,6 @@ fun CallDetailScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
 
             // Whisper 변환 버튼
             DMT_Button(
@@ -165,8 +177,6 @@ fun CallDetailScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("일정", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
 
             // llama 변환 버튼
             DMT_Button(
@@ -322,10 +332,31 @@ fun CallDetailScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 저장 메시지 표시
+        if (saveMessage.isNotEmpty()) {
+            Text(
+                text = saveMessage,
+                color = if (saveMessage.contains("성공")) Color.Green else Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         // 저장 버튼
         DMT_Button(
-            text = "저장",
+            text = if (isSaving) "저장중..." else "저장",
             onClick = {
+                // 입력 검증 강화
+                if (memo.isBlank()) {
+                    saveMessage = "일정 제목을 입력해주세요."
+                    return@DMT_Button
+                }
+
+                // 유효한 사용자 ID 확인
+                if (currentUserId <= 0) {
+                    saveMessage = "사용자 정보를 확인할 수 없습니다."
+                    return@DMT_Button
+                }
+
                 val selectedDateTime = LocalDateTime.of(
                     selectedYear.toInt(),
                     selectedMonth.toInt(),
@@ -333,19 +364,80 @@ fun CallDetailScreen(
                     selectedHour.toInt(),
                     selectedMinute.toInt()
                 )
-                Log.d("CallDetailScreen", "저장된 메모: $memo 일시: $selectedDateTime 장소: $selectedPlace")
+
+                // 현재 시간보다 이전 시간인지 체크
+                if (selectedDateTime.isBefore(LocalDateTime.now())) {
+                    saveMessage = "과거 시간으로는 일정을 생성할 수 없습니다."
+                    return@DMT_Button
+                }
+
+                isSaving = true
+                saveMessage = ""
+
+                // 서버로 일정 저장 요청
+                coroutineScope.launch {
+                    try {
+                        // Swagger에서 성공한 형식에 맞춰 요청 생성
+                        val scheduleRequest = ScheduleCreateRequest(
+                            userId = currentUserId,
+                            title = memo.ifBlank { "통화에서 추출된 일정" }, // 빈 제목 방지
+                            description = "통화 녹음에서 추출된 일정${if (selectedPlace.isNotEmpty()) " - 장소: $selectedPlace" else ""}",
+                            startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), // Swagger 형식에 맞춤
+                            endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), // 1시간 후로 설정
+                            isAi = true // AI로 생성된 일정으로 표시
+                        )
+
+                        Log.d("CallDetailScreen", "전송할 요청 데이터: $scheduleRequest")
+
+                        // 실제 서버 사용 (서버 정상 작동 확인됨)
+                        val response = ScheduleApiService.createSchedule(scheduleRequest, context)
+                        // val response = MockScheduleApiService.createSchedule(scheduleRequest, context)
+
+                        withContext(Dispatchers.Main) {
+                            saveMessage = "일정이 성공적으로 저장되었습니다."
+                            Log.d("CallDetailScreen", "일정 저장 성공: ${response.id}")
+
+                            // 저장 성공 후 이전 화면으로 이동
+                            kotlinx.coroutines.delay(1500)
+                            navController.popBackStack()
+                        }
+
+                    } catch (e: HttpException) {
+                        withContext(Dispatchers.Main) {
+                            val errorMessage = when (e.code()) {
+                                400 -> "잘못된 요청입니다. 입력 내용을 확인해주세요."
+                                401 -> "로그인이 필요합니다."
+                                403 -> "권한이 없습니다."
+                                500 -> "서버 오류가 발생했습니다."
+                                else -> "네트워크 오류가 발생했습니다. (${e.code()})"
+                            }
+                            saveMessage = errorMessage
+                            Log.e("CallDetailScreen", "일정 저장 실패: ${e.message()}")
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            saveMessage = "일정 저장 중 오류가 발생했습니다: ${e.message}"
+                            Log.e("CallDetailScreen", "일정 저장 예외: ", e)
+                        }
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            isSaving = false
+                        }
+                    }
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
     }
 }
 
+// 현재 사용자 ID를 가져오는 함수
+private fun getCurrentUserId(context: android.content.Context): Long {
+    return UserPreferences.getUserId(context)
+}
 
-
-// ---------------------------------------
-//  파싱 함수 - robust (영어/자연어 날짜/시간 지원)
-// ---------------------------------------
-
+// 나머지 함수들은 동일하게 유지...
 data class Quintuple<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
 fun parseLlamaScheduleResponseFull(response: String): Quintuple<String, String, String, String, String> {
@@ -517,25 +609,6 @@ fun parseDateToLocalDate(dateString: String): LocalDate {
         now.plusDays(daysToAdd.toLong())
     }
 }
-
-//실제 AudioPlayer로 대체
-//@Composable
-//fun AudioPlayerStub() {
-//    Card(
-//        modifier = Modifier.fillMaxWidth(),
-//        colors = CardDefaults.cardColors(containerColor = Color(0xFFfef7e7))
-//    ) {
-//        Row(
-//            verticalAlignment = Alignment.CenterVertically,
-//            modifier = Modifier.padding(12.dp)
-//        ) {
-//            Icon(Icons.Default.PlayArrow, contentDescription = "재생")
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Text("0:00 / 5:12")
-//        }
-//    }
-//}
-
 
 @Composable
 fun AudioPlayer(

@@ -120,4 +120,10 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite:2.13.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.2")
     implementation("org.tensorflow:tensorflow-lite-gpu:2.13.0")
+
+    // Gson for JSON parsing
+    implementation ("com.google.code.gson:gson:2.10.1")
+
+    // Coroutines (이미 있다면 생략)
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
