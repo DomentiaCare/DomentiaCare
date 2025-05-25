@@ -22,8 +22,10 @@ class PatientViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 patientList = RetrofitClient.authApi.getPatients()
+                Log.d("PatientViewModel", "Patients loaded successfully: ${patientList.size} patients")
             } catch (e: Exception) {
                 // 예외 처리
+                Log.e("PatientViewModel", "Error loading patients: ${e.message}")
             }
         }
     }

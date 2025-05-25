@@ -9,5 +9,7 @@ data class Patient(
     val addressDetail1: String,
     val addressDetail2: String,
     val phone: String,
-    val isescape: Boolean
+    val latitude: Double,
+    val longitude: Double,
+    val isSameSigungu: Boolean
 )

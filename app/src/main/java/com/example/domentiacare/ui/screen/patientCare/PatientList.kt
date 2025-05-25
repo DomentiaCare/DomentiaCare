@@ -163,15 +163,10 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-//        elevation = CardDefaults.cardElevation(
-//            defaultElevation =4.dp
-//        ),
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
-            .clickable{
-                onClick()
-            }
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
@@ -203,24 +198,34 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "나이: ${patient.age}세",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
+                Row {
+                    Text(
+                        text = "나이: ${patient.age}세",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = patient.gender,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = patient.gender,
+                text = if (patient.isSameSigungu == true) "정상 범위" else "확인 요망",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = if (patient.isSameSigungu == true) MaterialTheme.colorScheme.secondary else Color.Red
             )
         }
     }
 }
+
 
 @Composable
 fun RegisterPatientDialog(

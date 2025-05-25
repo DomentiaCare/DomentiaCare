@@ -28,11 +28,12 @@ class AddressSearchActivity : Activity() {  //다음 포스트 코드 주소 검
 
     class AddressBridge(private val context: Context) {
         @JavascriptInterface
-        fun onAddressSelected(zip: String, roadAddr: String) {
-            Log.d("address", "우편번호: $zip, 도로명주소: $roadAddr")  // 로그 추가
+        fun onAddressSelected(zip: String, roadAddr: String, sigungu: String) {
+            Log.d("address", "우편번호: $zip, 도로명주소: $roadAddr, 구: $sigungu")  // 로그 추가
             val intent = Intent().apply {
                 putExtra("zonecode", zip)
                 putExtra("roadAddress", roadAddr)
+                putExtra("sigungu", sigungu)
             }
             (context as Activity).setResult(Activity.RESULT_OK, intent)
             context.finish()

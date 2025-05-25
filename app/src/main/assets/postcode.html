@@ -16,7 +16,7 @@
       new daum.Postcode({
         oncomplete: function(data) {
           if (window.Android && window.Android.onAddressSelected) {
-            window.Android.onAddressSelected(data.zonecode, data.roadAddress);
+            window.Android.onAddressSelected(data.zonecode, data.roadAddress, data.sigungu);
           } else {
             alert("Android 인터페이스 연결 실패");
           }

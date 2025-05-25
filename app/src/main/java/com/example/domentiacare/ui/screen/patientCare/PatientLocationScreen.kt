@@ -1,5 +1,6 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,17 +9,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.example.domentiacare.R
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.data.remote.connectWebSocket
 import com.example.domentiacare.data.remote.dto.LocationRequestBody
+import com.example.domentiacare.data.remote.dto.Patient
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 import retrofit2.Call
@@ -28,8 +33,7 @@ import retrofit2.Response
 @Composable
 fun PatientLocationScreen(
     navController: NavController,
-    patientName: String,
-    patientId : Long,
+    patient : Patient
 ) {
     val patientLatLng = remember { mutableStateOf(LatLng(37.5828483, 127.0105811)) }
     val cameraPositionState = rememberCameraPositionState {
@@ -37,8 +41,17 @@ fun PatientLocationScreen(
     }
     val markerState = rememberMarkerState(position = patientLatLng.value)
 
+    // 환자의 집 위치 마커 아이콘
+    val context = LocalContext.current
+    val homeIcon = remember {
+        mutableStateOf<BitmapDescriptor?>(null)
+    }
+
     LaunchedEffect(Unit) {
-        RetrofitClient.authApi.getCurrentLocation(patientId).enqueue(object :
+        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.home)
+        homeIcon.value = BitmapDescriptorFactory.fromBitmap(bitmap)
+        Log.d("초기 위치 요청", "환자 ID: ${patient.patientId}, ${patient.latitude}, ${patient.longitude}")
+        RetrofitClient.authApi.getCurrentLocation(patient.patientId).enqueue(object :
             Callback<LocationRequestBody> {
             override fun onResponse(
                 call: Call<LocationRequestBody>,
@@ -53,7 +66,7 @@ fun PatientLocationScreen(
                     markerState.position = patientLatLng.value
                     cameraPositionState.move(CameraUpdateFactory.newLatLng(patientLatLng.value))
                     // ✅ WebSocket 연결 시작
-                    connectWebSocket(patientId) { lat, lon ->
+                    connectWebSocket(patient.patientId) { lat, lon ->
                         patientLatLng.value = LatLng(lat, lon)
                         markerState.position = patientLatLng.value
                     }
@@ -89,15 +102,16 @@ fun PatientLocationScreen(
         ) {
             Marker(
                 state = markerState,
-                title = patientName,
+                title = patient.patientName,
                 snippet = "환자의 현재 위치입니다."
             )
-            Circle(
-                center = patientLatLng.value,
-                radius = 500.0,
-                strokeColor = Color.Blue,
-                fillColor = Color(0x220000FF),
-                strokeWidth = 2f
+            Marker(
+                state = MarkerState(
+                    position = LatLng(patient.latitude, patient.longitude)
+                ),
+                title = "집",
+                snippet = "${patient.patientName} 의 집 위치입니다.",
+                icon = homeIcon.value
             )
         }
     }

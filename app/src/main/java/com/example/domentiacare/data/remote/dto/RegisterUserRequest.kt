@@ -10,5 +10,6 @@ data class RegisterUserRequest(  //회원가입 정보 백엔드로 보내는 DT
     val address: String,
     val addressDetail1: String,
     val addressDetail2: String,
-    val role: String
+    val role: String,
+    val sigungu: String  // 시군구 정보 추가
 )
