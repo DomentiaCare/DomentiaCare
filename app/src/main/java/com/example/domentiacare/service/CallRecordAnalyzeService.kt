@@ -129,7 +129,7 @@ class CallRecordAnalyzeService : Service() {
                 // 🆕 최종 파일 검증
                 if (!file.exists() || file.length() == 0L) {
                     Log.e("CallRecordAnalyzeService", "유효하지 않은 파일: $filePath")
-                    showResultNotification("일정 등록 실패", "", "", "", "오디오 파일 오류")
+                    showResultNotificationWithIntent("일정 등록 실패", "", "", "", "오디오 파일 오류")
                     return@Thread
                 }
 
@@ -146,7 +146,7 @@ class CallRecordAnalyzeService : Service() {
 
                     if (!outputWavFile.exists() || outputWavFile.length() == 0L) {
                         Log.e("CallRecordAnalyzeService", "WAV 변환 실패")
-                        showResultNotification("일정 등록 실패", "", "", "", "오디오 변환 실패")
+                        showResultNotificationWithIntent("일정 등록 실패", "", "", "", "오디오 변환 실패")
                         return@Thread
                     }
 
@@ -166,7 +166,7 @@ class CallRecordAnalyzeService : Service() {
 
                 if (transcript.isBlank()) {
                     Log.e("CallRecordAnalyzeService", "Whisper 변환 결과가 비어있음")
-                    showResultNotification("일정 등록 실패", "", "", "", "음성 인식 실패")
+                    showResultNotificationWithIntent("일정 등록 실패", "", "", "", "음성 인식 실패")
                     return@Thread
                 }
 
@@ -189,15 +189,15 @@ class CallRecordAnalyzeService : Service() {
                 // 3. 파싱 및 일정 등록
                 if (isValidLlamaResponse(result)) {
                     val (summary, date, hour, min, place) = parseLlamaScheduleResponseFull(result)
-                    showResultNotification(summary, date, hour, min, place)
+                    showResultNotificationWithIntent(summary, date, hour, min, place)
                 } else {
                     Log.d("CallRecordAnalyzeService", "Llama 응답이 완전하지 않음: $result")
-                    showResultNotification("일정 등록 실패", "", "", "", "LLaMA 응답 불완전")
+                    showResultNotificationWithIntent("일정 등록 실패", "", "", "", "LLaMA 응답 불완전")
                 }
 
             } catch (e: Exception) {
                 Log.e("CallRecordAnalyzeService", "처리 중 오류 발생", e)
-                showResultNotification("일정 등록 실패", "", "", "", e.message ?: "알 수 없는 오류")
+                showResultNotificationWithIntent("일정 등록 실패", "", "", "", e.message ?: "알 수 없는 오류")
             }
         }.start()
     }
@@ -248,14 +248,43 @@ class CallRecordAnalyzeService : Service() {
         }
     }
 
-    private fun showResultNotification(summary: String, date: String, hour: String, min: String, place: String) {
+    private fun showResultNotificationWithIntent(
+        summary: String, date: String, hour: String, min: String, place: String
+    ) {
         val channelId = "call_record_analysis"
-        val manager = getSystemService(NotificationManager::class.java)
+
+        // MainActivity로 이동하는 인텐트 생성
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("from_notification", true)
+            putExtra("target_screen", "schedule")
+            putExtra("schedule_summary", summary)
+            putExtra("schedule_date", date)
+            putExtra("schedule_time", "$hour:$min")
+            putExtra("schedule_place", place)
+            putExtra("notification_id", Random.nextInt())
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            Random.nextInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("일정 자동 등록 결과")
+            .setContentTitle("일정 자동 등록 완료")
             .setContentText("$summary ($date $hour:$min @ $place)")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent) // 클릭시 일정 화면으로 이동
+            .setAutoCancel(true) // 클릭하면 알림 자동 삭제
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("새로운 일정이 통화에서 자동으로 등록되었습니다.\n$summary\n📅 $date $hour:$min\n📍 $place\n\n클릭하여 확인하고 수정하세요."))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
         manager.notify(Random.nextInt(), notification)
     }
 }

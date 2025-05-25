@@ -1,8 +1,8 @@
 import java.net.InetAddress
 import java.util.Properties
 
-//val localIpAddress = InetAddress.getLocalHost().hostAddress
-val localIpAddress = "3.35.8.215"
+//val localIpAddress = InetAddress.getLocalHost().hostAddress // 로컬 IP 주소 자동 설정
+val localIpAddress = "3.35.8.215" // db 서버 IP 주소로 교체
 
 val baseUrl = "http://$localIpAddress:8080"
 

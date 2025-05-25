@@ -79,6 +79,7 @@ fun CallDetailScreen(
     // 저장 상태
     var isSaving by remember { mutableStateOf(false) }
     var saveMessage by remember { mutableStateOf("") }
+    var testMessage by remember { mutableStateOf("") } // 테스트 메시지 추가
 
     val years = (2023..2027).map { it.toString() }
     val months = (1..12).map { it.toString().padStart(2, '0') }
@@ -113,7 +114,14 @@ fun CallDetailScreen(
         // 통화 정보
         Text("${recordLog.name}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         Text("${recordLog.type} ${recordLog.time}", fontSize = 14.sp, color = Color.Gray)
-        Spacer(modifier = Modifier.height(16.dp))
+        // 저장 메시지 표시
+        if (saveMessage.isNotEmpty()) {
+            Text(
+                text = saveMessage,
+                color = if (saveMessage.contains("성공")) Color.Green else Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
         // 오디오
         Text("통화 녹음", fontWeight = FontWeight.SemiBold)
@@ -333,14 +341,99 @@ fun CallDetailScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 저장 메시지 표시
-        if (saveMessage.isNotEmpty()) {
+        // 저장 메시지 표시 위에 테스트 버튼들 추가
+        if (testMessage.isNotEmpty()) {
             Text(
-                text = saveMessage,
-                color = if (saveMessage.contains("성공")) Color.Green else Color.Red,
+                text = testMessage,
+                color = if (testMessage.contains("✅")) Color.Green else Color.Red,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
+
+        // API 조회 테스트 버튼들
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 내 일정 조회 버튼
+            DMT_Button(
+                text = "내 일정",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val schedules = ScheduleApiService.getMySchedules(context)
+                            testMessage = "✅ 내 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 내 일정 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // 오늘 일정 조회 버튼
+            DMT_Button(
+                text = "오늘 일정",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val schedules = ScheduleApiService.getTodaySchedules(currentUserId, context)
+                            testMessage = "✅ 오늘 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 오늘 일정 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 전체 일정 조회 버튼
+            DMT_Button(
+                text = "전체 조회",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            ScheduleApiService.getAllSchedulesWithLog(currentUserId, context)
+                            testMessage = "✅ 전체 일정 조회 완료 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 전체 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // 이번 주 일정 조회 버튼
+            DMT_Button(
+                text = "이번 주",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val today = LocalDateTime.now()
+                            val startOfWeek = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                            val endOfWeek = today.plusDays(7).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+
+                            val schedules = ScheduleApiService.getSchedulesByDateRange(
+                                currentUserId, startOfWeek, endOfWeek, context
+                            )
+                            testMessage = "✅ 이번 주 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 이번 주 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // 저장 버튼
         DMT_Button(

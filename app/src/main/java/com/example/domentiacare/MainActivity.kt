@@ -29,8 +29,23 @@ import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import com.example.domentiacare.service.LocationForegroundService
 import com.example.domentiacare.ui.AppNavHost
 import com.example.domentiacare.ui.theme.DomentiaCareTheme
-import com.example.domentiacare.ui.test.TestLlamaActivity  // 추가된 import
+import com.example.domentiacare.ui.test.TestLlamaActivity
 import dagger.hilt.android.AndroidEntryPoint
+
+// 알림 데이터를 담는 데이터 클래스
+data class NotificationData(
+    val fromNotification: Boolean = false,
+    val targetScreen: String? = null,
+    val scheduleData: ScheduleNotificationData? = null,
+    val notificationId: Int = -1
+)
+
+data class ScheduleNotificationData(
+    val summary: String? = null,
+    val date: String? = null,
+    val time: String? = null,
+    val place: String? = null
+)
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -40,6 +55,9 @@ class MainActivity : ComponentActivity() {
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
     private lateinit var finePermissionLauncher: ActivityResultLauncher<String>
     private lateinit var backgroundPermissionLauncher: ActivityResultLauncher<String>
+
+    // 🆕 알림 데이터를 담을 MutableState
+    private lateinit var notificationDataState: MutableState<NotificationData?>
 
     // 🔹 POST_NOTIFICATIONS 권한 요청 런처
     private val requestPermissionLauncher = registerForActivityResult(
@@ -69,7 +87,6 @@ class MainActivity : ComponentActivity() {
         val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
 
-
         // ✅ Android 13 이상일 경우 알림 권한 요청
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             askNotificationPermission()
@@ -82,6 +99,69 @@ class MainActivity : ComponentActivity() {
             requestAudioPermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
+        // 위치 권한 관련 초기화
+        initializeLocationPermissions()
+
+        enableEdgeToEdge()
+        setContent {
+            // 🆕 알림 데이터 상태 초기화
+            notificationDataState = remember { mutableStateOf(extractNotificationData(intent)) }
+
+            DomentiaCareTheme {
+                if (IS_DEV_MODE) {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // 기존 앱 네비게이션에 알림 데이터 전달
+                        Box(modifier = Modifier.weight(1f)) {
+                            AppNavHost(notificationData = notificationDataState.value)
+                        }
+                    }
+                } else {
+                    // 정식 릴리즈에서는 기존 UI만 표시
+                    AppNavHost(notificationData = notificationDataState.value)
+                }
+            }
+        }
+    }
+
+    // 🆕 수정된 onNewIntent 메서드 - override 키워드와 올바른 시그니처 사용
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        // 🆕 새 인텐트가 들어올 때 알림 데이터 업데이트
+        if (::notificationDataState.isInitialized) {
+            notificationDataState.value = extractNotificationData(intent)
+        }
+    }
+
+    // 🆕 인텐트에서 알림 데이터 추출
+    private fun extractNotificationData(intent: Intent?): NotificationData? {
+        return if (intent?.getBooleanExtra("from_notification", false) == true) {
+            Log.d("MainActivity", "알림에서 앱 실행됨")
+            Log.d("MainActivity", "Target Screen: ${intent.getStringExtra("target_screen")}")
+            Log.d("MainActivity", "Schedule Summary: ${intent.getStringExtra("schedule_summary")}")
+
+            NotificationData(
+                fromNotification = true,
+                targetScreen = intent.getStringExtra("target_screen"),
+                scheduleData = ScheduleNotificationData(
+                    summary = intent.getStringExtra("schedule_summary"),
+                    date = intent.getStringExtra("schedule_date"),
+                    time = intent.getStringExtra("schedule_time"),
+                    place = intent.getStringExtra("schedule_place")
+                ),
+                notificationId = intent.getIntExtra("notification_id", -1)
+            )
+        } else {
+            Log.d("MainActivity", "일반 앱 실행")
+            null
+        }
+    }
+
+    // 위치 권한 초기화 메서드 분리
+    private fun initializeLocationPermissions() {
         finePermissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
@@ -113,84 +193,14 @@ class MainActivity : ComponentActivity() {
         } else {
             requestFineLocationPermission()
         }
-
-        enableEdgeToEdge()
-        setContent {
-            DomentiaCareTheme {
-                if (IS_DEV_MODE) {
-                    // 🆕 개발 모드일 때 메인 컨텐츠 위에 LLaMA 테스트 버튼 추가
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // LLaMA 테스트 버튼을 상단에 고정
-
-                        // 해당 부분 지우면 안됨!! (이종범) 라마 오류시 디버깅 해야함.
-                        //LlamaTestButton()
-
-                        // 기존 앱 네비게이션
-                        Box(modifier = Modifier.weight(1f)) {
-                            AppNavHost()
-                        }
-                    }
-                } else {
-                    // 정식 릴리즈에서는 기존 UI만 표시
-                    AppNavHost()
-                }
-            }
-        }
     }
 
-    // 🆕 LLaMA 테스트 버튼 컴포넌트
-    @Composable
-    private fun LlamaTestButton() {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "🤖 LLaMA Test",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    Text(
-                        text = "ChatApp 연동 테스트",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        Log.d("MainActivity", "Opening LLaMA test activity")
-                        startActivity(Intent(this@MainActivity, TestLlamaActivity::class.java))
-                    },
-                    modifier = Modifier.padding(start = 8.dp)
-                ) {
-                    Text("Test")
-                }
-            }
-        }
-    }
-
-    // 기존 메서드들은 그대로 유지...
-
+    // 기존 메서드들 유지...
     private val requestAudioPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
-            // 여기에 녹음 파일 가져오는 코드 호출 가능
         } else {
             Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
         }
@@ -216,7 +226,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         } else {
-            startLocationService() // Q 이하에서는 백그라운드 권한 필요 없음
+            startLocationService()
         }
     }
 
@@ -226,15 +236,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun askNotificationPermission() {
-        // 이미 권한이 허용되었는지 확인
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             == PackageManager.PERMISSION_GRANTED
         ) {
             Log.d("Permission", "📢 알림 권한 이미 허용됨")
-        }
-        // 사용자에게 권한 요청 사유 설명이 필요한 경우
-        else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-            // 설명 다이얼로그 띄운 후 → OK 누르면 requestPermissionLauncher.launch(...) 호출
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
             AlertDialog.Builder(this)
                 .setTitle("알림 권한 필요")
                 .setMessage("위치 이탈 알림을 수신하려면 알림 권한이 필요합니다.")
@@ -243,9 +249,7 @@ class MainActivity : ComponentActivity() {
                 }
                 .setNegativeButton("거부", null)
                 .show()
-        }
-        // 설명 없이 바로 요청
-        else {
+        } else {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
