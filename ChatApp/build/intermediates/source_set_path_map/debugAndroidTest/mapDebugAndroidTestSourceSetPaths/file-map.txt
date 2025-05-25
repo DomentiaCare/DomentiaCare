@@ -1,4 +1,0 @@
-com.quicinc.chatapp.test.ChatApp-androidTest-0 C:\2025-1\capstone\project\DomentiaCare\ChatApp\build\generated\res\resValues\androidTest\debug
-com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-1 C:\2025-1\capstone\project\DomentiaCare\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.quicinc.chatapp.test.ChatApp-mergeDebugAndroidTestResources-2 C:\2025-1\capstone\project\DomentiaCare\ChatApp\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.quicinc.chatapp.test.ChatApp-debugAndroidTest-3 C:\2025-1\capstone\project\DomentiaCare\ChatApp\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources
