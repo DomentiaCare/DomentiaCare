@@ -189,16 +189,25 @@ import java.time.LocalDate
                     }
 
                     composable(
-                        "PatientLocationScreen/{name}/{id}",
+                        "PatientLocationScreen/{id}",
                         arguments = listOf(
-                            navArgument("name") { type = NavType.StringType },
                             navArgument("id") { type = NavType.LongType }
                         )
                     ) { backStackEntry ->
-                        val name = backStackEntry.arguments?.getString("name") ?: ""
                         val id = backStackEntry.arguments?.getLong("id") ?: -1L
-                        PatientLocationScreen(navController, name, id)
+                        val parentEntry = remember(backStackEntry) {
+                            navController.getBackStackEntry("patientList")
+                        }
+                        val viewModel: PatientViewModel = viewModel(parentEntry)
+                        val patient = viewModel.patientList.find { it.patientId == id }
+
+                        if (patient != null) {
+                            PatientLocationScreen(navController, patient)
+                        } else {
+                            Text("환자 정보를 찾을 수 없습니다.")
+                        }
                     }
+
                     composable("MyPageScreen") {
                         MyPageScreen(navController)
                     }

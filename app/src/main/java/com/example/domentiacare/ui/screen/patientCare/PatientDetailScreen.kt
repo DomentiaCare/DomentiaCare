@@ -1,5 +1,12 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,8 +29,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.ui.component.DMT_Button
@@ -32,8 +41,24 @@ import com.example.domentiacare.ui.component.DMT_Button
 fun PatientDetailScreen(navController: NavController,
                         patient: Patient
 ) {
+    val context = LocalContext.current
 
-        Column(
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // 권한 허용되면 즉시 전화 걸기
+            val intent = Intent(Intent.ACTION_CALL).apply {
+                data = Uri.parse("tel:${patient.phone}")
+            }
+            context.startActivity(intent)
+        } else {
+            Toast.makeText(context, "전화 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+    Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
@@ -78,7 +103,7 @@ fun PatientDetailScreen(navController: NavController,
 
             // 버튼 2개
             Button(
-                onClick = { navController.navigate("PatientLocationScreen/${patient.patientName}/${patient.patientId}") },
+                onClick = { navController.navigate("PatientLocationScreen/${patient.patientId}") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -95,6 +120,32 @@ fun PatientDetailScreen(navController: NavController,
                     .height(50.dp)
             ) {
                 Text("일정 보기")
+            }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+                onClick = { /* TODO: 클릭 동작 통화?? */
+                    // 현재 권한 상태 확인
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CALL_PHONE
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        // 권한 있으면 바로 전화
+                        val intent = Intent(Intent.ACTION_CALL).apply {
+                            data = Uri.parse("tel:${patient.phone}")
+                        }
+                        context.startActivity(intent)
+                    } else {
+                        // 권한 없으면 요청
+                        launcher.launch(Manifest.permission.CALL_PHONE)
+                    }},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text("전화 걸기")
             }
 
             Text(text = "안녕하세요, 반가워요!", style = MaterialTheme.typography.bodyLarge)

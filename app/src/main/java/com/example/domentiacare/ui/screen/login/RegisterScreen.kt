@@ -67,6 +67,7 @@ fun RegisterScreen(
     var address by remember { mutableStateOf("") }
     var addressDetail1 by remember { mutableStateOf("") }
     var addressDetail2 by remember { mutableStateOf("") }
+    var sigungu by remember { mutableStateOf("") } // 시군구 정보 추가
     var role by remember { mutableStateOf("") }
 
     // 주소 검색을 위한 launcher
@@ -77,6 +78,7 @@ fun RegisterScreen(
             val data = result.data
             address = data?.getStringExtra("zonecode") ?: ""
             addressDetail1 = data?.getStringExtra("roadAddress") ?: ""
+            sigungu = data?.getStringExtra("sigungu") ?: ""
         }
     }
 
@@ -155,7 +157,8 @@ fun RegisterScreen(
                     address = address ,
                     addressDetail1 = addressDetail1,
                     addressDetail2 = addressDetail2,
-                    role = role
+                    role = role,
+                    sigungu = sigungu  // 시군구 정보 추가
                 )
 
                 RetrofitClient.authApi.registerUser(request).enqueue(object : Callback<KakaoLoginResponse> {
