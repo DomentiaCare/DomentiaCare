@@ -665,33 +665,99 @@ fun parseDateSmart(dateRaw: String): String {
 }
 
 
-// robust 시간 파싱: "1230", "12:30", "twelve thirty", "12 pm", "noon" 등 커버
+// 🔧 개선된 robust 시간 파싱: 다양한 형식 지원
 fun parseTimeSmart(timeRaw: String): Pair<String, String> {
     val cleaned = timeRaw.trim().lowercase(Locale.US)
-    // 1. "1230"
+    Log.d("parseTimeSmart", "입력: '$timeRaw' -> 정리: '$cleaned'")
+
+    // 1. "1230" (4자리 숫자)
     if (cleaned.length == 4 && cleaned.all { it.isDigit() }) {
-        return cleaned.substring(0, 2) to cleaned.substring(2, 4)
+        val result = cleaned.substring(0, 2) to cleaned.substring(2, 4)
+        Log.d("parseTimeSmart", "4자리 숫자 파싱: $result")
+        return result
     }
-    // 2. "12:30" or "12-30"
-    Regex("""(\d{1,2})[:\-](\d{2})""").find(cleaned)?.let { match ->
-        return match.groupValues[1].padStart(2, '0') to match.groupValues[2].padStart(2, '0')
+
+    // 2. "12:30", "12-30", "12.30" (구분자 포함)
+    Regex("""(\d{1,2})[\:\-\.](\d{2})""").find(cleaned)?.let { match ->
+        val result = match.groupValues[1].padStart(2, '0') to match.groupValues[2].padStart(2, '0')
+        Log.d("parseTimeSmart", "구분자 포함 파싱: $result")
+        return result
     }
-    // 3. "12 pm", "12 am", "2:30 pm"
-    Regex("""(\d{1,2})[:]?(\d{2})?\s*(am|pm)""").find(cleaned)?.let { match ->
-        var hour = match.groupValues[1].toInt()
-        val minute = match.groupValues[2].ifBlank { "00" }
-        val ampm = match.groupValues[3]
-        if (ampm == "pm" && hour != 12) hour += 12
-        if (ampm == "am" && hour == 12) hour = 0
-        return hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+
+    // 3. 🆕 AM/PM 형식 개선 - "3:00pm", "3pm", "12:30 am", "2 pm" 등
+    val ampmPatterns = listOf(
+        // "3:00pm", "3:00 pm", "12:30am" 등
+        Regex("""(\d{1,2}):(\d{2})\s*(am|pm)"""),
+        // "3pm", "12 am" 등 (분 없음)
+        Regex("""(\d{1,2})\s*(am|pm)"""),
+        // "3:00p", "12:30a" 등 (짧은 형식)
+        Regex("""(\d{1,2}):(\d{2})\s*([ap])"""),
+        // "3p", "12a" 등
+        Regex("""(\d{1,2})\s*([ap])""")
+    )
+
+    for (pattern in ampmPatterns) {
+        pattern.find(cleaned)?.let { match ->
+            var hour = match.groupValues[1].toInt()
+            val minute = if (match.groupValues.size > 3 && match.groupValues[2].isNotEmpty()) {
+                match.groupValues[2]
+            } else {
+                "00"
+            }
+            val ampm = match.groupValues.last().lowercase()
+
+            // AM/PM 처리
+            when {
+                ampm.startsWith("p") && hour != 12 -> hour += 12
+                ampm.startsWith("a") && hour == 12 -> hour = 0
+            }
+
+            val result = hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+            Log.d("parseTimeSmart", "AM/PM 파싱: $result (원본: ${match.value})")
+            return result
+        }
     }
-    // 4. 영어 단어 ("twelve thirty", "nine", "noon", "midnight")
+
+    // 4. 🆕 24시간 형식 (13:00, 14:30 등)
+    Regex("""(\d{1,2}):(\d{2})""").find(cleaned)?.let { match ->
+        val hour = match.groupValues[1].toInt()
+        val minute = match.groupValues[2]
+        if (hour in 0..23) {
+            val result = hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+            Log.d("parseTimeSmart", "24시간 형식 파싱: $result")
+            return result
+        }
+    }
+
+    // 5. 🆕 단순 시간 (숫자만)
+    Regex("""^(\d{1,2})$""").find(cleaned)?.let { match ->
+        val hour = match.groupValues[1].toInt()
+        if (hour in 0..23) {
+            val result = hour.toString().padStart(2, '0') to "00"
+            Log.d("parseTimeSmart", "단순 시간 파싱: $result")
+            return result
+        }
+    }
+
+    // 6. 영어 단어 ("twelve thirty", "nine", "noon", "midnight")
     val engNumMap = mapOf(
         "one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6,
         "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10, "eleven" to 11, "twelve" to 12
     )
-    if (cleaned.contains("noon")) return "12" to "00"
-    if (cleaned.contains("midnight")) return "00" to "00"
+
+    // 특수 시간
+    when {
+        cleaned.contains("noon") -> {
+            Log.d("parseTimeSmart", "noon 파싱: 12:00")
+            return "12" to "00"
+        }
+        cleaned.contains("midnight") -> {
+            Log.d("parseTimeSmart", "midnight 파싱: 00:00")
+            return "00" to "00"
+        }
+    }
+
+    // 영어 숫자 + 분 ("twelve thirty", "nine fifteen" 등)
     Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(thirty|fifteen|forty five|o'clock|zero)?""")
         .find(cleaned)?.let { match ->
             val hour = engNumMap[match.groupValues[1]]?.toString()?.padStart(2, '0') ?: ""
@@ -702,17 +768,50 @@ fun parseTimeSmart(timeRaw: String): Pair<String, String> {
                 cleaned.contains("zero") || cleaned.contains("o'clock") -> "00"
                 else -> "00"
             }
-            return hour to min
+            val result = hour to min
+            Log.d("parseTimeSmart", "영어 숫자+분 파싱: $result")
+            return result
         }
-    Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(am|pm))?""")
+
+    // 영어 숫자 + AM/PM ("twelve pm", "nine am" 등)
+    Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(am|pm|a|p))?""")
         .find(cleaned)?.let { match ->
             var hour = engNumMap[match.groupValues[1]] ?: 0
-            val ampm = match.groupValues[2]
-            if (ampm == "pm" && hour != 12) hour += 12
-            if (ampm == "am" && hour == 12) hour = 0
-            return hour.toString().padStart(2, '0') to "00"
+            val ampm = match.groupValues[2].lowercase()
+
+            when {
+                ampm.startsWith("p") && hour != 12 -> hour += 12
+                ampm.startsWith("a") && hour == 12 -> hour = 0
+            }
+
+            val result = hour.toString().padStart(2, '0') to "00"
+            Log.d("parseTimeSmart", "영어 숫자+AM/PM 파싱: $result")
+            return result
         }
+
+    // 7. 🆕 다양한 구어체 표현
+    val colloquialTimes = mapOf(
+        "morning" to ("09" to "00"),
+        "afternoon" to ("14" to "00"),
+        "evening" to ("18" to "00"),
+        "night" to ("20" to "00"),
+        "early morning" to ("07" to "00"),
+        "late morning" to ("11" to "00"),
+        "early afternoon" to ("13" to "00"),
+        "late afternoon" to ("16" to "00"),
+        "early evening" to ("17" to "00"),
+        "late evening" to ("21" to "00")
+    )
+
+    for ((phrase, time) in colloquialTimes) {
+        if (cleaned.contains(phrase)) {
+            Log.d("parseTimeSmart", "구어체 표현 파싱: $time (원본: $phrase)")
+            return time
+        }
+    }
+
     // 못 찾으면 빈 값
+    Log.d("parseTimeSmart", "파싱 실패: '$timeRaw' -> 빈 값 반환")
     return "" to ""
 }
 
