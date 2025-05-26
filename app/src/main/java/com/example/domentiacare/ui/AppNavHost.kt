@@ -57,22 +57,16 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.time.LocalDate
-
-import android.Manifest
-import android.content.pm.PackageManager
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import java.net.URLDecoder
 
 // MainActivity에서 전달받을 알림 데이터
 import com.example.domentiacare.NotificationData
+import com.example.domentiacare.data.remote.dto.Patient
 
 @Composable
 fun AppNavHost(notificationData: NotificationData? = null) {
@@ -225,31 +219,44 @@ fun AppNavHost(notificationData: NotificationData? = null) {
 
                 // 기존 라우트들 유지...
                 composable(
-                    "patientDetail/{name}/{age}/{condition}",
+                    "patientDetail/{patientId}",
                     arguments = listOf(
-                        navArgument("name") { type = NavType.StringType },
-                        navArgument("age") { type = NavType.IntType },
-                        navArgument("condition") { type = NavType.StringType }
+                        navArgument("patientId") { type = NavType.LongType }
                     )
                 ) { backStackEntry ->
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
-                    val age = backStackEntry.arguments?.getInt("age") ?: 0
-                    val condition = backStackEntry.arguments?.getString("condition") ?: ""
-                    PatientDetailScreen(
-                        navController,
-                        Patient(name, age, condition),
-                    )
+                    val patientId = backStackEntry.arguments?.getLong("patientId")
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("patientList")
+                    }
+                    val viewModel: PatientViewModel = viewModel(parentEntry)
+                    val patient = viewModel.patientList.find { it.patientId == patientId }
+                    if (patient != null) {
+                        PatientDetailScreen(navController, patient)
+                    } else {
+                        Text("환자 정보를 찾을 수 없습니다.")
+                    }
                 }
 
                 composable(
-                    "PatientLocationScreen/{name}",
+                    "PatientLocationScreen/{id}",
                     arguments = listOf(
-                        navArgument("name") { type = NavType.StringType }
+                        navArgument("id") { type = NavType.LongType }
                     )
                 ) { backStackEntry ->
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
-                    PatientLocationScreen(navController, name)
+                    val id = backStackEntry.arguments?.getLong("id") ?: -1L
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("patientList")
+                    }
+                    val viewModel: PatientViewModel = viewModel(parentEntry)
+                    val patient = viewModel.patientList.find { it.patientId == id }
+
+                    if (patient != null) {
+                        PatientLocationScreen(navController, patient)
+                    } else {
+                        Text("환자 정보를 찾을 수 없습니다.")
+                    }
                 }
+
                 composable("MyPageScreen") {
                     MyPageScreen(navController)
                 }
