@@ -23,6 +23,11 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -34,10 +39,14 @@ class LocationForegroundService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         startLocationTracking()
+        startWebSocketLocationSending() // ✅ 웹소켓 위치 전송 시작
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -126,4 +135,48 @@ class LocationForegroundService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun startWebSocketLocationSending() {
+        serviceScope.launch {
+            while (true) {
+                if (ActivityCompat.checkSelfPermission(
+                        this@LocationForegroundService,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        location?.let {
+                            sendLocationViaWebSocket(it.latitude, it.longitude)
+                            Log.d("WebSocket", "위치 전송: lat=${it.latitude}, lng=${it.longitude}")
+                        }
+                    }
+                }
+                kotlinx.coroutines.delay(5000L) // 5초마다 실행
+            }
+        }
+    }
+
+    private fun sendLocationViaWebSocket(lat: Double, lng: Double) {
+        val token = TokenManager.getToken()
+        if (token.isNullOrBlank()) {
+            Log.d("WebSocket", "❌ JWT 없음 → WebSocket 위치 전송 생략")
+            return
+        }
+
+        val request = LocationRequestBody(lat, lng)
+        RetrofitClient.authApi.websocketLocation(request).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                Log.d("WebSocket", "위치 전송 성공")
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Log.e("WebSocket", "위치 전송 실패", t)
+            }
+        })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel() // ✅ Coroutine 종료
+    }
 }
