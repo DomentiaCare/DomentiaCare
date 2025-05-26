@@ -23,6 +23,7 @@ import androidx.core.app.NotificationCompat
 import com.example.domentiacare.MainActivity
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import kotlin.random.Random
+import kotlinx.coroutines.runBlocking
 
 class CallRecordAnalyzeService : Service() {
 
@@ -129,6 +130,8 @@ class CallRecordAnalyzeService : Service() {
                 // 🆕 최종 파일 검증
                 if (!file.exists() || file.length() == 0L) {
                     Log.e("CallRecordAnalyzeService", "유효하지 않은 파일: $filePath")
+
+                    //이게 실 notification을 띄우는 로직
                     showResultNotificationWithIntent("일정 등록 실패", "", "", "", "오디오 파일 오류")
                     return@Thread
                 }
@@ -189,6 +192,16 @@ class CallRecordAnalyzeService : Service() {
                 // 3. 파싱 및 일정 등록
                 if (isValidLlamaResponse(result)) {
                     val (summary, date, hour, min, place) = parseLlamaScheduleResponseFull(result)
+
+                    // 파싱 이후에 저장하는 로직 가져오기
+                    val saveSuccess = saveScheduleFromParsing(context, summary, date, hour, min, place)
+                    if (saveSuccess) {
+                        Log.d("CallRecordAnalyzeService", "일정 DB 저장 성공")
+                    } else {
+                        Log.e("CallRecordAnalyzeService", "일정 DB 저장 실패")
+                    }
+
+
                     showResultNotificationWithIntent(summary, date, hour, min, place)
                 } else {
                     Log.d("CallRecordAnalyzeService", "Llama 응답이 완전하지 않음: $result")
@@ -286,5 +299,43 @@ class CallRecordAnalyzeService : Service() {
 
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(Random.nextInt(), notification)
+    }
+}
+
+
+
+private fun saveScheduleFromParsing(
+    context: Context,
+    summary: String,
+    date: String,
+    hour: String,
+    min: String,
+    place: String
+): Boolean {
+    val userId = com.example.domentiacare.data.util.UserPreferences.getUserId(context).let { if (it > 0) it else 6L }
+    val localDateTime = try {
+        java.time.LocalDateTime.of(
+            java.time.LocalDate.parse(date),
+            java.time.LocalTime.of(hour.toIntOrNull() ?: 0, min.toIntOrNull() ?: 0)
+        )
+    } catch (e: Exception) {
+        java.time.LocalDateTime.now().plusHours(1)
+    }
+
+    val simpleSchedule = com.example.domentiacare.data.local.SimpleSchedule(
+        localId = java.util.UUID.randomUUID().toString(),
+        userId = userId,
+        title = summary.ifBlank { "Call Schedule" },
+        description = "Call recording extracted schedule${if (place.isNotBlank()) " - Location: $place" else ""}",
+        startDate = localDateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+        endDate = localDateTime.plusHours(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+        isAi = true
+    )
+
+    val syncManager = com.example.domentiacare.data.sync.SimpleSyncManager.getInstance(context)
+    // 여기서 runBlocking으로 suspend 함수 호출
+    return runBlocking {
+        val result = syncManager.saveSchedule(simpleSchedule)
+        result.isSuccess
     }
 }

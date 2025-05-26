@@ -561,6 +561,7 @@ fun parseLlamaScheduleResponseFull(response: String): Quintuple<String, String, 
 }
 
 // 날짜: 다양한 영어 표현 지원 ("2024-06-09", "Sunday", "tomorrow", "next Monday" 등)
+// robust 날짜 파싱: 다양한 영어 표현 지원 ("2024-06-09", "Sunday", "this Sunday", "next Monday", "tomorrow" 등)
 fun parseDateSmart(dateRaw: String): String {
     val lower = dateRaw.trim().lowercase(Locale.US)
     val today = LocalDate.now()
@@ -598,7 +599,15 @@ fun parseDateSmart(dateRaw: String): String {
     regexNextDay.find(lower)?.let {
         val targetDOW = dowMap[it.groupValues[1]]!!
         var daysToAdd = (targetDOW.value - today.dayOfWeek.value + 7) % 7
-        if (daysToAdd == 0) daysToAdd = 7
+        if (daysToAdd == 0) daysToAdd = 7 // 항상 다음 주로
+        return today.plusDays(daysToAdd.toLong()).toString()
+    }
+    // 4-1. "this Sunday" 등
+    val regexThisDay = Regex("""this\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)""")
+    regexThisDay.find(lower)?.let {
+        val targetDOW = dowMap[it.groupValues[1]]!!
+        val todayDow = today.dayOfWeek.value
+        val daysToAdd = (targetDOW.value - todayDow + 7) % 7
         return today.plusDays(daysToAdd.toLong()).toString()
     }
     // 5. 월/일 (ex: "June 10", "Jun 10", "10 June")
@@ -622,6 +631,7 @@ fun parseDateSmart(dateRaw: String): String {
     // 6. 못찾으면 원문 반환
     return dateRaw
 }
+
 
 // robust 시간 파싱: "1230", "12:30", "twelve thirty", "12 pm", "noon" 등 커버
 fun parseTimeSmart(timeRaw: String): Pair<String, String> {
@@ -676,25 +686,56 @@ fun parseTimeSmart(timeRaw: String): Pair<String, String> {
 
 // 요일 → LocalDate로 변환 (UI 드롭다운 동기화용)
 fun parseDateToLocalDate(dateString: String): LocalDate {
-    return try {
-        LocalDate.parse(dateString)
-    } catch (e: Exception) {
-        val dayOfWeekMap = mapOf(
-            "sunday" to DayOfWeek.SUNDAY,
-            "monday" to DayOfWeek.MONDAY,
-            "tuesday" to DayOfWeek.TUESDAY,
-            "wednesday" to DayOfWeek.WEDNESDAY,
-            "thursday" to DayOfWeek.THURSDAY,
-            "friday" to DayOfWeek.FRIDAY,
-            "saturday" to DayOfWeek.SATURDAY,
-        )
-        val now = LocalDate.now()
-        val targetDayOfWeek = dayOfWeekMap[dateString.trim().lowercase()] ?: return now
-        var daysToAdd = (targetDayOfWeek.value - now.dayOfWeek.value + 7) % 7
-        if (daysToAdd == 0) daysToAdd = 7
-        now.plusDays(daysToAdd.toLong())
+    val now = LocalDate.now()
+    val dayOfWeekMap = mapOf(
+        "sunday" to DayOfWeek.SUNDAY,
+        "monday" to DayOfWeek.MONDAY,
+        "tuesday" to DayOfWeek.TUESDAY,
+        "wednesday" to DayOfWeek.WEDNESDAY,
+        "thursday" to DayOfWeek.THURSDAY,
+        "friday" to DayOfWeek.FRIDAY,
+        "saturday" to DayOfWeek.SATURDAY,
+    )
+
+    // 먼저 ISO 포맷(yyyy-MM-dd) 시도
+    try {
+        return LocalDate.parse(dateString)
+    } catch (_: Exception) { }
+
+    val lower = dateString.trim().lowercase()
+
+    // 1. "next sunday", "this monday" 등
+    val regexNextThis = Regex("""(next|this)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)""")
+    regexNextThis.find(lower)?.let {
+        val mode = it.groupValues[1] // next or this
+        val dow = dayOfWeekMap[it.groupValues[2]] ?: return now
+        val todayDow = now.dayOfWeek.value
+
+        return when (mode) {
+            "next" -> {
+                var daysToAdd = (dow.value - todayDow + 7) % 7
+                if (daysToAdd == 0) daysToAdd = 7 // 항상 다음 주로
+                now.plusDays(daysToAdd.toLong())
+            }
+            "this" -> {
+                val daysToAdd = (dow.value - todayDow + 7) % 7
+                now.plusDays(daysToAdd.toLong())
+            }
+            else -> now
+        }
     }
+
+    // 2. 요일 단독 (예: "sunday")
+    dayOfWeekMap[lower]?.let { dow ->
+        var daysToAdd = (dow.value - now.dayOfWeek.value + 7) % 7
+        if (daysToAdd == 0) daysToAdd = 7 // 항상 미래
+        return now.plusDays(daysToAdd.toLong())
+    }
+
+    // 3. 못찾으면 오늘 반환
+    return now
 }
+
 
 @Composable
 fun AudioPlayer(
