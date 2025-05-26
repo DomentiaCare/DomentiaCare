@@ -1,5 +1,0 @@
-ninja: Entering directory `C:\2025-1\capstone\project\DomentiaCare\ChatApp\.cxx\Debug\4x1p494b\arm64-v8a'
-[1/4] Building CXX object CMakeFiles/chatapp.dir/PromptHandler.cpp.o
-[2/4] Building CXX object CMakeFiles/chatapp.dir/GenieLib.cpp.o
-[3/4] Building CXX object CMakeFiles/chatapp.dir/GenieWrapper.cpp.o
-[4/4] Linking CXX shared library C:\2025-1\capstone\project\DomentiaCare\ChatApp\build\intermediates\cxx\Debug\4x1p494b\obj\arm64-v8a\libchatapp.so
