@@ -2,6 +2,8 @@ package com.example.domentiacare.data.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.domentiacare.data.local.CurrentUser
+import com.example.domentiacare.data.local.TokenManager
 
 object UserPreferences {
     private const val PREF_NAME = "dementia_care_prefs"
@@ -26,11 +28,12 @@ object UserPreferences {
     }
 
     fun getUserId(context: Context): Long {
-        return getPreferences(context).getLong(KEY_USER_ID, -1L)
+        return CurrentUser.user?.id ?: getPreferences(context).getLong(KEY_USER_ID, -1L)
     }
 
     fun getAuthToken(context: Context): String? {
-        return getPreferences(context).getString(KEY_AUTH_TOKEN, null)
+        //return getPreferences(context).getString(KEY_AUTH_TOKEN, null)
+        return TokenManager.getToken() // TokenManager에서 토큰을 가져옵니다.
     }
 
     fun getUserName(context: Context): String? {

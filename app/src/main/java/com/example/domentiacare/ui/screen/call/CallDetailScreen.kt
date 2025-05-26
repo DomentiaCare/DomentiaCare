@@ -102,6 +102,7 @@ fun CallDetailScreen(
     // 현재 사용자 ID를 미리 가져와서 저장 (Swagger 테스트에서 사용한 userId: 6)
     val currentUserId = remember {
         val savedUserId = UserPreferences.getUserId(context)
+        Log.d("CallDetailScreen", "현재 사용자 ID: $savedUserId")
         if (savedUserId > 0) savedUserId else 6L // Swagger에서 성공한 userId 사용
     }
 
