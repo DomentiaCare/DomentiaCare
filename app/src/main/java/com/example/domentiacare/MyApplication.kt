@@ -11,6 +11,7 @@ import com.kakao.sdk.common.KakaoSdk
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.*
 import java.security.MessageDigest
+import com.example.domentiacare.BuildConfig
 
 @HiltAndroidApp
 class MyApplication : Application() {

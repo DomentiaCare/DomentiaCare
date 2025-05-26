@@ -9,7 +9,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.domentiacarewatch"
+        applicationId = "com.example.domentiacare"
         minSdk = 33
         targetSdk = 34
         versionCode = 1
@@ -61,4 +61,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     debugImplementation(libs.androidx.tiles.tooling)
+
+    // Watch service
+    implementation ("com.google.android.gms:play-services-wearable:18.1.0")
 }

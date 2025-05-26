@@ -25,6 +25,9 @@ import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import kotlin.random.Random
 import kotlinx.coroutines.runBlocking
 
+//Watch 서비스에서 사용하는 import
+import com.example.domentiacare.service.watch.WatchMessageHelper
+
 class CallRecordAnalyzeService : Service() {
 
     private var fileObserver: FileObserver? = null
@@ -300,6 +303,21 @@ class CallRecordAnalyzeService : Service() {
         summary: String, date: String, hour: String, min: String, place: String
     ) {
         val channelId = "call_record_analysis"
+
+        // ===== 워치에도 메시지 전송 =====
+        val watchMessage = """
+        $summary
+        $date $hour:$min
+        $place
+    """.trimIndent()
+
+        Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
+        WatchMessageHelper.sendMessageToWatch(
+            context = this,
+            path = "/schedule_notify",
+            message = watchMessage
+        )
+        // ===========================
 
         // MainActivity로 이동하는 인텐트 생성
         val intent = Intent(this, MainActivity::class.java).apply {
