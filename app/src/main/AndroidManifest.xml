@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
 
+    <!-- 백그라운드 서비스 권한 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
 
     <!--  통화 기록 권한  -->
@@ -35,6 +37,11 @@
     <!--    저장소 읽기  -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- 🔗 ChatApp 서비스 접근을 위한 쿼리 선언 (Android 11+에서 필요) -->
+    <queries>
+        <package android:name="com.quicinc.chatapp" />
+    </queries>
 
     <application
         android:largeHeap="true"
@@ -50,7 +57,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
-        <!-- Qualcomm uses-native-library 이종범-->
+        <!-- Qualcomm uses-native-library (ChatApp 서비스 호출을 위해 필요할 수 있음) -->
         <uses-native-library
             android:name="libadsprpc.so"
             android:required="false" />
@@ -58,13 +65,18 @@
             android:name="libcdsprpc.so"
             android:required="false" />
 
-
-
         <!-- 👇 ForegroundService 등록 -->
         <service
             android:name=".service.LocationForegroundService"
             android:exported="false"
             android:foregroundServiceType="location"/>
+
+        <!-- 통화 녹음 자동 분석 포그라운드 서비스 등록 -->
+        <service
+            android:name=".service.CallRecordAnalyzeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- 👇 Firebase Cloud Messaging Service 등록 -->
         <service
             android:name=".service.MyFirebaseMessagingService"
@@ -78,7 +90,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${GOOGLE_MAP_KEY}" />
-      
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -86,18 +98,30 @@
             android:theme="@style/Theme.DomentiaCare">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!-- 삭제하면 안됨!!!!!! (이종범) 라마 오류시 디버깅 위해 필요한 부분임-->
+        <!-- AndroidManifest.xml의 application 태그 안에 추가 -->
+        <activity
+            android:name=".ui.test.TestLlamaActivity"
+            android:exported="false"
+            android:label="LLaMA Test"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity" />
+        </activity>
 
-        <!-- 퀄컴 Conversation 액티비티 경로 변경필요 ★★★★★★★★★★★★★★★★★★★★★★★-->
+        <!-- 🗑️ 퀄컴 Conversation 액티비티 - 더이상 필요하지 않으므로 제거 -->
+        <!-- ChatApp의 서비스를 사용하므로 이 Activity는 불필요 -->
+        <!--
         <activity
             android:name="com.example.domentiacare.service.llama.Conversation"
             android:parentActivityName="com.example.domentiacare.service.llama.Conversation" >
         </activity>
-
+        -->
 
 
         <!-- ✅ 카카오 로그인 처리용 액티비티 (반드시 있어야 함!) -->
@@ -112,8 +136,10 @@
                 <data android:scheme="${kakao_scheme}" android:host="oauth" />
             </intent-filter>
         </activity>
+
         <!-- ✅ 카카오 우편번호찾기 처리용 액티비티 (반드시 있어야 함!) -->
-        <activity android:name="com.example.domentiacare.webView.AddressSearchActivity" />
+        <activity android:name=".webView.AddressSearchActivity" />
+
     </application>
 
 </manifest>

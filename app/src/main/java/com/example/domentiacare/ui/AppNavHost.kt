@@ -58,224 +58,266 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.time.LocalDate
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.domentiacare.data.model.CallRecordingViewModel
+import com.example.domentiacare.ui.screen.call.CallLogViewModel
+import java.net.URLDecoder
+
+// MainActivity에서 전달받을 알림 데이터
+import com.example.domentiacare.NotificationData
+
 @Composable
-    fun AppNavHost() {
-        val navController = rememberNavController()
-        val scheduleViewModel: ScheduleViewModel = viewModel()
+fun AppNavHost(notificationData: NotificationData? = null) {
+    val navController = rememberNavController()
+    val scheduleViewModel: ScheduleViewModel = viewModel()
 
-        val drawerState = rememberDrawerState(DrawerValue.Closed)
-        val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-        //특정 화면의 이름을 알아내어 메뉴 드래그 비활성화하기
-        val currentBackStackEntry = navController.currentBackStackEntryAsState()
-        val currentDestination = currentBackStackEntry.value?.destination?.route
-        val isMapScreen = currentDestination?.startsWith("PatientLocationScreen") == true
+    // 🆕 알림에서 온 경우 해당 화면으로 네비게이션
+    LaunchedEffect(notificationData) {
+        notificationData?.let { data ->
+            if (data.fromNotification) {
+                Log.d("AppNavHost", "알림에서 온 데이터: ${data.targetScreen}")
 
-        //jwt 토큰이 없으면 로그인 화면으로 이동
-        val token = TokenManager.getToken()
-        val inintScreen = if (token == null) {
-            "login"
-        } else {
-            "home"
-        }
-
-        ModalNavigationDrawer( // ✅ 모든 화면을 감싸도록 이동
-            drawerState = drawerState,
-            gesturesEnabled = !isMapScreen,
-            drawerContent = {
-                ModalDrawerSheet (
-                    drawerContainerColor = Color.White
-                ) {
-                    Text("메뉴", modifier = Modifier.padding(16.dp))
-                    DMT_DrawerMenuItem("홈", onClick = {
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                        scope.launch { drawerState.close() }
-                    })
-
-                    DMT_DrawerMenuItem("일정관리", onClick = {
-                        navController.navigate("schedule")
-                        scope.launch { drawerState.close() }
-                    })
-
-                    DMT_DrawerMenuItem("환자관리", onClick = {
-                        navController.navigate("patientList")
-                        scope.launch { drawerState.close() }
-                    })
-
-                    DMT_DrawerMenuItem("로그아웃", onClick = {
-                        navController.navigate("login") {
-                            TokenManager.clearToken()
-                            popUpTo("login") { inclusive = true }
-                        }
-                        scope.launch { drawerState.close() }
-                    })
-                }
-            }
-        ) {
-            BackHandler(enabled = drawerState.isOpen) {
-                scope.launch {
-                    drawerState.close()
-                }
-            }
-            Scaffold(
-                topBar = {
-                    TopBar(title = "DomentiaCare", drawerState = drawerState, scope = scope)
-                },
-                bottomBar = {
-                    BottomNavBar(navController)
-                }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = inintScreen, //home
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable("login") {
-                        LoginScreen(navController,
-                            onLoginSuccess = {
-                                navController.navigate("home") {
-                                    popUpTo("login") { inclusive = true }
-                                    sendFcmTokenAfterLogin()
-                                }
-                            }
-                        )
-                    }
-                    composable("home") {
-                        Home(navController)
-                    }
-                    composable("schedule") {
-                        ScheduleScreen(navController, scheduleViewModel)
-                    }
-                    composable("addSchedule/{selectedDate}") { backStackEntry ->
-                        val date = backStackEntry.arguments?.getString("selectedDate") ?: ""
-                        AddScheduleScreen(
-                            navController = navController,
-                            selectedDate = date,
-                            scheduleViewModel
-                        )
-                    }
-                    composable("patientList") {
-                        PatientList(navController)
-                    }
-                    composable("scheduleDetail/{date}") { backStackEntry ->
-                        val dateString = backStackEntry.arguments?.getString("date") ?: ""
-                        val date = LocalDate.parse(dateString)
-                        ScheduleDetailScreen(
-                            navController,
-                            date,
-                            scheduleViewModel
-                        )
-                    }
-
-                    composable(
-                        "patientDetail/{patientId}",
-                        arguments = listOf(
-                            navArgument("patientId") { type = NavType.LongType }
-                        )
-                    ) { backStackEntry ->
-                        val patientId = backStackEntry.arguments?.getLong("patientId")
-                        val parentEntry = remember(backStackEntry) {
-                            navController.getBackStackEntry("patientList")
-                        }
-                        val viewModel: PatientViewModel = viewModel(parentEntry)
-                        val patient = viewModel.patientList.find { it.patientId == patientId }
-                        if (patient != null) {
-                            PatientDetailScreen(navController, patient)
-                        } else {
-                            Text("환자 정보를 찾을 수 없습니다.")
-                        }
-                    }
-
-                    composable(
-                        "PatientLocationScreen/{id}",
-                        arguments = listOf(
-                            navArgument("id") { type = NavType.LongType }
-                        )
-                    ) { backStackEntry ->
-                        val id = backStackEntry.arguments?.getLong("id") ?: -1L
-                        val parentEntry = remember(backStackEntry) {
-                            navController.getBackStackEntry("patientList")
-                        }
-                        val viewModel: PatientViewModel = viewModel(parentEntry)
-                        val patient = viewModel.patientList.find { it.patientId == id }
-
-                        if (patient != null) {
-                            PatientLocationScreen(navController, patient)
-                        } else {
-                            Text("환자 정보를 찾을 수 없습니다.")
-                        }
-                    }
-
-                    composable("MyPageScreen") {
-                        MyPageScreen(navController)
-                    }
-                    composable(
-                        "RegisterScreen?email={email}&nickname={nickname}",
-                        arguments = listOf(
-                            navArgument("email") { type = NavType.StringType },
-                            navArgument("nickname") { type = NavType.StringType }
-                        )
-                    ) { backStackEntry ->
-                        val email = backStackEntry.arguments?.getString("email") ?: ""
-                        val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
-                        RegisterScreen(email = email, nickname = nickname, onRegistSuccess ={
-                            navController.navigate("home") {
-                                popUpTo("RegisterScreen") { inclusive = true }
-                            }
-                            sendFcmTokenAfterLogin()
-                        } )
-                    }
-                    composable("CallDetailScreen"){
-                        CallDetailScreen(navController)
-                    }
-                    composable("WhisperScreen"){
-                        WhisperScreen()
-                    }
-                      
-                    composable("CallLogScreen") {
-                        // ① Compose 상에서 사용할 Context
-                        val context = LocalContext.current
-                        // ② ViewModel 인스턴스
-                        val viewModel: CallRecordingViewModel = viewModel()
-                        // ③ 권한 요청 런처 준비
-                        val permissionLauncher =
-                            rememberLauncherForActivityResult(
-                                ActivityResultContracts.RequestPermission()
-                            ) { granted ->
-                                if (granted) {
-                                    viewModel.loadRecordings()
-                                } else {
-                                    Toast
-                                        .makeText(context, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT)
-                                        .show()
-                                }
-                            }
-
-                        // ④ 화면 최초 진입 시 권한 체크 & 요청 or 바로 로드
-                        LaunchedEffect(Unit) {
-                            if (ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.READ_CALL_LOG
-                                ) == PackageManager.PERMISSION_GRANTED
-                            ) {
-                                viewModel.loadRecordings()
-                            } else {
-                                permissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                when (data.targetScreen) {
+                    "schedule" -> {
+                        if (data.scheduleData != null) {
+                            // 일정 화면으로 이동하면서 알림 데이터 전달
+                            navController.navigate("schedule") {
+                                popUpTo("home") { inclusive = false }
                             }
                         }
-
-                        // ⑤ 실제 UI 호출
-                        CallLogScreen(
-                            viewModel = viewModel,
-                            navController = navController
-                        )
+                    }
+                    "call_record" -> {
+                        navController.navigate("CallLogScreen") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    }
+                    "location" -> {
+                        navController.navigate("patientList") {
+                            popUpTo("home") { inclusive = false }
+                        }
+                    }
+                    else -> {
+                        navController.navigate("home")
                     }
                 }
             }
         }
     }
+
+    //특정 화면의 이름을 알아내어 메뉴 드래그 비활성화하기
+    val currentBackStackEntry = navController.currentBackStackEntryAsState()
+    val currentDestination = currentBackStackEntry.value?.destination?.route
+    val isMapScreen = currentDestination?.startsWith("PatientLocationScreen") == true
+
+    //jwt 토큰이 없으면 로그인 화면으로 이동
+    val token = TokenManager.getToken()
+    val inintScreen = if (token == null) {
+        "login"
+    } else {
+        "home"
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = !isMapScreen,
+        drawerContent = {
+            ModalDrawerSheet (
+                drawerContainerColor = Color.White
+            ) {
+                Text("메뉴", modifier = Modifier.padding(16.dp))
+                DMT_DrawerMenuItem("홈", onClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                    scope.launch { drawerState.close() }
+                })
+
+                DMT_DrawerMenuItem("일정관리", onClick = {
+                    navController.navigate("schedule")
+                    scope.launch { drawerState.close() }
+                })
+
+                DMT_DrawerMenuItem("환자관리", onClick = {
+                    navController.navigate("patientList")
+                    scope.launch { drawerState.close() }
+                })
+
+                DMT_DrawerMenuItem("로그아웃", onClick = {
+                    navController.navigate("login") {
+                        TokenManager.clearToken()
+                        popUpTo("login") { inclusive = true }
+                    }
+                    scope.launch { drawerState.close() }
+                })
+            }
+        }
+    ) {
+        BackHandler(enabled = drawerState.isOpen) {
+            scope.launch {
+                drawerState.close()
+            }
+        }
+        Scaffold(
+            topBar = {
+                TopBar(title = "DomentiaCare", drawerState = drawerState, scope = scope)
+            },
+            bottomBar = {
+                BottomNavBar(navController)
+            }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = inintScreen,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("login") {
+                    LoginScreen(navController,
+                        onLoginSuccess = {
+                            navController.navigate("home") {
+                                popUpTo("login") { inclusive = true }
+                                sendFcmTokenAfterLogin()
+                            }
+                        }
+                    )
+                }
+                composable("home") {
+                    Home(navController)
+                }
+                composable("schedule") {
+                    // 🆕 알림 데이터를 ScheduleScreen에 전달
+                    ScheduleScreen(
+                        navController = navController,
+                        viewModel = scheduleViewModel,
+                        notificationData = notificationData?.scheduleData
+                    )
+                }
+                composable("addSchedule/{selectedDate}") { backStackEntry ->
+                    val date = backStackEntry.arguments?.getString("selectedDate") ?: ""
+                    AddScheduleScreen(
+                        navController = navController,
+                        selectedDate = date,
+                        scheduleViewModel
+                    )
+                }
+                composable("patientList") {
+                    PatientList(navController)
+                }
+                composable("scheduleDetail/{date}") { backStackEntry ->
+                    val dateString = backStackEntry.arguments?.getString("date") ?: ""
+                    val date = LocalDate.parse(dateString)
+                    ScheduleDetailScreen(
+                        navController,
+                        date,
+                        scheduleViewModel
+                    )
+                }
+
+                // 기존 라우트들 유지...
+                composable(
+                    "patientDetail/{name}/{age}/{condition}",
+                    arguments = listOf(
+                        navArgument("name") { type = NavType.StringType },
+                        navArgument("age") { type = NavType.IntType },
+                        navArgument("condition") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val age = backStackEntry.arguments?.getInt("age") ?: 0
+                    val condition = backStackEntry.arguments?.getString("condition") ?: ""
+                    PatientDetailScreen(
+                        navController,
+                        Patient(name, age, condition),
+                    )
+                }
+
+                composable(
+                    "PatientLocationScreen/{name}",
+                    arguments = listOf(
+                        navArgument("name") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    PatientLocationScreen(navController, name)
+                }
+                composable("MyPageScreen") {
+                    MyPageScreen(navController)
+                }
+                composable(
+                    "RegisterScreen?email={email}&nickname={nickname}",
+                    arguments = listOf(
+                        navArgument("email") { type = NavType.StringType },
+                        navArgument("nickname") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val email = backStackEntry.arguments?.getString("email") ?: ""
+                    val nickname = backStackEntry.arguments?.getString("nickname") ?: ""
+                    RegisterScreen(email = email, nickname = nickname, onRegistSuccess ={
+                        navController.navigate("home") {
+                            popUpTo("RegisterScreen") { inclusive = true }
+                        }
+                        sendFcmTokenAfterLogin()
+                    } )
+                }
+
+                composable(
+                    "CallDetailScreen/{filePath}",
+                    arguments = listOf(navArgument("filePath") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val filePath = URLDecoder.decode(backStackEntry.arguments?.getString("filePath") ?: "", "utf-8")
+                    CallDetailScreen(filePath, navController)
+                }
+                composable("WhisperScreen"){
+                    WhisperScreen()
+                }
+
+                composable("CallLogScreen") {
+                    val context = LocalContext.current
+                    val viewModel: CallRecordingViewModel = viewModel()
+                    val permissionLauncher =
+                        rememberLauncherForActivityResult(
+                            ActivityResultContracts.RequestPermission()
+                        ) { granted ->
+                            if (granted) {
+                                viewModel.loadRecordings()
+                            } else {
+                                Toast
+                                    .makeText(context, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        }
+
+                    LaunchedEffect(Unit) {
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.READ_CALL_LOG
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            viewModel.loadRecordings()
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
+                        }
+                    }
+
+                    CallLogScreen(
+                        viewModel = viewModel,
+                        navController = navController
+                    )
+                }
+            }
+        }
+    }
+}
 
 fun sendFcmTokenAfterLogin(){
     FirebaseMessaging.getInstance().token
@@ -292,4 +334,3 @@ fun sendFcmTokenAfterLogin(){
             })
         }
 }
-
