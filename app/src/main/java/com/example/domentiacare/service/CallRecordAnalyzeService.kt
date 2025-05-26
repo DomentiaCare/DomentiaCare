@@ -183,9 +183,15 @@ class CallRecordAnalyzeService : Service() {
                 val llamaManager = MyApplication.llamaServiceManager
                 val prompt = """
                     Please analyze the following phone conversation and extract schedule information.
-                    Output only two sections in the following format. **Do NOT use Markdown or any formatting.**
+                    Output only two sections in the following format. . **Do NOT use Markdown or any formatting.**
                     Summary: [A representative title for the schedule, extracted from the conversation.]
-                    Schedule: {"date": "...", "time": "...", "place": "..."}
+                    Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}
+            
+                    Instructions:
+                    1. Extract a representative title for this conversation that can be used as a schedule title. Output as 'Summary'.
+                    2. Extract schedule information in JSON format with exactly these keys: "date", "time", "place".
+                    3. If multiple times are mentioned, prioritize the main event time.
+                    4. Output only the summary and JSON, nothing else.
                     
                     Phone conversation:
                     "$transcript"
