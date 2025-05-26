@@ -1,15 +1,31 @@
 package com.example.domentiacare.ui.screen.patientCare
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.domentiacare.R
 import com.example.domentiacare.data.remote.RetrofitClient
@@ -112,6 +128,58 @@ fun PatientLocationScreen(
                 title = "집",
                 snippet = "${patient.patientName} 의 집 위치입니다.",
                 icon = homeIcon.value
+            )
+        }
+        CallFloatingButton(phoneNumber = patient.phone) // ← 여기에 추가
+    }
+}
+
+@Composable
+fun CallFloatingButton(phoneNumber: String) {
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // 권한 허용되면 즉시 전화 걸기
+            val intent = Intent(Intent.ACTION_CALL).apply {
+                data = Uri.parse("tel:${phoneNumber}")
+            }
+            context.startActivity(intent)
+        } else {
+            Toast.makeText(context, "전화 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = 20.dp, bottom = 20.dp), // ← 살짝 오른쪽 위로 이동
+        contentAlignment = Alignment.BottomStart
+    ) {
+        FloatingActionButton(
+            onClick = { /* TODO: 클릭 동작 통화?? */
+                // 현재 권한 상태 확인
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CALL_PHONE
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    // 권한 있으면 바로 전화
+                    val intent = Intent(Intent.ACTION_CALL).apply {
+                        data = Uri.parse("tel:${phoneNumber}")
+                    }
+                    context.startActivity(intent)
+                } else {
+                    // 권한 없으면 요청
+                    launcher.launch(Manifest.permission.CALL_PHONE)
+                }},
+            containerColor = Color(0xFFF49000),
+            contentColor = Color.White
+        ) {
+            Icon(
+                imageVector = Icons.Default.Phone,
+                contentDescription = "전화 걸기"
             )
         }
     }
