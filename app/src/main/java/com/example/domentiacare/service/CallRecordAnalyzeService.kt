@@ -206,13 +206,13 @@ class CallRecordAnalyzeService : Service() {
 
                     // 파싱 이후에 저장하는 로직 가져오기
                     val saveSuccess = saveScheduleFromParsing(context, summary, date, hour, min, place)
-                    if (saveSuccess) {
-                        Log.d("CallRecordAnalyzeService", "일정 DB 저장 성공")
-                    } else {
-                        Log.e("CallRecordAnalyzeService", "일정 DB 저장 실패")
-                    }
+//                    if (saveSuccess) {
+//                        Log.d("CallRecordAnalyzeService", "일정 DB 저장 성공")
+//                    } else {
+//                        Log.e("CallRecordAnalyzeService", "일정 DB 저장 실패")
+//                    }
 
-                    showResultNotificationWithIntent(summary, date, hour, min, place)
+                    showResultNotificationWithIntent(summary, date, hour, min, place) // 🆕 알림 클릭시 일정 화면으로 이동
                 } else {
                     Log.d("CallRecordAnalyzeService", "Llama 응답이 완전하지 않음: $result")
                     showResultNotificationWithIntent("일정 등록 실패", "", "", "", "LLaMA 응답 불완전")
