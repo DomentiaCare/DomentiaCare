@@ -63,4 +63,8 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     // 백엔드로 위치보내는 서비스 api
     @POST("/api/location/save")
     fun saveDBLocation(@Body location: LocationRequestBody): Call<Void>
+
+    // 백엔드로 위치보내서 웹소켓 서비스 api
+    @POST("/api/location/websocket")
+    fun websocketLocation(@Body location: LocationRequestBody): Call<Void>
 }
