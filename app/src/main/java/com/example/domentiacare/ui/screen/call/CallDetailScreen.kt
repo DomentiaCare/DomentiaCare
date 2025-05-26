@@ -67,6 +67,7 @@ fun CallDetailScreen(
 
     // 일정 제목/메모
     var memo by remember { mutableStateOf(initialMemo) }
+    var extractedTitle by remember {mutableStateOf("")}
 
     // 날짜/시간 드롭다운 State
     var selectedYear by remember { mutableStateOf(LocalDateTime.now().year.toString()) }
@@ -143,10 +144,15 @@ fun CallDetailScreen(
                 text = if (isLoading) "변환중..." else "STT 변환",
                 onClick = {
                     Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
+                    isLoading = true // 변환 wav파일 삭제위한 코드 작성
+
+
                     val m4aFile = File(file.path)
                     val outputDir = File("/sdcard/Recordings/wav/")
                     if (!outputDir.exists()) outputDir.mkdirs()
                     val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
+
+
                     convertM4aToWavForWhisper(m4aFile, outputWavFile)
                     Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
 
@@ -159,6 +165,20 @@ fun CallDetailScreen(
                         onResult = { result ->
                             transcript = result
                             isLoading = false
+
+                            //Whisper처리 완료 후 WAV파일 삭제
+                            try{
+                                if(outputWavFile.exists()){
+                                    val deleted = outputWavFile.delete()
+                                    if(deleted){
+                                        Log.d("CallDetailScreen", "✅ WAV 파일 삭제 성공: ${outputWavFile.absolutePath}")
+                                    } else {
+                                        Log.w("CallDetailScreen", "⚠️ WAV 파일 삭제 실패: ${outputWavFile.absolutePath}")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("CallDetailScreen", "❌ WAV 파일 삭제 중 오류: ${e.message}")
+                            }
                         },
                         onUpdate = { }
                     )
@@ -196,6 +216,7 @@ fun CallDetailScreen(
 
                     isAnalyzing = true
                     memo = ""
+                    extractedTitle = ""
                     var lastParsedResult = ""
 
                     val prompt = """
@@ -218,6 +239,14 @@ fun CallDetailScreen(
                         try {
                             val result = llamaServiceManager.sendQuery(prompt) { partialText ->
                                 memo = partialText
+
+                                if (partialText.contains("Summary:") && partialText.contains("Schedule:")){
+                                    val (title, _, _, _, _) = parseLlamaScheduleResponseFull(partialText)
+                                    if(title.isNotBlank()){
+                                        extractedTitle = title
+                                    }
+                                }
+
                                 // 부분 응답에서도 완성된 Schedule이면 파싱
                                 if (
                                     partialText.contains("Schedule:") &&
@@ -227,7 +256,8 @@ fun CallDetailScreen(
                                     lastParsedResult = partialText
                                     val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(partialText)
                                     coroutineScope.launch(Dispatchers.Main) {
-                                        memo = title
+                                        //memo = title
+                                        extractedTitle = title
                                         val localDate = parseDateToLocalDate(date)
                                         selectedYear = localDate.year.toString()
                                         selectedMonth = localDate.monthValue.toString().padStart(2, '0')
@@ -250,7 +280,8 @@ fun CallDetailScreen(
                                 lastParsedResult = result
                                 val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(result)
                                 withContext(Dispatchers.Main) {
-                                    memo = title
+                                    extractedTitle = title
+                                    //memo = title
                                     val localDate = parseDateToLocalDate(date)
                                     selectedYear = localDate.year.toString()
                                     selectedMonth = localDate.monthValue.toString().padStart(2, '0')
@@ -441,7 +472,7 @@ fun CallDetailScreen(
             text = if (isSaving) "저장중..." else "저장",
             onClick = {
                 // 입력 검증 강화
-                if (memo.isBlank()) {
+                if (extractedTitle.isBlank()) {
                     saveMessage = "일정 제목을 입력해주세요."
                     return@DMT_Button
                 }
@@ -476,7 +507,7 @@ fun CallDetailScreen(
                         val simpleSchedule = SimpleSchedule(
                             localId = UUID.randomUUID().toString(),
                             userId = currentUserId,
-                            title = if (memo.isBlank()) "Call Schedule" else memo,
+                            title = extractedTitle.ifBlank { "Call Schedule" },
                             description = "Call recording extracted schedule${if (selectedPlace.isNotEmpty()) " - Location: $selectedPlace" else ""}",
                             startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
                             endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
