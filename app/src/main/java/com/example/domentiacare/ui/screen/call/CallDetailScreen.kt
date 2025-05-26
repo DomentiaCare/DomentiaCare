@@ -26,11 +26,16 @@ import com.example.domentiacare.service.whisper.WhisperWrapper
 import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.SimpleDropdown
 import com.example.domentiacare.MyApplication
+import com.example.domentiacare.data.local.SimpleSchedule
+import com.example.domentiacare.data.sync.SimpleSyncManager
+import com.example.domentiacare.network.ScheduleApiService
+import com.example.domentiacare.data.util.UserPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import retrofit2.HttpException
 import java.io.File
 import java.text.SimpleDateFormat
 import java.time.*
@@ -71,6 +76,11 @@ fun CallDetailScreen(
     var selectedMinute by remember { mutableStateOf(LocalDateTime.now().minute.toString().padStart(2, '0')) }
     var selectedPlace by remember { mutableStateOf("") }
 
+    // 저장 상태
+    var isSaving by remember { mutableStateOf(false) }
+    var saveMessage by remember { mutableStateOf("") }
+    var testMessage by remember { mutableStateOf("") } // 테스트 메시지 추가
+
     val years = (2023..2027).map { it.toString() }
     val months = (1..12).map { it.toString().padStart(2, '0') }
     val days = (1..31).map { it.toString().padStart(2, '0') }
@@ -86,6 +96,15 @@ fun CallDetailScreen(
     val llamaServiceManager = MyApplication.llamaServiceManager
     var isAnalyzing by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    // 현재 사용자 ID를 미리 가져와서 저장 (Swagger 테스트에서 사용한 userId: 6)
+    val currentUserId = remember {
+        val savedUserId = UserPreferences.getUserId(context)
+        if (savedUserId > 0) savedUserId else 6L // Swagger에서 성공한 userId 사용
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,13 +114,17 @@ fun CallDetailScreen(
         // 통화 정보
         Text("${recordLog.name}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
         Text("${recordLog.type} ${recordLog.time}", fontSize = 14.sp, color = Color.Gray)
-        Spacer(modifier = Modifier.height(16.dp))
+        // 저장 메시지 표시
+        if (saveMessage.isNotEmpty()) {
+            Text(
+                text = saveMessage,
+                color = if (saveMessage.contains("성공")) Color.Green else Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
 
         // 오디오
         Text("통화 녹음", fontWeight = FontWeight.SemiBold)
-
-        //실제 Audio 플레이어로 대체 (이종범)
-        //AudioPlayerStub()
         AudioPlayer(file.path)
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,8 +136,6 @@ fun CallDetailScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
 
             // Whisper 변환 버튼
             DMT_Button(
@@ -165,8 +186,6 @@ fun CallDetailScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("일정", fontWeight = FontWeight.SemiBold)
-            val context = LocalContext.current
-            val coroutineScope = rememberCoroutineScope()
 
             // llama 변환 버튼
             DMT_Button(
@@ -322,10 +341,116 @@ fun CallDetailScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 저장 메시지 표시 위에 테스트 버튼들 추가
+        if (testMessage.isNotEmpty()) {
+            Text(
+                text = testMessage,
+                color = if (testMessage.contains("✅")) Color.Green else Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // API 조회 테스트 버튼들
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 내 일정 조회 버튼
+            DMT_Button(
+                text = "내 일정",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val schedules = ScheduleApiService.getMySchedules(context)
+                            testMessage = "✅ 내 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 내 일정 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // 오늘 일정 조회 버튼
+            DMT_Button(
+                text = "오늘 일정",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val schedules = ScheduleApiService.getTodaySchedules(currentUserId, context)
+                            testMessage = "✅ 오늘 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 오늘 일정 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // 전체 일정 조회 버튼
+            DMT_Button(
+                text = "전체 조회",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            ScheduleApiService.getAllSchedulesWithLog(currentUserId, context)
+                            testMessage = "✅ 전체 일정 조회 완료 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 전체 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // 이번 주 일정 조회 버튼
+            DMT_Button(
+                text = "이번 주",
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val today = LocalDateTime.now()
+                            val startOfWeek = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                            val endOfWeek = today.plusDays(7).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+
+                            val schedules = ScheduleApiService.getSchedulesByDateRange(
+                                currentUserId, startOfWeek, endOfWeek, context
+                            )
+                            testMessage = "✅ 이번 주 일정 ${schedules.size}개 조회 (로그 확인)"
+                        } catch (e: Exception) {
+                            testMessage = "❌ 이번 주 조회 실패: ${e.message}"
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // 저장 버튼
         DMT_Button(
-            text = "저장",
+            text = if (isSaving) "저장중..." else "저장",
             onClick = {
+                // 입력 검증 강화
+                if (memo.isBlank()) {
+                    saveMessage = "일정 제목을 입력해주세요."
+                    return@DMT_Button
+                }
+
+                // 유효한 사용자 ID 확인
+                if (currentUserId <= 0) {
+                    saveMessage = "사용자 정보를 확인할 수 없습니다."
+                    return@DMT_Button
+                }
+
                 val selectedDateTime = LocalDateTime.of(
                     selectedYear.toInt(),
                     selectedMonth.toInt(),
@@ -333,19 +458,72 @@ fun CallDetailScreen(
                     selectedHour.toInt(),
                     selectedMinute.toInt()
                 )
-                Log.d("CallDetailScreen", "저장된 메모: $memo 일시: $selectedDateTime 장소: $selectedPlace")
+
+                // 현재 시간보다 이전 시간인지 체크
+                if (selectedDateTime.isBefore(LocalDateTime.now())) {
+                    saveMessage = "과거 시간으로는 일정을 생성할 수 없습니다."
+                    return@DMT_Button
+                }
+
+                // 간단한 Offline-First 저장 로직 (Room 대신 SharedPreferences 사용)
+                isSaving = true
+                saveMessage = ""
+
+                coroutineScope.launch {
+                    try {
+                        // 간단한 일정 객체 생성
+                        val simpleSchedule = SimpleSchedule(
+                            localId = UUID.randomUUID().toString(),
+                            userId = currentUserId,
+                            title = if (memo.isBlank()) "Call Schedule" else memo,
+                            description = "Call recording extracted schedule${if (selectedPlace.isNotEmpty()) " - Location: $selectedPlace" else ""}",
+                            startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+                            endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
+                            isAi = true
+                        )
+
+                        // SimpleSyncManager를 통한 Offline-First 저장
+                        val syncManager = SimpleSyncManager.getInstance(context)
+                        val result = syncManager.saveSchedule(simpleSchedule)
+
+                        withContext(Dispatchers.Main) {
+                            if (result.isSuccess) {
+                                saveMessage = "✅ 일정이 저장되었습니다."
+                                Log.d("CallDetailScreen", "로컬 저장 성공: ${result.getOrNull()?.localId}")
+
+                                // 성공 후 이전 화면으로 이동
+                                delay(1500)
+                                navController.popBackStack()
+                            } else {
+                                saveMessage = "❌ 저장 실패: ${result.exceptionOrNull()?.message}"
+                                Log.e("CallDetailScreen", "저장 실패", result.exceptionOrNull())
+                            }
+                        }
+
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            saveMessage = "❌ 저장 중 오류 발생: ${e.message}"
+                            Log.e("CallDetailScreen", "저장 예외", e)
+                        }
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            isSaving = false
+                        }
+                    }
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSaving
         )
     }
 }
 
+// 현재 사용자 ID를 가져오는 함수
+private fun getCurrentUserId(context: android.content.Context): Long {
+    return UserPreferences.getUserId(context)
+}
 
-
-// ---------------------------------------
-//  파싱 함수 - robust (영어/자연어 날짜/시간 지원)
-// ---------------------------------------
-
+// 나머지 함수들은 동일하게 유지...
 data class Quintuple<A, B, C, D, E>(val first: A, val second: B, val third: C, val fourth: D, val fifth: E)
 
 fun parseLlamaScheduleResponseFull(response: String): Quintuple<String, String, String, String, String> {
@@ -517,25 +695,6 @@ fun parseDateToLocalDate(dateString: String): LocalDate {
         now.plusDays(daysToAdd.toLong())
     }
 }
-
-//실제 AudioPlayer로 대체
-//@Composable
-//fun AudioPlayerStub() {
-//    Card(
-//        modifier = Modifier.fillMaxWidth(),
-//        colors = CardDefaults.cardColors(containerColor = Color(0xFFfef7e7))
-//    ) {
-//        Row(
-//            verticalAlignment = Alignment.CenterVertically,
-//            modifier = Modifier.padding(12.dp)
-//        ) {
-//            Icon(Icons.Default.PlayArrow, contentDescription = "재생")
-//            Spacer(modifier = Modifier.width(8.dp))
-//            Text("0:00 / 5:12")
-//        }
-//    }
-//}
-
 
 @Composable
 fun AudioPlayer(

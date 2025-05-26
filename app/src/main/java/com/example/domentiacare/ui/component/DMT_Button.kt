@@ -17,6 +17,8 @@ fun DMT_Button(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = Color(0xFFF49000), // 기본 주황색
+    // enable 설정
+    enabled: Boolean = true // 버튼 활성화 여부
 ) {
 
     val colors = ButtonDefaults.buttonColors(
