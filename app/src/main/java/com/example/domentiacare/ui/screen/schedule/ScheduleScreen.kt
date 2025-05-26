@@ -38,6 +38,7 @@ import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+
 @Composable
 fun ScheduleScreen(
     navController: NavController,
@@ -131,14 +132,16 @@ fun ScheduleScreen(
 
                         OutlinedButton(
                             onClick = {
-                                // 일정 삭제 로직
-                                Log.d("ScheduleScreen", "일정 삭제 클릭")
+                                // 일정 확인 로직
+                                // 일정 화면으로 넘어가야함
+                                Log.d("ScheduleScreen", "일정 확인 클릭")
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("삭제하기")
+                            Text("확인")
                         }
                     }
+
                 }
             }
         }

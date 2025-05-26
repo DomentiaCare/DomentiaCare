@@ -67,6 +67,7 @@ fun CallDetailScreen(
 
     // 일정 제목/메모
     var memo by remember { mutableStateOf(initialMemo) }
+    var extractedTitle by remember {mutableStateOf("")}
 
     // 날짜/시간 드롭다운 State
     var selectedYear by remember { mutableStateOf(LocalDateTime.now().year.toString()) }
@@ -102,6 +103,7 @@ fun CallDetailScreen(
     // 현재 사용자 ID를 미리 가져와서 저장 (Swagger 테스트에서 사용한 userId: 6)
     val currentUserId = remember {
         val savedUserId = UserPreferences.getUserId(context)
+        Log.d("CallDetailScreen", "현재 사용자 ID: $savedUserId")
         if (savedUserId > 0) savedUserId else 6L // Swagger에서 성공한 userId 사용
     }
 
@@ -142,10 +144,15 @@ fun CallDetailScreen(
                 text = if (isLoading) "변환중..." else "STT 변환",
                 onClick = {
                     Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
+                    isLoading = true // 변환 wav파일 삭제위한 코드 작성
+
+
                     val m4aFile = File(file.path)
                     val outputDir = File("/sdcard/Recordings/wav/")
                     if (!outputDir.exists()) outputDir.mkdirs()
                     val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
+
+
                     convertM4aToWavForWhisper(m4aFile, outputWavFile)
                     Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
 
@@ -158,6 +165,20 @@ fun CallDetailScreen(
                         onResult = { result ->
                             transcript = result
                             isLoading = false
+
+                            //Whisper처리 완료 후 WAV파일 삭제
+                            try{
+                                if(outputWavFile.exists()){
+                                    val deleted = outputWavFile.delete()
+                                    if(deleted){
+                                        Log.d("CallDetailScreen", "✅ WAV 파일 삭제 성공: ${outputWavFile.absolutePath}")
+                                    } else {
+                                        Log.w("CallDetailScreen", "⚠️ WAV 파일 삭제 실패: ${outputWavFile.absolutePath}")
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("CallDetailScreen", "❌ WAV 파일 삭제 중 오류: ${e.message}")
+                            }
                         },
                         onUpdate = { }
                     )
@@ -195,6 +216,7 @@ fun CallDetailScreen(
 
                     isAnalyzing = true
                     memo = ""
+                    extractedTitle = ""
                     var lastParsedResult = ""
 
                     val prompt = """
@@ -217,6 +239,14 @@ fun CallDetailScreen(
                         try {
                             val result = llamaServiceManager.sendQuery(prompt) { partialText ->
                                 memo = partialText
+
+                                if (partialText.contains("Summary:") && partialText.contains("Schedule:")){
+                                    val (title, _, _, _, _) = parseLlamaScheduleResponseFull(partialText)
+                                    if(title.isNotBlank()){
+                                        extractedTitle = title
+                                    }
+                                }
+
                                 // 부분 응답에서도 완성된 Schedule이면 파싱
                                 if (
                                     partialText.contains("Schedule:") &&
@@ -226,7 +256,8 @@ fun CallDetailScreen(
                                     lastParsedResult = partialText
                                     val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(partialText)
                                     coroutineScope.launch(Dispatchers.Main) {
-                                        memo = title
+                                        //memo = title
+                                        extractedTitle = title
                                         val localDate = parseDateToLocalDate(date)
                                         selectedYear = localDate.year.toString()
                                         selectedMonth = localDate.monthValue.toString().padStart(2, '0')
@@ -249,7 +280,8 @@ fun CallDetailScreen(
                                 lastParsedResult = result
                                 val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(result)
                                 withContext(Dispatchers.Main) {
-                                    memo = title
+                                    extractedTitle = title
+                                    //memo = title
                                     val localDate = parseDateToLocalDate(date)
                                     selectedYear = localDate.year.toString()
                                     selectedMonth = localDate.monthValue.toString().padStart(2, '0')
@@ -440,7 +472,7 @@ fun CallDetailScreen(
             text = if (isSaving) "저장중..." else "저장",
             onClick = {
                 // 입력 검증 강화
-                if (memo.isBlank()) {
+                if (extractedTitle.isBlank()) {
                     saveMessage = "일정 제목을 입력해주세요."
                     return@DMT_Button
                 }
@@ -475,7 +507,7 @@ fun CallDetailScreen(
                         val simpleSchedule = SimpleSchedule(
                             localId = UUID.randomUUID().toString(),
                             userId = currentUserId,
-                            title = if (memo.isBlank()) "Call Schedule" else memo,
+                            title = extractedTitle.ifBlank { "Call Schedule" },
                             description = "Call recording extracted schedule${if (selectedPlace.isNotEmpty()) " - Location: $selectedPlace" else ""}",
                             startDate = selectedDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
                             endDate = selectedDateTime.plusHours(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")),
@@ -561,6 +593,7 @@ fun parseLlamaScheduleResponseFull(response: String): Quintuple<String, String, 
 }
 
 // 날짜: 다양한 영어 표현 지원 ("2024-06-09", "Sunday", "tomorrow", "next Monday" 등)
+// robust 날짜 파싱: 다양한 영어 표현 지원 ("2024-06-09", "Sunday", "this Sunday", "next Monday", "tomorrow" 등)
 fun parseDateSmart(dateRaw: String): String {
     val lower = dateRaw.trim().lowercase(Locale.US)
     val today = LocalDate.now()
@@ -598,7 +631,15 @@ fun parseDateSmart(dateRaw: String): String {
     regexNextDay.find(lower)?.let {
         val targetDOW = dowMap[it.groupValues[1]]!!
         var daysToAdd = (targetDOW.value - today.dayOfWeek.value + 7) % 7
-        if (daysToAdd == 0) daysToAdd = 7
+        if (daysToAdd == 0) daysToAdd = 7 // 항상 다음 주로
+        return today.plusDays(daysToAdd.toLong()).toString()
+    }
+    // 4-1. "this Sunday" 등
+    val regexThisDay = Regex("""this\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)""")
+    regexThisDay.find(lower)?.let {
+        val targetDOW = dowMap[it.groupValues[1]]!!
+        val todayDow = today.dayOfWeek.value
+        val daysToAdd = (targetDOW.value - todayDow + 7) % 7
         return today.plusDays(daysToAdd.toLong()).toString()
     }
     // 5. 월/일 (ex: "June 10", "Jun 10", "10 June")
@@ -623,33 +664,100 @@ fun parseDateSmart(dateRaw: String): String {
     return dateRaw
 }
 
-// robust 시간 파싱: "1230", "12:30", "twelve thirty", "12 pm", "noon" 등 커버
+
+// 🔧 개선된 robust 시간 파싱: 다양한 형식 지원
 fun parseTimeSmart(timeRaw: String): Pair<String, String> {
     val cleaned = timeRaw.trim().lowercase(Locale.US)
-    // 1. "1230"
+    Log.d("parseTimeSmart", "입력: '$timeRaw' -> 정리: '$cleaned'")
+
+    // 1. "1230" (4자리 숫자)
     if (cleaned.length == 4 && cleaned.all { it.isDigit() }) {
-        return cleaned.substring(0, 2) to cleaned.substring(2, 4)
+        val result = cleaned.substring(0, 2) to cleaned.substring(2, 4)
+        Log.d("parseTimeSmart", "4자리 숫자 파싱: $result")
+        return result
     }
-    // 2. "12:30" or "12-30"
-    Regex("""(\d{1,2})[:\-](\d{2})""").find(cleaned)?.let { match ->
-        return match.groupValues[1].padStart(2, '0') to match.groupValues[2].padStart(2, '0')
+
+    // 2. "12:30", "12-30", "12.30" (구분자 포함)
+    Regex("""(\d{1,2})[\:\-\.](\d{2})""").find(cleaned)?.let { match ->
+        val result = match.groupValues[1].padStart(2, '0') to match.groupValues[2].padStart(2, '0')
+        Log.d("parseTimeSmart", "구분자 포함 파싱: $result")
+        return result
     }
-    // 3. "12 pm", "12 am", "2:30 pm"
-    Regex("""(\d{1,2})[:]?(\d{2})?\s*(am|pm)""").find(cleaned)?.let { match ->
-        var hour = match.groupValues[1].toInt()
-        val minute = match.groupValues[2].ifBlank { "00" }
-        val ampm = match.groupValues[3]
-        if (ampm == "pm" && hour != 12) hour += 12
-        if (ampm == "am" && hour == 12) hour = 0
-        return hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+
+    // 3. 🆕 AM/PM 형식 개선 - "3:00pm", "3pm", "12:30 am", "2 pm" 등
+    val ampmPatterns = listOf(
+        // "3:00pm", "3:00 pm", "12:30am" 등
+        Regex("""(\d{1,2}):(\d{2})\s*(am|pm)"""),
+        // "3pm", "12 am" 등 (분 없음)
+        Regex("""(\d{1,2})\s*(am|pm)"""),
+        // "3:00p", "12:30a" 등 (짧은 형식)
+        Regex("""(\d{1,2}):(\d{2})\s*([ap])"""),
+        // "3p", "12a" 등
+        Regex("""(\d{1,2})\s*([ap])""")
+    )
+
+    for (pattern in ampmPatterns) {
+        pattern.find(cleaned)?.let { match ->
+            var hour = match.groupValues[1].toInt()
+            val minute = if (match.groupValues.size > 3 && match.groupValues[2].isNotEmpty()) {
+                match.groupValues[2]
+            } else {
+                "00"
+            }
+            val ampm = match.groupValues.last().lowercase()
+
+            // AM/PM 처리
+            when {
+                ampm.startsWith("p") && hour != 12 -> hour += 12
+                ampm.startsWith("a") && hour == 12 -> hour = 0
+            }
+
+            val result = hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+            Log.d("parseTimeSmart", "AM/PM 파싱: $result (원본: ${match.value})")
+            return result
+        }
     }
-    // 4. 영어 단어 ("twelve thirty", "nine", "noon", "midnight")
+
+    // 4. 🆕 24시간 형식 (13:00, 14:30 등)
+    Regex("""(\d{1,2}):(\d{2})""").find(cleaned)?.let { match ->
+        val hour = match.groupValues[1].toInt()
+        val minute = match.groupValues[2]
+        if (hour in 0..23) {
+            val result = hour.toString().padStart(2, '0') to minute.padStart(2, '0')
+            Log.d("parseTimeSmart", "24시간 형식 파싱: $result")
+            return result
+        }
+    }
+
+    // 5. 🆕 단순 시간 (숫자만)
+    Regex("""^(\d{1,2})$""").find(cleaned)?.let { match ->
+        val hour = match.groupValues[1].toInt()
+        if (hour in 0..23) {
+            val result = hour.toString().padStart(2, '0') to "00"
+            Log.d("parseTimeSmart", "단순 시간 파싱: $result")
+            return result
+        }
+    }
+
+    // 6. 영어 단어 ("twelve thirty", "nine", "noon", "midnight")
     val engNumMap = mapOf(
         "one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6,
         "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10, "eleven" to 11, "twelve" to 12
     )
-    if (cleaned.contains("noon")) return "12" to "00"
-    if (cleaned.contains("midnight")) return "00" to "00"
+
+    // 특수 시간
+    when {
+        cleaned.contains("noon") -> {
+            Log.d("parseTimeSmart", "noon 파싱: 12:00")
+            return "12" to "00"
+        }
+        cleaned.contains("midnight") -> {
+            Log.d("parseTimeSmart", "midnight 파싱: 00:00")
+            return "00" to "00"
+        }
+    }
+
+    // 영어 숫자 + 분 ("twelve thirty", "nine fifteen" 등)
     Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(thirty|fifteen|forty five|o'clock|zero)?""")
         .find(cleaned)?.let { match ->
             val hour = engNumMap[match.groupValues[1]]?.toString()?.padStart(2, '0') ?: ""
@@ -660,41 +768,105 @@ fun parseTimeSmart(timeRaw: String): Pair<String, String> {
                 cleaned.contains("zero") || cleaned.contains("o'clock") -> "00"
                 else -> "00"
             }
-            return hour to min
+            val result = hour to min
+            Log.d("parseTimeSmart", "영어 숫자+분 파싱: $result")
+            return result
         }
-    Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(am|pm))?""")
+
+    // 영어 숫자 + AM/PM ("twelve pm", "nine am" 등)
+    Regex("""(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s*(am|pm|a|p))?""")
         .find(cleaned)?.let { match ->
             var hour = engNumMap[match.groupValues[1]] ?: 0
-            val ampm = match.groupValues[2]
-            if (ampm == "pm" && hour != 12) hour += 12
-            if (ampm == "am" && hour == 12) hour = 0
-            return hour.toString().padStart(2, '0') to "00"
+            val ampm = match.groupValues[2].lowercase()
+
+            when {
+                ampm.startsWith("p") && hour != 12 -> hour += 12
+                ampm.startsWith("a") && hour == 12 -> hour = 0
+            }
+
+            val result = hour.toString().padStart(2, '0') to "00"
+            Log.d("parseTimeSmart", "영어 숫자+AM/PM 파싱: $result")
+            return result
         }
+
+    // 7. 🆕 다양한 구어체 표현
+    val colloquialTimes = mapOf(
+        "morning" to ("09" to "00"),
+        "afternoon" to ("14" to "00"),
+        "evening" to ("18" to "00"),
+        "night" to ("20" to "00"),
+        "early morning" to ("07" to "00"),
+        "late morning" to ("11" to "00"),
+        "early afternoon" to ("13" to "00"),
+        "late afternoon" to ("16" to "00"),
+        "early evening" to ("17" to "00"),
+        "late evening" to ("21" to "00")
+    )
+
+    for ((phrase, time) in colloquialTimes) {
+        if (cleaned.contains(phrase)) {
+            Log.d("parseTimeSmart", "구어체 표현 파싱: $time (원본: $phrase)")
+            return time
+        }
+    }
+
     // 못 찾으면 빈 값
+    Log.d("parseTimeSmart", "파싱 실패: '$timeRaw' -> 빈 값 반환")
     return "" to ""
 }
 
 // 요일 → LocalDate로 변환 (UI 드롭다운 동기화용)
 fun parseDateToLocalDate(dateString: String): LocalDate {
-    return try {
-        LocalDate.parse(dateString)
-    } catch (e: Exception) {
-        val dayOfWeekMap = mapOf(
-            "sunday" to DayOfWeek.SUNDAY,
-            "monday" to DayOfWeek.MONDAY,
-            "tuesday" to DayOfWeek.TUESDAY,
-            "wednesday" to DayOfWeek.WEDNESDAY,
-            "thursday" to DayOfWeek.THURSDAY,
-            "friday" to DayOfWeek.FRIDAY,
-            "saturday" to DayOfWeek.SATURDAY,
-        )
-        val now = LocalDate.now()
-        val targetDayOfWeek = dayOfWeekMap[dateString.trim().lowercase()] ?: return now
-        var daysToAdd = (targetDayOfWeek.value - now.dayOfWeek.value + 7) % 7
-        if (daysToAdd == 0) daysToAdd = 7
-        now.plusDays(daysToAdd.toLong())
+    val now = LocalDate.now()
+    val dayOfWeekMap = mapOf(
+        "sunday" to DayOfWeek.SUNDAY,
+        "monday" to DayOfWeek.MONDAY,
+        "tuesday" to DayOfWeek.TUESDAY,
+        "wednesday" to DayOfWeek.WEDNESDAY,
+        "thursday" to DayOfWeek.THURSDAY,
+        "friday" to DayOfWeek.FRIDAY,
+        "saturday" to DayOfWeek.SATURDAY,
+    )
+
+    // 먼저 ISO 포맷(yyyy-MM-dd) 시도
+    try {
+        return LocalDate.parse(dateString)
+    } catch (_: Exception) { }
+
+    val lower = dateString.trim().lowercase()
+
+    // 1. "next sunday", "this monday" 등
+    val regexNextThis = Regex("""(next|this)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)""")
+    regexNextThis.find(lower)?.let {
+        val mode = it.groupValues[1] // next or this
+        val dow = dayOfWeekMap[it.groupValues[2]] ?: return now
+        val todayDow = now.dayOfWeek.value
+
+        return when (mode) {
+            "next" -> {
+                var daysToAdd = (dow.value - todayDow + 7) % 7
+                if (daysToAdd == 0) daysToAdd = 7 // 항상 다음 주로
+                now.plusDays(daysToAdd.toLong())
+            }
+            "this" -> {
+                val daysToAdd = (dow.value - todayDow + 7) % 7
+                now.plusDays(daysToAdd.toLong())
+            }
+            else -> now
+        }
     }
+
+    // 2. 요일 단독 (예: "sunday")
+    dayOfWeekMap[lower]?.let { dow ->
+        var daysToAdd = (dow.value - now.dayOfWeek.value + 7) % 7
+        if (daysToAdd == 0) daysToAdd = 7 // 항상 미래
+        return now.plusDays(daysToAdd.toLong())
+    }
+
+    // 3. 못찾으면 오늘 반환
+    return now
 }
+
 
 @Composable
 fun AudioPlayer(

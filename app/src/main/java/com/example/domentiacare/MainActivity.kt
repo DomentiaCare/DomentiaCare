@@ -2,6 +2,7 @@ package com.example.domentiacare
 
 import com.example.domentiacare.service.CallRecordAnalyzeService
 import android.Manifest
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -21,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -33,6 +35,7 @@ import com.example.domentiacare.ui.test.TestLlamaActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 import com.example.domentiacare.service.androidtts.TTSServiceManager
+
 // 알림 데이터를 담는 데이터 클래스
 data class NotificationData(
     val fromNotification: Boolean = false,
@@ -53,38 +56,12 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: CallLogViewModel by viewModels()
     private val IS_DEV_MODE = true
-    private val LOCATION_PERMISSION_REQUEST_CODE = 1001
-    private lateinit var finePermissionLauncher: ActivityResultLauncher<String>
-    private lateinit var backgroundPermissionLauncher: ActivityResultLauncher<String>
 
     // 🆕 알림 데이터를 담을 MutableState
     private lateinit var notificationDataState: MutableState<NotificationData?>
 
-    // 🔹 POST_NOTIFICATIONS 권한 요청 런처
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Log.d("Permission", "✅ 알림 권한 허용됨")
-        } else {
-            Toast.makeText(this, "❌ 알림 권한이 거부되었습니다", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // 통화 기록 권한
-    private val requestReadCallLog = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            viewModel.loadCallLogs(this)
-        } else {
-            Toast.makeText(this, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
 //        // TTS 서비스 테스트
 //        TTSServiceManager.init(this){
@@ -95,25 +72,8 @@ class MainActivity : ComponentActivity() {
 //            // TTSServiceManager.shutdown()
 //        }
 
-
-
         val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
-
-        // ✅ Android 13 이상일 경우 알림 권한 요청
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            askNotificationPermission()
-        }
-
-        // ✅ 오디오 권한 요청
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestAudioPermission.launch(Manifest.permission.READ_MEDIA_AUDIO)
-        } else {
-            requestAudioPermission.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-
-        // 위치 권한 관련 초기화
-        initializeLocationPermissions()
 
         enableEdgeToEdge()
         setContent {
@@ -121,6 +81,9 @@ class MainActivity : ComponentActivity() {
             notificationDataState = remember { mutableStateOf(extractNotificationData(intent)) }
 
             DomentiaCareTheme {
+                // 🆕 순차적 권한 요청 컴포저블 호출
+                SequentialPermissionRequester()
+
                 if (IS_DEV_MODE) {
                     Column(
                         modifier = Modifier.fillMaxSize()
@@ -135,6 +98,141 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(notificationData = notificationDataState.value)
                 }
             }
+        }
+    }
+
+    // 🆕 순차적 권한 요청 컴포저블
+    @Composable
+    fun SequentialPermissionRequester() {
+        val context = LocalContext.current
+        val activity = context as Activity
+
+        // 요청할 권한 리스트 (Android 버전에 따라 동적으로 구성)
+        val permissions = remember {
+            mutableListOf<String>().apply {
+                // 기본 권한들
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+                add(Manifest.permission.READ_PHONE_STATE)
+
+                // Android 버전에 따른 오디오/저장소 권한
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    add(Manifest.permission.READ_MEDIA_AUDIO)
+                    add(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                }
+
+                // 백그라운드 위치 권한 (Android 10 이상)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
+            }
+        }
+
+        // 현재 요청할 권한의 인덱스 상태
+        var currentIndex by remember { mutableStateOf(0) }
+        var allPermissionsRequested by remember { mutableStateOf(false) }
+
+        // 런처: 하나의 권한을 요청함
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            val currentPermission = permissions[currentIndex]
+
+            if (isGranted) {
+                Log.d("Permission", "✅ $currentPermission 허용됨")
+                handlePermissionGranted(currentPermission)
+            } else {
+                Log.d("Permission", "❌ $currentPermission 거절됨")
+                handlePermissionDenied(currentPermission)
+            }
+
+            // 다음 권한으로 이동
+            currentIndex++
+        }
+
+        // 최초 실행 시 권한 요청 시작
+        LaunchedEffect(currentIndex) {
+            if (currentIndex < permissions.size && !allPermissionsRequested) {
+                val permission = permissions[currentIndex]
+
+                // 이미 허용된 권한인지 확인
+                if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("Permission", "📋 $permission 이미 허용됨")
+                    handlePermissionGranted(permission)
+                    currentIndex++
+                } else {
+                    // 백그라운드 위치 권한의 경우 특별 처리
+                    if (permission == Manifest.permission.ACCESS_BACKGROUND_LOCATION) {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                            // 정밀 위치 권한이 없으면 백그라운드 위치 권한 건너뛰기
+                            Log.d("Permission", "⚠️ 정밀 위치 권한이 없어 백그라운드 위치 권한 건너뛰기")
+                            currentIndex++
+                            return@LaunchedEffect
+                        }
+                    }
+
+                    permissionLauncher.launch(permission)
+                }
+            } else if (!allPermissionsRequested) {
+                Log.d("Permission", "🎉 모든 권한 요청 완료")
+                allPermissionsRequested = true
+                onAllPermissionsProcessed()
+            }
+        }
+    }
+
+    // 권한이 허용되었을 때 처리
+    private fun handlePermissionGranted(permission: String) {
+        when (permission) {
+            Manifest.permission.ACCESS_FINE_LOCATION -> {
+                Log.d("Permission", "정밀 위치 권한 허용됨")
+            }
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION -> {
+                Log.d("Permission", "백그라운드 위치 권한 허용됨")
+            }
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE -> {
+                Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
+            }
+            Manifest.permission.POST_NOTIFICATIONS -> {
+                Log.d("Permission", "📢 알림 권한 허용됨")
+            }
+            Manifest.permission.READ_PHONE_STATE -> {
+                Log.d("Permission", "📞 통화 기록 권한 허용됨")
+                viewModel.loadCallLogs(this)
+            }
+        }
+    }
+
+    // 권한이 거절되었을 때 처리
+    private fun handlePermissionDenied(permission: String) {
+        when (permission) {
+            Manifest.permission.ACCESS_FINE_LOCATION -> {
+                Toast.makeText(this, "정확한 위치 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+            }
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION -> {
+                Toast.makeText(this, "백그라운드 위치 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+            }
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_EXTERNAL_STORAGE -> {
+                Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+            Manifest.permission.POST_NOTIFICATIONS -> {
+                Toast.makeText(this, "❌ 알림 권한이 거부되었습니다", Toast.LENGTH_SHORT).show()
+            }
+            Manifest.permission.READ_PHONE_STATE -> {
+                Toast.makeText(this, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // 모든 권한 처리 완료 후 실행할 로직
+    private fun onAllPermissionsProcessed() {
+        // 위치 서비스 시작 (위치 권한이 있는 경우)
+        if (hasFineLocationPermission()) {
+            startLocationService()
         }
     }
 
@@ -173,52 +271,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 위치 권한 초기화 메서드 분리
-    private fun initializeLocationPermissions() {
-        finePermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (isGranted) {
-                Log.d("Permission", "정밀 위치 권한 허용됨")
-                requestBackgroundLocationPermission()
-            } else {
-                Toast.makeText(this, "정확한 위치 권한이 필요합니다", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        backgroundPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (isGranted) {
-                Log.d("Permission", "백그라운드 위치 권한 허용됨")
-                startLocationService()
-            } else {
-                Toast.makeText(this, "백그라운드 위치 권한이 필요합니다", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        if (hasFineLocationPermission()) {
-            if (hasBackgroundLocationPermission()) {
-                startLocationService()
-            } else {
-                requestBackgroundLocationPermission()
-            }
-        } else {
-            requestFineLocationPermission()
-        }
-    }
-
-    // 기존 메서드들 유지...
-    private val requestAudioPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            Log.d("Permission", "🎙️ 오디오 파일 접근 권한 허용됨")
-        } else {
-            Toast.makeText(this, "녹음 파일 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
+    // 유틸리티 메서드들
     private fun hasFineLocationPermission(): Boolean {
         return ActivityCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
@@ -231,39 +284,8 @@ class MainActivity : ComponentActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestFineLocationPermission() {
-        finePermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
-
-    private fun requestBackgroundLocationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            backgroundPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        } else {
-            startLocationService()
-        }
-    }
-
     private fun startLocationService() {
         val intent = Intent(this, LocationForegroundService::class.java)
         ContextCompat.startForegroundService(this, intent)
-    }
-
-    private fun askNotificationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.d("Permission", "📢 알림 권한 이미 허용됨")
-        } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-            AlertDialog.Builder(this)
-                .setTitle("알림 권한 필요")
-                .setMessage("위치 이탈 알림을 수신하려면 알림 권한이 필요합니다.")
-                .setPositiveButton("허용") { _, _ ->
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-                .setNegativeButton("거부", null)
-                .show()
-        } else {
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
     }
 }
