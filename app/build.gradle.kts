@@ -186,4 +186,8 @@ dependencies {
     implementation ("org.java-websocket:Java-WebSocket:1.5.2")
     implementation ("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
     implementation ("io.reactivex.rxjava2:rxjava:2.2.21")
+
+
+    // Watch service
+    implementation ("com.google.android.gms:play-services-wearable:18.1.0")
 }
