@@ -206,7 +206,7 @@ class CallRecordAnalyzeService : Service() {
                         }
 
                         // 7. 성공 알림 표시
-                        showSuccessNotification(finalRecord)
+                        showResultNotificationWithIntent(finalRecord)
                     } else {
                         Log.w("CallRecordAnalyzeService", "⚠️ 추출된 일정이 없습니다.")
                         showErrorNotification("일정 추출 실패", "통화에서 일정을 찾을 수 없습니다.")
@@ -527,7 +527,7 @@ class CallRecordAnalyzeService : Service() {
     /**
      * 성공 알림 표시 (Record 기반)
      */
-    private fun showSuccessNotification(record: Record) {
+    private fun showResultNotificationWithIntent(record: Record) {
         val channelId = "call_record_analysis"
 
         // 첫 번째 일정 정보 가져오기
