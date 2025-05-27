@@ -651,6 +651,27 @@ class CallRecordAnalyzeService : Service() {
         val firstSchedule = record.extractedSchedules?.firstOrNull()
         val scheduleCount = record.extractedSchedules?.size ?: 0
 
+        // ===== 🔧 워치에 메시지 전송 추가 =====
+        if (firstSchedule != null) {
+            val watchMessage = """
+            ${firstSchedule.title}
+            ${firstSchedule.startDate}
+            ${firstSchedule.description}
+        """.trimIndent()
+
+            Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
+            try {
+                WatchMessageHelper.sendMessageToWatch(
+                    context = this,
+                    path = "/schedule_notify",
+                    message = watchMessage
+                )
+            } catch (e: Exception) {
+                Log.e("CallRecordAnalyzeService", "워치 메시지 전송 실패", e)
+            }
+        }
+        // =====================================
+
         // MainActivity로 이동하는 인텐트 생성
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
