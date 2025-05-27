@@ -7,8 +7,12 @@ import com.example.domentiacare.data.local.SimpleSchedule
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Response
 import retrofit2.http.*
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -49,7 +53,15 @@ data class RecordResponse(
     val parseStatus: String,
     val createdAt: String,
     val updatedAt: String,
-    val extractedSchedules: String? = null // JSON 문자열로 수신
+    val extractedSchedules: String? = null, // JSON 문자열로 수신
+    val audioUrl: String? = null // audioUrl 추가
+)
+
+// 🔧 파일 업로드 응답 DTO 추가
+data class AudioUploadResponse(
+    val success: String,
+    val audioUrl: String,
+    val message: String
 )
 
 // Retrofit 인터페이스
@@ -68,6 +80,14 @@ interface RecordApiInterface {
 
     @GET("api/records/user/{userId}")
     suspend fun getRecordsByUser(@Path("userId") userId: Long): Response<List<RecordResponse>>
+
+    // 🔧 파일 업로드 API 수정 - 올바른 응답 타입으로 변경
+    @Multipart
+    @POST("api/records/{localId}/upload-audio")
+    suspend fun uploadAudio(
+        @Path("localId") localId: String,
+        @Part file: MultipartBody.Part
+    ): Response<AudioUploadResponse> // Void -> AudioUploadResponse로 변경
 }
 
 // API 서비스
@@ -142,6 +162,46 @@ object RecordApiService {
             Result.failure(e)
         }
     }
+
+    suspend fun uploadAudioFile(localId: String, wavFile: File): Result<String> {
+        return try {
+            Log.d("RecordApiService", "🎵 오디오 파일 업로드 시작: ${wavFile.name} (${wavFile.length()} bytes)")
+
+            // 파일 검증
+            if (!wavFile.exists() || wavFile.length() == 0L) {
+                return Result.failure(Exception("유효하지 않은 파일입니다."))
+            }
+
+            // 파일 크기 제한 (50MB)
+            if (wavFile.length() > 50 * 1024 * 1024) {
+                return Result.failure(Exception("파일 크기가 50MB를 초과합니다."))
+            }
+
+            val requestFile = wavFile.asRequestBody("audio/wav".toMediaTypeOrNull())
+            val body = MultipartBody.Part.createFormData("file", wavFile.name, requestFile)
+
+            Log.d("RecordApiService", "📤 서버로 파일 전송 중...")
+            val response = api.uploadAudio(localId, body)
+
+            if (response.isSuccessful) {
+                val result = response.body()
+                if (result != null && result.success == "true") {
+                    Log.d("RecordApiService", "✅ 오디오 파일 업로드 성공: ${result.audioUrl}")
+                    Result.success(result.audioUrl)
+                } else {
+                    Log.e("RecordApiService", "❌ 서버 응답 오류: $result")
+                    Result.failure(Exception("서버 응답 오류"))
+                }
+            } else {
+                Log.e("RecordApiService", "❌ 오디오 파일 업로드 실패: ${response.code()}")
+                Result.failure(Exception("Audio upload failed: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Log.e("RecordApiService", "❌ 오디오 파일 업로드 예외", e)
+            Result.failure(e)
+        }
+    }
+
 }
 
 // Extension functions for conversion

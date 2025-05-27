@@ -24,6 +24,10 @@ import com.example.domentiacare.network.RecordApiService
 import kotlin.random.Random
 import kotlinx.coroutines.*
 
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+
 //Watch 서비스에서 사용하는 import
 import com.example.domentiacare.service.watch.WatchMessageHelper
 
@@ -138,77 +142,79 @@ class CallRecordAnalyzeService : Service() {
     private fun handleNewRecordFileWithRecordSystem(filePath: String) {
         serviceScope.launch {
             Log.d("CallRecordAnalyzeService", "=== Record 시스템 통합 처리 시작 ===")
-            Log.d("CallRecordAnalyzeService", "파일: $filePath")
 
             try {
                 val file = File(filePath)
-
-                // 🆕 최종 파일 검증
                 if (!file.exists() || file.length() == 0L) {
                     Log.e("CallRecordAnalyzeService", "❌ 유효하지 않은 파일: $filePath")
                     showErrorNotification("파일 오류", "오디오 파일이 유효하지 않습니다.")
                     return@launch
                 }
 
-                // 1. RecordingFile 객체 생성
+                // 1. Record 생성
                 val recordingFile = RecordingFile(
                     name = file.name,
                     path = file.absolutePath,
                     lastModified = file.lastModified(),
                     size = file.length()
                 )
-                Log.d("CallRecordAnalyzeService", "📋 RecordingFile 생성: ${recordingFile.name}")
 
-                // 2. 사용자 ID 가져오기
                 val userId = UserPreferences.getUserId(applicationContext).let {
                     if (it > 0) it else 6L
                 }
-                Log.d("CallRecordAnalyzeService", "👤 사용자 ID: $userId")
 
-                // 3. Record 생성 및 저장
                 val record = recordingFile.toRecord(userId)
                 val saveResult = recordStorage.saveRecord(record)
 
                 if (saveResult.isFailure) {
-                    Log.e("CallRecordAnalyzeService", "❌ Record 저장 실패: ${saveResult.exceptionOrNull()?.message}")
+                    Log.e("CallRecordAnalyzeService", "❌ Record 저장 실패")
                     showErrorNotification("저장 오류", "Record 저장에 실패했습니다.")
                     return@launch
                 }
 
-                Log.d("CallRecordAnalyzeService", "✅ Record 저장 성공: ${record.localId}")
+                Log.d("CallRecordAnalyzeService", "✅ Record 로컬 저장 성공: ${record.localId}")
 
-                // 4. 전체 파이프라인 실행 (Whisper → Llama → 파싱)
+                // 🔧 2. 서버에 Record 먼저 생성 (AI 처리 전에)
+                try {
+                    val initialApiResult = RecordApiService.createRecord(record, applicationContext)
+                    if (initialApiResult.isSuccess) {
+                        Log.d("CallRecordAnalyzeService", "✅ 서버에 초기 Record 생성 성공")
+                    } else {
+                        Log.e("CallRecordAnalyzeService", "❌ 서버에 초기 Record 생성 실패: ${initialApiResult.exceptionOrNull()}")
+                        // 서버 생성 실패해도 로컬 처리는 계속 진행
+                    }
+                } catch (e: Exception) {
+                    Log.e("CallRecordAnalyzeService", "❌ 서버 초기 동기화 예외", e)
+                }
+
+                // 3. AI 처리 파이프라인 실행
                 Log.d("CallRecordAnalyzeService", "🚀 전체 파이프라인 시작")
                 val pipelineSuccess = executeFullPipeline(record.localId)
 
                 if (pipelineSuccess) {
                     Log.d("CallRecordAnalyzeService", "🎉 전체 파이프라인 성공!")
 
-                    // 5. 최종 Record 확인
                     val finalRecord = recordStorage.getRecordById(record.localId)
                     if (finalRecord?.extractedSchedules?.isNotEmpty() == true) {
                         Log.d("CallRecordAnalyzeService", "📅 추출된 일정: ${finalRecord.extractedSchedules!!.size}개")
 
-                        // 6. Record만 저장 (SimpleSchedule 내보내기 제거)
-                        saveRecord(finalRecord)
-
-                        // 2. 서버 전송 (최종 finalRecord로)
-                        //    최초 생성이 이미 서버에 되어 있으면 updateRecord,
-                        //    그렇지 않으면 createRecord를 사용(최초 1회만 create, 이후엔 update)
+                        // 🔧 4. 최종 Record 정보 서버 업데이트
                         try {
-                            // createRecord는 서버에 없을 때(처음), updateRecord는 이미 서버에 레코드가 있을 때 사용
-                            // create 시도가 실패하면 update로 fallback 가능 (상황에 따라)
-                            val apiResult = RecordApiService.createRecord(finalRecord, applicationContext)
-                            if (apiResult.isSuccess) {
-                                Log.d("CallRecordAnalyzeService", "✅==================== 서버에 최종 Record 동기화 성공")
+                            val updateApiResult = RecordApiService.updateRecord(finalRecord, applicationContext)
+                            if (updateApiResult.isSuccess) {
+                                Log.d("CallRecordAnalyzeService", "✅ 서버에 최종 Record 업데이트 성공")
                             } else {
-                                Log.e("CallRecordAnalyzeService", "❌==================== 서버에 최종 Record 동기화 실패: ${apiResult.exceptionOrNull()}")
+                                Log.e("CallRecordAnalyzeService", "❌ 서버에 최종 Record 업데이트 실패")
                             }
                         } catch (e: Exception) {
-                            Log.e("CallRecordAnalyzeService", "❌ 서버 동기화 예외", e)
+                            Log.e("CallRecordAnalyzeService", "❌ 서버 최종 업데이트 예외", e)
                         }
 
-                        // 7. 성공 알림 표시
+                        // 🔧 5. 잠시 대기 후 오디오 파일 업로드 (서버 동기화 시간 확보)
+                        delay(2000) // 2초 대기
+                        uploadAudioFileToServer(finalRecord)
+
+                        // 6. 성공 알림
                         showResultNotification(finalRecord)
                     } else {
                         Log.w("CallRecordAnalyzeService", "⚠️ 추출된 일정이 없습니다.")
@@ -227,6 +233,104 @@ class CallRecordAnalyzeService : Service() {
             Log.d("CallRecordAnalyzeService", "=== Record 시스템 통합 처리 완료 ===")
         }
     }
+
+    // 🔧 해결방안 2: 오디오 파일 업로드 함수에 재시도 로직 추가
+    private suspend fun uploadAudioFileToServer(record: Record) = withContext(Dispatchers.IO) {
+        try {
+            Log.d("CallRecordAnalyzeService", "🎵 오디오 파일 업로드 시작: ${record.localId}")
+
+            val originalFile = File(record.path)
+            var uploadFile: File? = null
+
+            try {
+                // 업로드할 파일 준비 (기존 로직과 동일)
+                uploadFile = if (record.path.endsWith(".m4a", ignoreCase = true)) {
+                    val cachedWavFile = File(applicationContext.cacheDir, originalFile.nameWithoutExtension + ".wav")
+
+                    if (cachedWavFile.exists() && cachedWavFile.length() > 0) {
+                        Log.d("CallRecordAnalyzeService", "✅ 기존 WAV 파일 사용: ${cachedWavFile.absolutePath}")
+                        cachedWavFile
+                    } else {
+                        Log.d("CallRecordAnalyzeService", "🔄 새로 WAV 변환 (업로드용)")
+                        val tempWavFile = File(applicationContext.cacheDir, "${record.localId}_upload.wav")
+                        convertM4aToWavForWhisper(originalFile, tempWavFile)
+
+                        if (tempWavFile.exists() && tempWavFile.length() > 0) {
+                            tempWavFile
+                        } else {
+                            Log.e("CallRecordAnalyzeService", "❌ WAV 변환 실패")
+                            return@withContext
+                        }
+                    }
+                } else {
+                    originalFile
+                }
+
+                if (uploadFile == null || !uploadFile.exists() || uploadFile.length() == 0L) {
+                    Log.e("CallRecordAnalyzeService", "❌ 업로드할 파일이 유효하지 않음")
+                    return@withContext
+                }
+
+                Log.d("CallRecordAnalyzeService", "📁 업로드 파일: ${uploadFile.absolutePath} (${uploadFile.length()} bytes)")
+
+                // 🔧 재시도 로직 추가
+                var uploadSuccess = false
+                var retryCount = 0
+                val maxRetries = 3
+
+                while (!uploadSuccess && retryCount < maxRetries) {
+                    try {
+                        Log.d("CallRecordAnalyzeService", "📤 파일 업로드 시도 ${retryCount + 1}/$maxRetries")
+
+                        val uploadResult = RecordApiService.uploadAudioFile(record.localId, uploadFile)
+
+                        if (uploadResult.isSuccess) {
+                            val audioUrl = uploadResult.getOrNull()
+                            Log.d("CallRecordAnalyzeService", "✅ 오디오 파일 업로드 성공: $audioUrl")
+                            uploadSuccess = true
+                        } else {
+                            val errorMsg = uploadResult.exceptionOrNull()?.message ?: "알 수 없는 오류"
+                            Log.e("CallRecordAnalyzeService", "❌ 업로드 실패 (시도 ${retryCount + 1}): $errorMsg")
+
+                            if (errorMsg.contains("404") && retryCount < maxRetries - 1) {
+                                // 404 오류면 Record가 아직 서버에 없을 수 있으므로 잠시 대기
+                                Log.d("CallRecordAnalyzeService", "⏳ Record 동기화 대기 중...")
+                                delay(3000) // 3초 대기
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CallRecordAnalyzeService", "❌ 업로드 시도 중 예외 (${retryCount + 1}): ${e.message}")
+                    }
+
+                    retryCount++
+                }
+
+                if (!uploadSuccess) {
+                    Log.e("CallRecordAnalyzeService", "❌ 모든 재시도 실패 - 오디오 파일 업로드 포기")
+                }
+
+            } finally {
+                // 파일 정리 (기존 로직과 동일)
+                if (uploadFile != originalFile && uploadFile?.name?.contains("upload") == true) {
+                    uploadFile?.delete()
+                    Log.d("CallRecordAnalyzeService", "🗑️ 임시 업로드 파일 삭제: ${uploadFile?.absolutePath}")
+                }
+
+                if (record.path.endsWith(".m4a", ignoreCase = true)) {
+                    val whisperWavFile = File(applicationContext.cacheDir, File(record.path).nameWithoutExtension + ".wav")
+                    if (whisperWavFile.exists()) {
+                        whisperWavFile.delete()
+                        Log.d("CallRecordAnalyzeService", "🗑️ Whisper WAV 파일 삭제: ${whisperWavFile.absolutePath}")
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e("CallRecordAnalyzeService", "❌ 오디오 파일 업로드 전체 예외", e)
+        }
+    }
+
+
 
     /**
      * 전체 파이프라인 실행 (Whisper → Llama → 파싱)
@@ -306,6 +410,16 @@ class CallRecordAnalyzeService : Service() {
 
                 audioPath = outputWavFile.absolutePath
                 Log.d("CallRecordAnalyzeService", "✅ WAV 변환 완료: ${outputWavFile.length()} bytes")
+
+                // 파일 전송
+                if (outputWavFile != null && outputWavFile.exists()) {
+                    val uploadResult = RecordApiService.uploadAudioFile(record.localId, outputWavFile)
+                    if (uploadResult.isSuccess) {
+                        Log.d("AudioUpload", "WAV 파일 업로드 성공")
+                    } else {
+                        Log.e("AudioUpload", "WAV 파일 업로드 실패: ${uploadResult.exceptionOrNull()}")
+                    }
+                }
             }
 
             // Whisper 실행
