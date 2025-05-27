@@ -8,6 +8,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.domentiacare.data.util.getCallRecordingFiles
@@ -35,6 +38,15 @@ import com.example.domentiacare.ui.test.TestLlamaActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 import com.example.domentiacare.service.androidtts.TTSServiceManager
+
+// AI Assistant imports
+import com.example.domentiacare.assistant.AIAssistant
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.Stop
+import android.net.Uri
+import android.provider.Settings
 
 // 알림 데이터를 담는 데이터 클래스
 data class NotificationData(
@@ -60,9 +72,16 @@ class MainActivity : ComponentActivity() {
     // 🆕 알림 데이터를 담을 MutableState
     private lateinit var notificationDataState: MutableState<NotificationData?>
 
+    // AI 어시스턴트 변수 추가
+    private var aiAssistant: AIAssistant? = null
+    private val assistantActiveState = mutableStateOf(false)
+    private val assistantRecordingState = mutableStateOf(false)
+    private val assistantAnalyzingState = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Log.d("MainActivity", "onCreate 진입")
 //        // TTS 서비스 테스트
 //        TTSServiceManager.init(this){
 //            // 2. 두 번째 목소리로 고정해서 이후 speak할 때 사용
@@ -71,6 +90,10 @@ class MainActivity : ComponentActivity() {
 //            // 필요시 tts shutdown
 //            // TTSServiceManager.shutdown()
 //        }
+
+        // AI 어시스턴트 초기화
+        initializeAIAssistant()
+        Log.d("MainActivity", "initializeAIAssistant() 호출")
 
         val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
         ContextCompat.startForegroundService(this, serviceIntent)
@@ -85,20 +108,324 @@ class MainActivity : ComponentActivity() {
                 SequentialPermissionRequester()
 
                 if (IS_DEV_MODE) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // 기존 앱 네비게이션에 알림 데이터 전달
-                        Box(modifier = Modifier.weight(1f)) {
-                            AppNavHost(notificationData = notificationDataState.value)
+                    Scaffold(
+                        floatingActionButton = {
+                            AIAssistantFAB()
+                        }
+                    ) { paddingValues ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
+                            // AI 어시스턴트 상태 표시
+                            AIAssistantStatusCard()
+
+                            // 기존 앱 네비게이션에 알림 데이터 전달
+                            Box(modifier = Modifier.weight(1f)) {
+                                AppNavHost(notificationData = notificationDataState.value)
+                            }
                         }
                     }
                 } else {
                     // 정식 릴리즈에서는 기존 UI만 표시
-                    AppNavHost(notificationData = notificationDataState.value)
+                    Scaffold(
+                        floatingActionButton = {
+                            AIAssistantFAB()
+                        }
+                    ) { paddingValues ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
+                            // AI 어시스턴트 상태 표시
+                            AIAssistantStatusCard()
+
+                            AppNavHost(notificationData = notificationDataState.value)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // AI 어시스턴트 상태 표시 카드 - 수정된 버전
+    @Composable
+    private fun AIAssistantStatusCard() {
+        when {
+            assistantAnalyzingState.value -> {
+                // 🆕 분석 중 상태 - 가장 먼저 체크 (State 변수 사용)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 로딩 인디케이터 추가
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "🧠 명령 분석 중...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+            }
+            assistantRecordingState.value -> {
+                // 녹음 중 상태
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Mic,
+                            contentDescription = "녹음 중",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "🎤 음성 인식 중... 다시 누르면 중지",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+            assistantActiveState.value -> {
+                // 대기 중 상태
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.MicOff,
+                            contentDescription = "대기 중",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "🎙️ 준비됨. 버튼을 눌러 말하세요",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // AI 어시스턴트 플로팅 버튼
+    @Composable
+    private fun AIAssistantFAB() {
+        val buttonColor = when {
+            assistantRecordingState.value -> MaterialTheme.colorScheme.error  // 녹음 중: 빨간색
+            assistantActiveState.value -> MaterialTheme.colorScheme.secondary // 대기 중: 보조색
+            else -> MaterialTheme.colorScheme.primary                         // 비활성: 기본색
+        }
+
+        val buttonIcon = when {
+            assistantRecordingState.value -> Icons.Default.Stop     // 녹음 중: 정지 아이콘
+            assistantActiveState.value -> Icons.Default.Mic        // 대기 중: 마이크 아이콘
+            else -> Icons.Default.MicOff                           // 비활성: 마이크 꺼짐 아이콘
+        }
+
+        val contentDescription = when {
+            assistantRecordingState.value -> "녹음 중지"
+            assistantActiveState.value -> "녹음 시작"
+            else -> "AI 어시스턴트 활성화"
+        }
+
+        FloatingActionButton(
+            onClick = {
+                Log.d("MainActivity", "FloatingActionButton 클릭됨")
+                toggleAIAssistant()
+            },
+            containerColor = buttonColor
+        ) {
+            Icon(
+                imageVector = buttonIcon,
+                contentDescription = contentDescription,
+                tint = Color.White
+            )
+        }
+    }
+
+    // AI 어시스턴트 토글 - 디버깅 로그 추가
+    private fun toggleAIAssistant() {
+        Log.d("MainActivity", "toggleAIAssistant() 호출됨, aiAssistant: $aiAssistant")
+
+        aiAssistant?.let { assistant ->
+            val isRecording = assistant.isCurrentlyRecording()
+            val isWaiting = assistant.isWaiting()
+            val isActive = assistant.isActive()
+
+            Log.d("MainActivity", "🔍 현재 상태 - isRecording: $isRecording, isWaiting: $isWaiting, isActive: $isActive")
+
+            when {
+                isRecording -> {
+                    // 녹음 중 → 녹음 중지 및 처리
+                    Log.d("MainActivity", "🛑 녹음 중지 및 처리 시작")
+                    assistant.activateAssistant() // 내부적으로 stopVoiceRecording() 호출
+                    updateAssistantStates()
+                }
+                isWaiting -> {
+                    // 대기 중 → 녹음 시작
+                    Log.d("MainActivity", "🎤 녹음 시작")
+                    assistant.activateAssistant() // 내부적으로 startVoiceRecording() 호출
+                    updateAssistantStates()
+                }
+                else -> {
+                    // 비활성 → 활성화
+                    Log.d("MainActivity", "🚀 비활성 상태 - 권한 확인 후 어시스턴트 시작")
+                    checkPermissionsAndStartAssistant()
+                }
+            }
+        } ?: run {
+            Log.e("MainActivity", "❌ aiAssistant가 null입니다!")
+        }
+    }
+
+    // 어시스턴트 상태 업데이트
+    private fun updateAssistantStates() {
+        aiAssistant?.let { assistant ->
+            assistantActiveState.value = assistant.isActive()
+            assistantRecordingState.value = assistant.isCurrentlyRecording()
+            assistantAnalyzingState.value = assistant.isCurrentlyAnalyzing()
+
+            // 상태 변화 로깅 - 분석 상태도 추가
+            Log.d("MainActivity", "📊 상태 업데이트 - Active: ${assistantActiveState.value}, Recording: ${assistantRecordingState.value}, Analyzing: ${assistant.isCurrentlyAnalyzing()}")
+
+            // 녹음이 중지되고 처리가 시작되면 5초 후 상태 다시 확인
+            if (!assistant.isCurrentlyRecording() && assistant.isActive()) {
+                Handler(Looper.getMainLooper()).postDelayed({
+                    assistantActiveState.value = assistant.isActive()
+                    assistantRecordingState.value = assistant.isCurrentlyRecording()
+                }, 5000)
+            }
+        }
+    }
+
+    // 권한 확인 후 어시스턴트 시작 - 디버깅 로그 추가
+    private fun checkPermissionsAndStartAssistant() {
+        Log.d("MainActivity", "🔐 checkPermissionsAndStartAssistant() 진입")
+
+        val hasRecordPermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+        Log.d("MainActivity", "🎤 RECORD_AUDIO 권한 상태: $hasRecordPermission")
+
+        if (!hasRecordPermission) {
+            // 권한이 없으면 사용자에게 알림만 표시 (중복 권한 요청 방지)
+            Log.d("MainActivity", "❌ 권한 없음 - 사용자에게 알림 표시")
+            Toast.makeText(this, "음성 인식을 위해 마이크 권한이 필요합니다.\n설정에서 권한을 허용해주세요.", Toast.LENGTH_LONG).show()
+
+            // 또는 설정 화면으로 이동하는 옵션 제공
+            showPermissionDialog()
+        } else {
+            // 권한 있음 → 어시스턴트 시작
+            Log.d("MainActivity", "✅ 권한 있음 - 어시스턴트 시작")
+            startAIAssistant()
+        }
+    }
+
+    private fun showPermissionDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("마이크 권한 필요")
+            .setMessage("AI 어시스턴트 기능을 사용하려면 마이크 권한이 필요합니다.\n설정에서 권한을 허용하시겠습니까?")
+            .setPositiveButton("설정으로 이동") { _, _ ->
+                // 앱 설정 화면으로 이동
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("취소", null)
+            .show()
+    }
+
+
+    // AI 어시스턴트 시작 - 디버깅 로그 추가
+    private fun startAIAssistant() {
+        Log.d("MainActivity", "🎤 startAIAssistant() 진입")
+
+        aiAssistant?.let { assistant ->
+            Log.d("MainActivity", "✅ aiAssistant 확인됨 - activateAssistant() 호출")
+            assistant.activateAssistant()
+            updateAssistantStates()
+            Log.d("MainActivity", "🎤 AI 어시스턴트 활성화 완료")
+        } ?: run {
+            Log.e("MainActivity", "❌ aiAssistant가 null입니다!")
+        }
+    }
+
+    // 일정 액션 처리
+    private fun handleScheduleAction(action: String, details: String) {
+        Log.d("MainActivity", "📅 스케줄 액션: $action - $details")
+
+        when (action) {
+            "check" -> {
+                // 일정 조회 로직
+                if (details == "오늘") {
+                    // 오늘 일정 조회
+                    Log.d("MainActivity", "오늘 일정 조회 실행")
+                } else if (details == "내일") {
+                    // 내일 일정 조회
+                    Log.d("MainActivity", "내일 일정 조회 실행")
+                }
+            }
+            "find" -> {
+                // 위치 찾기 로직
+                if (details == "patient") {
+                    Log.d("MainActivity", "환자 위치 찾기 실행")
+                } else if (details == "caregiver") {
+                    Log.d("MainActivity", "보호자 위치 찾기 실행")
+                }
+            }
+        }
+    }
+
+    // AI 어시스턴트 초기화 함수 - 수정된 버전
+    private fun initializeAIAssistant() {
+        Log.d("MainActivity", "initializeAIAssistant() 진입")
+        aiAssistant = AIAssistant(
+            context = this,
+            onScheduleAction = { action, details ->
+                handleScheduleAction(action, details)
+            },
+            onStateChanged = {
+                // 🆕 상태 변경 시 UI 업데이트 콜백 추가
+                Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
+                updateAssistantStates()
+            }
+        )
+        Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
     }
 
     // 🆕 순차적 권한 요청 컴포저블
@@ -113,6 +440,7 @@ class MainActivity : ComponentActivity() {
                 // 기본 권한들
                 add(Manifest.permission.ACCESS_FINE_LOCATION)
                 add(Manifest.permission.READ_PHONE_STATE)
+                add(Manifest.permission.RECORD_AUDIO) // AI 어시스턴트용 추가
 
                 // Android 버전에 따른 오디오/저장소 권한
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -203,6 +531,11 @@ class MainActivity : ComponentActivity() {
                 Log.d("Permission", "📞 통화 기록 권한 허용됨")
                 viewModel.loadCallLogs(this)
             }
+            Manifest.permission.RECORD_AUDIO -> {
+                Log.d("Permission", "🎤 음성 녹음 권한 허용됨")
+                // 권한이 허용되면 AI 어시스턴트를 즉시 시작할 수 있도록 상태 업데이트
+                Toast.makeText(this, "이제 AI 어시스턴트를 사용할 수 있습니다!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -225,6 +558,9 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.READ_PHONE_STATE -> {
                 Toast.makeText(this, "통화 기록 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
             }
+            Manifest.permission.RECORD_AUDIO -> {
+                Toast.makeText(this, "음성 인식 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -235,6 +571,7 @@ class MainActivity : ComponentActivity() {
             startLocationService()
         }
     }
+
 
     // 🆕 수정된 onNewIntent 메서드 - override 키워드와 올바른 시그니처 사용
     override fun onNewIntent(intent: Intent) {
@@ -288,4 +625,16 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, LocationForegroundService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
+
+    override fun onDestroy() {
+        // 리소스 정리
+        aiAssistant?.destroy()
+        super.onDestroy()
+    }
+
+    companion object {
+        private const val RECORD_AUDIO_REQUEST_CODE = 1001
+    }
+
+
 }
