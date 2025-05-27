@@ -209,7 +209,7 @@ class CallRecordAnalyzeService : Service() {
                         }
 
                         // 7. 성공 알림 표시
-                        showResultNotificationWithIntent(finalRecord)
+                        showResultNotification(finalRecord)
                     } else {
                         Log.w("CallRecordAnalyzeService", "⚠️ 추출된 일정이 없습니다.")
                         showErrorNotification("일정 추출 실패", "통화에서 일정을 찾을 수 없습니다.")
@@ -530,27 +530,12 @@ class CallRecordAnalyzeService : Service() {
     /**
      * 성공 알림 표시 (Record 기반)
      */
-    private fun showResultNotificationWithIntent(record: Record) {
+    private fun showResultNotification(record: Record) {
         val channelId = "call_record_analysis"
 
         // 첫 번째 일정 정보 가져오기
         val firstSchedule = record.extractedSchedules?.firstOrNull()
         val scheduleCount = record.extractedSchedules?.size ?: 0
-
-        // ===== 워치에도 메시지 전송 =====
-        val watchMessage = """
-        $summary
-        $date $hour:$min
-        $place
-    """.trimIndent()
-
-        Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
-        WatchMessageHelper.sendMessageToWatch(
-            context = this,
-            path = "/schedule_notify",
-            message = watchMessage
-        )
-        // ===========================
 
         // MainActivity로 이동하는 인텐트 생성
         val intent = Intent(this, MainActivity::class.java).apply {
@@ -604,6 +589,64 @@ class CallRecordAnalyzeService : Service() {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .build()
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(Random.nextInt(), notification)
+    }
+
+    /**
+     * 성공 알림 표시 (Record 기반)
+     */
+    private fun showResultNotificationWithIntent(
+        summary: String, date: String, hour: String, min: String, place: String
+    ) {
+        val channelId = "call_record_analysis"
+
+        // ===== 워치에도 메시지 전송 =====
+        val watchMessage = """
+        $summary
+        $date $hour:$min
+        $place
+    """.trimIndent()
+
+        Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
+        WatchMessageHelper.sendMessageToWatch(
+            context = this,
+            path = "/schedule_notify",
+            message = watchMessage
+        )
+        // ===========================
+
+        // MainActivity로 이동하는 인텐트 생성
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("from_notification", true)
+            putExtra("target_screen", "schedule")
+            putExtra("schedule_summary", summary)
+            putExtra("schedule_date", date)
+            putExtra("schedule_time", "$hour:$min")
+            putExtra("schedule_place", place)
+            putExtra("notification_id", Random.nextInt())
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            Random.nextInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("일정 자동 등록 완료")
+            .setContentText("$summary ($date $hour:$min @ $place)")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent) // 클릭시 일정 화면으로 이동
+            .setAutoCancel(true) // 클릭하면 알림 자동 삭제
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("새로운 일정이 통화에서 자동으로 등록되었습니다.\n$summary\n📅 $date $hour:$min\n📍 $place\n\n클릭하여 확인하고 수정하세요."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
