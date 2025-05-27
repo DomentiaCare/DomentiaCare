@@ -20,6 +20,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.domentiacare.MainActivity
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
+import com.example.domentiacare.network.RecordApiService
 import kotlin.random.Random
 import kotlinx.coroutines.*
 
@@ -187,6 +188,22 @@ class CallRecordAnalyzeService : Service() {
 
                         // 6. Record만 저장 (SimpleSchedule 내보내기 제거)
                         saveRecord(finalRecord)
+
+                        // 2. 서버 전송 (최종 finalRecord로)
+                        //    최초 생성이 이미 서버에 되어 있으면 updateRecord,
+                        //    그렇지 않으면 createRecord를 사용(최초 1회만 create, 이후엔 update)
+                        try {
+                            // createRecord는 서버에 없을 때(처음), updateRecord는 이미 서버에 레코드가 있을 때 사용
+                            // create 시도가 실패하면 update로 fallback 가능 (상황에 따라)
+                            val apiResult = RecordApiService.createRecord(finalRecord, applicationContext)
+                            if (apiResult.isSuccess) {
+                                Log.d("CallRecordAnalyzeService", "✅==================== 서버에 최종 Record 동기화 성공")
+                            } else {
+                                Log.e("CallRecordAnalyzeService", "❌==================== 서버에 최종 Record 동기화 실패: ${apiResult.exceptionOrNull()}")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CallRecordAnalyzeService", "❌ 서버 동기화 예외", e)
+                        }
 
                         // 7. 성공 알림 표시
                         showSuccessNotification(finalRecord)
@@ -424,8 +441,9 @@ class CallRecordAnalyzeService : Service() {
     }
 
     /**
-     * Record만 저장 (SimpleSchedule 내보내기 제거)
+     * Record만 저장
      */
+    // local에 room으로 저장 - 박진호 할 일
     private suspend fun saveRecord(record: Record) = withContext(Dispatchers.IO) {
         Log.d("CallRecordAnalyzeService", "💾 Record 최종 저장")
         Log.d("CallRecordAnalyzeService", "  - Record ID: ${record.localId}")

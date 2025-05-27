@@ -25,4 +25,14 @@ object RetrofitClient {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(AuthApi::class.java)
+
+    private val retrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(client)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    fun <T> createService(service: Class<T>): T {
+        return retrofit.create(service)
+    }
 }
