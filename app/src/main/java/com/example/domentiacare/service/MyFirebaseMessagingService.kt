@@ -86,9 +86,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         try {
             // 워치 메시지 형식 (위험 알림에 맞게 구성)
             val watchMessage = """
-                🚨 $title
+                $title
                 $body
-                즉시 확인 필요
             """.trimIndent()
 
             Log.d("FCM", "워치 위험 알림 전송: $watchMessage")
@@ -96,7 +95,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             // CallRecordAnalyzeService에서 사용한 것과 동일한 방식
             WatchMessageHelper.sendMessageToWatch(
                 context = this,
-                path = "/schedule_notify", // 기존과 동일한 path 사용 (워치에서 같은 방식으로 처리)
+                path = "/danger_alert", // 기존과 동일한 path 사용 (워치에서 같은 방식으로 처리)
                 message = watchMessage
             )
 
