@@ -24,6 +24,9 @@ import com.example.domentiacare.network.RecordApiService
 import kotlin.random.Random
 import kotlinx.coroutines.*
 
+//Watch 서비스에서 사용하는 import
+import com.example.domentiacare.service.watch.WatchMessageHelper
+
 class CallRecordAnalyzeService : Service() {
 
     private var fileObserver: FileObserver? = null
@@ -534,6 +537,22 @@ class CallRecordAnalyzeService : Service() {
         val firstSchedule = record.extractedSchedules?.firstOrNull()
         val scheduleCount = record.extractedSchedules?.size ?: 0
 
+        // ===== 워치에도 메시지 전송 =====
+        val watchMessage = """
+        $summary
+        $date $hour:$min
+        $place
+    """.trimIndent()
+
+        Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
+        WatchMessageHelper.sendMessageToWatch(
+            context = this,
+            path = "/schedule_notify",
+            message = watchMessage
+        )
+        // ===========================
+
+        // MainActivity로 이동하는 인텐트 생성
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("from_notification", true)
