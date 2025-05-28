@@ -108,71 +108,81 @@ class MainActivity : ComponentActivity() {
             notificationDataState = remember { mutableStateOf(extractNotificationData(intent)) }
 
             DomentiaCareTheme {
-                SequentialPermissionRequester()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = Color.White
+                ) {
+                    SequentialPermissionRequester()
 
-                //AI어시스턴트 버튼 출현 위치
-                val offsetX = remember { mutableStateOf(850f) }
-                val offsetY = remember { mutableStateOf(1700f) }
+                    //AI어시스턴트 버튼 출현 위치
+                    val offsetX = remember { mutableStateOf(850f) }
+                    val offsetY = remember { mutableStateOf(1700f) }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        content = { _ ->
-                            // 🆕 상태 카드 제거하고 바로 AppNavHost 표시
-                            AppNavHost(
-                                notificationData = notificationDataState.value,
-                                getAssistantState = { assistantEnabledByUser.value },
-                                toggleAssistant = {
-                                    // 🆕 설정에서 스위치를 끌 때 강제 중지
-                                    if (assistantEnabledByUser.value) {
-                                        // 현재 켜져있는데 끄려고 함 → 강제 중지
-                                        Log.d("MainActivity", "🛑 설정에서 AI 어시스턴트 비활성화 - 강제 중지")
-                                        aiAssistant?.forceStop(showMessage = true)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Scaffold(
+                            modifier = Modifier.fillMaxSize(),
+                            content = { _ ->
+                                // 🆕 상태 카드 제거하고 바로 AppNavHost 표시
+                                AppNavHost(
+                                    notificationData = notificationDataState.value,
+                                    getAssistantState = { assistantEnabledByUser.value },
+                                    toggleAssistant = {
+                                        // 🆕 설정에서 스위치를 끌 때 강제 중지
+                                        if (assistantEnabledByUser.value) {
+                                            // 현재 켜져있는데 끄려고 함 → 강제 중지
+                                            Log.d("MainActivity", "🛑 설정에서 AI 어시스턴트 비활성화 - 강제 중지")
+                                            aiAssistant?.forceStop(showMessage = true)
+                                        }
+                                        assistantEnabledByUser.value = !assistantEnabledByUser.value
                                     }
-                                    assistantEnabledByUser.value = !assistantEnabledByUser.value
-                                }
-                            )
-                        }
-                    )
-
-                    // 🆕 플로팅 상태 카드 - 상단에 위치
-                    AIAssistantFloatingStatusCard()
-
-                    // FAB는 Box의 상단에서 레이아웃 흐름과 무관하게 위치
-                    if (assistantEnabledByUser.value) {
-                        FloatingActionButton(
-                            onClick = {
-                                toggleAIAssistant()
-                            },
-                            modifier = Modifier
-                                .offset { IntOffset(offsetX.value.toInt(), offsetY.value.toInt()) }
-                                .zIndex(1f)
-                                .pointerInput(Unit) {
-                                    detectDragGestures { change, dragAmount ->
-                                        change.consume()
-                                        offsetX.value += dragAmount.x
-                                        offsetY.value += dragAmount.y
-                                    }
-                                },
-                            containerColor = when {
-                                assistantRecordingState.value || assistantAnalyzingState.value -> MaterialTheme.colorScheme.error  // 녹음/분석 중: 빨간색
-                                assistantActiveState.value -> MaterialTheme.colorScheme.secondary // 대기 중: 보조색
-                                else -> MaterialTheme.colorScheme.primary                         // 비활성: 기본색
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = when {
-                                    assistantRecordingState.value || assistantAnalyzingState.value -> Icons.Default.Stop     // 녹음/분석 중: 정지 아이콘
-                                    assistantActiveState.value -> Icons.Default.Mic        // 대기 중: 마이크 아이콘
-                                    else -> Icons.Default.MicOff                           // 비활성: 마이크 꺼짐 아이콘
+                        )
+
+                        // 🆕 플로팅 상태 카드 - 상단에 위치
+                        AIAssistantFloatingStatusCard()
+
+                        // FAB는 Box의 상단에서 레이아웃 흐름과 무관하게 위치
+                        if (assistantEnabledByUser.value) {
+                            FloatingActionButton(
+                                onClick = {
+                                    toggleAIAssistant()
                                 },
-                                contentDescription = when {
-                                    assistantRecordingState.value || assistantAnalyzingState.value -> "강제 중지"
-                                    assistantActiveState.value -> "녹음 시작"
-                                    else -> "AI 어시스턴트 활성화"
-                                },
-                                tint = Color.White
-                            )
+                                modifier = Modifier
+                                    .offset {
+                                        IntOffset(
+                                            offsetX.value.toInt(),
+                                            offsetY.value.toInt()
+                                        )
+                                    }
+                                    .zIndex(1f)
+                                    .pointerInput(Unit) {
+                                        detectDragGestures { change, dragAmount ->
+                                            change.consume()
+                                            offsetX.value += dragAmount.x
+                                            offsetY.value += dragAmount.y
+                                        }
+                                    },
+                                containerColor = when {
+                                    assistantRecordingState.value || assistantAnalyzingState.value -> MaterialTheme.colorScheme.error  // 녹음/분석 중: 빨간색
+                                    assistantActiveState.value -> MaterialTheme.colorScheme.secondary // 대기 중: 보조색
+                                    else -> MaterialTheme.colorScheme.primary                         // 비활성: 기본색
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = when {
+                                        assistantRecordingState.value || assistantAnalyzingState.value -> Icons.Default.Stop     // 녹음/분석 중: 정지 아이콘
+                                        assistantActiveState.value -> Icons.Default.Mic        // 대기 중: 마이크 아이콘
+                                        else -> Icons.Default.MicOff                           // 비활성: 마이크 꺼짐 아이콘
+                                    },
+                                    contentDescription = when {
+                                        assistantRecordingState.value || assistantAnalyzingState.value -> "강제 중지"
+                                        assistantActiveState.value -> "녹음 시작"
+                                        else -> "AI 어시스턴트 활성화"
+                                    },
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
                 }
