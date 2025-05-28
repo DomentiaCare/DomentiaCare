@@ -17,17 +17,21 @@ import java.util.*
 class AIAssistant(
     private val context: Context,
     private val onScheduleAction: (action: String, details: String) -> Unit,
-    private val onStateChanged: (() -> Unit)? = null // 🆕 상태 변경 콜백 추가
+    private val onStateChanged: (() -> Unit)? = null
 ) {
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
     private var isRecognizing = false
-    private var isAnalyzing = false // 🆕 Llama 분석 중 상태 추가
+    private var isAnalyzing = false
     private var isRetrying = false
     private var isTTSPlaying = false
     private var pendingSpeechRecognition = false
 
+    // 🆕 강제 중지를 위한 변수들 추가
+    private var currentAnalysisJob: Job? = null // Llama 분석 Job 추적
+    private var isForceStopping = false // 강제 중지 중인지 확인
+    private var isDestroyed = false // 어시스턴트가 파괴되었는지 확인
 
     //해당 내용은 보호자나 환자의 전화번호로 대체해야함. (DB에서 정보가져와서 연결해야할 부분)
     private val contacts = mapOf(
@@ -42,22 +46,100 @@ class AIAssistant(
     init {
         TTSServiceManager.init(context) {
             Log.d("AIAssistant", "TTS initialization completed")
-            //tts정상작동 테스트 (이종범)
-            //speakKorean("음성 서비스가 준비되었습니다.")
         }
+    }
+
+    /**
+     * 🆕 강제 중지 함수 - 모든 동작을 즉시 중단
+     */
+    fun forceStop(showMessage: Boolean = true) {
+        Log.d("AIAssistant", "🛑 forceStop() called - 모든 동작 강제 중지")
+
+        // 강제 중지 플래그 설정
+        isForceStopping = true
+
+        try {
+            // 1. Llama 분석 Job 취소
+            currentAnalysisJob?.cancel()
+            currentAnalysisJob = null
+            Log.d("AIAssistant", "✅ Llama 분석 Job 취소됨")
+
+            // 2. 음성 인식 즉시 중지
+            speechRecognizer?.let { recognizer ->
+                try {
+                    recognizer.stopListening()
+                    recognizer.cancel() // 🆕 cancel() 추가로 더 강력한 중지
+                    Log.d("AIAssistant", "✅ 음성 인식 강제 중지됨")
+                } catch (e: Exception) {
+                    Log.e("AIAssistant", "❌ 음성 인식 중지 실패: ${e.message}")
+                }
+            }
+
+            // 3. TTS 즉시 중지
+            TTSServiceManager.stop()
+            isTTSPlaying = false
+            Log.d("AIAssistant", "✅ TTS 강제 중지됨")
+
+            // 4. 모든 상태 즉시 초기화
+            resetStateImmediately()
+
+            // 5. 사용자에게 알림 (선택적)
+            if (showMessage) {
+                // TTS로 알림 대신 Toast 사용 (더 빠른 피드백)
+                Toast.makeText(context, "AI 어시스턴트가 중지되었습니다", Toast.LENGTH_SHORT).show()
+            }
+
+        } catch (e: Exception) {
+            Log.e("AIAssistant", "❌ 강제 중지 중 오류: ${e.message}", e)
+        } finally {
+            // 강제 중지 플래그 해제
+            isForceStopping = false
+            Log.d("AIAssistant", "🏁 강제 중지 완료")
+        }
+    }
+
+    /**
+     * 🆕 즉시 상태 초기화 (기존 resetState()와 다르게 TTS 기다리지 않음)
+     */
+    private fun resetStateImmediately() {
+        isListening = false
+        isRecognizing = false
+        isAnalyzing = false
+        isRetrying = false
+        pendingSpeechRecognition = false
+        // isTTSPlaying은 위에서 이미 false로 설정됨
+
+        // SpeechRecognizer 정리
+        try {
+            speechRecognizer?.destroy()
+            speechRecognizer = null
+        } catch (e: Exception) {
+            Log.e("AIAssistant", "❌ SpeechRecognizer 정리 실패: ${e.message}")
+        }
+
+        Log.d("AIAssistant", "🔄 상태 즉시 초기화 완료")
+
+        // UI 상태 업데이트
+        onStateChanged?.invoke()
     }
 
     /**
      * Activate AI Assistant (when floating button is clicked)
      */
     fun activateAssistant() {
+        // 🆕 파괴된 상태이거나 강제 중지 중이면 무시
+        if (isDestroyed || isForceStopping) {
+            Log.w("AIAssistant", "⚠️ 어시스턴트가 파괴되었거나 강제 중지 중입니다")
+            return
+        }
+
         Log.d("AIAssistant", "🔧 activateAssistant() entry: isRecognizing=$isRecognizing, isListening=$isListening, isTTSPlaying=$isTTSPlaying")
 
         when {
-            isRecognizing -> {
-                // Currently recognizing → stop recognition
-                Log.d("AIAssistant", "🛑 Recognition in progress - stopping recognition")
-                stopSpeechRecognition()
+            isRecognizing || isAnalyzing -> {
+                // 🆕 현재 인식 중이거나 분석 중 → 강제 중지
+                Log.d("AIAssistant", "🛑 Recognition/Analysis in progress - 강제 중지")
+                forceStop(showMessage = false) // 메시지 없이 조용히 중지
             }
             isListening -> {
                 // Waiting → start speech recognition (only when TTS is not playing)
@@ -73,13 +155,12 @@ class AIAssistant(
                 // Set to start speech recognition after TTS completion
                 pendingSpeechRecognition = true
                 speakKorean("네, 말씀하세요.") {
-                    // Start speech recognition in TTS completion callback
-                    Log.d("AIAssistant", "🔊 TTS completed - starting speech recognition")
-                    if (pendingSpeechRecognition && isListening && !isRecognizing) {
+                    // 🆕 강제 중지 중이면 음성 인식 시작하지 않음
+                    if (!isForceStopping && pendingSpeechRecognition && isListening && !isRecognizing) {
+                        Log.d("AIAssistant", "🔊 TTS completed - starting speech recognition")
                         startSpeechRecognitionSafe()
                     }
                     pendingSpeechRecognition = false
-                    // 🆕 TTS 완료 후에도 UI 업데이트
                     onStateChanged?.invoke()
                 }
             }
@@ -92,12 +173,18 @@ class AIAssistant(
      * Safe speech recognition start (checking TTS playback)
      */
     private fun startSpeechRecognitionSafe() {
+        // 🆕 강제 중지 중이거나 파괴된 상태면 시작하지 않음
+        if (isForceStopping || isDestroyed) {
+            Log.w("AIAssistant", "⚠️ 강제 중지 중이거나 파괴된 상태 - 음성 인식 시작 취소")
+            return
+        }
+
         if (isTTSPlaying) {
             Log.w("AIAssistant", "⚠️ TTS is playing, postponing speech recognition start")
             // Wait briefly and retry after TTS completion
             CoroutineScope(Dispatchers.Main).launch {
-                delay(500) // Retry after 0.5 seconds
-                if (!isTTSPlaying && isListening && !isRecognizing) {
+                delay(500)
+                if (!isForceStopping && !isDestroyed && !isTTSPlaying && isListening && !isRecognizing) {
                     startSpeechRecognition()
                 }
             }
@@ -106,7 +193,9 @@ class AIAssistant(
 
         // Ensure we're on the main thread
         CoroutineScope(Dispatchers.Main).launch {
-            startSpeechRecognition()
+            if (!isForceStopping && !isDestroyed) {
+                startSpeechRecognition()
+            }
         }
     }
 
@@ -114,8 +203,9 @@ class AIAssistant(
      * Start STT (Speech-to-Text) - Must be called from Main Thread
      */
     private fun startSpeechRecognition() {
-        if (isRecognizing) {
-            Log.d("AIAssistant", "⚠️ Already recognizing speech")
+        // 🆕 추가 안전 검사
+        if (isRecognizing || isForceStopping || isDestroyed) {
+            Log.d("AIAssistant", "⚠️ 음성 인식 시작 불가 - isRecognizing=$isRecognizing, isForceStopping=$isForceStopping, isDestroyed=$isDestroyed")
             return
         }
 
@@ -146,6 +236,12 @@ class AIAssistant(
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
             speechRecognizer?.setRecognitionListener(object : RecognitionListener {
                 override fun onResults(results: Bundle?) {
+                    // 🆕 강제 중지 중이면 결과 무시
+                    if (isForceStopping || isDestroyed) {
+                        Log.d("AIAssistant", "⚠️ 강제 중지 중 - STT 결과 무시")
+                        return
+                    }
+
                     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     val resultText = matches?.firstOrNull() ?: "No result"
 
@@ -156,7 +252,6 @@ class AIAssistant(
                     isAnalyzing = true
                     Log.d("AIAssistant", "🔄 State changed: isRecognizing=false, isAnalyzing=true")
 
-                    // 🆕 UI에 상태 변경 알림
                     onStateChanged?.invoke()
 
                     if (resultText != "No result" && resultText.trim().length >= 2) {
@@ -170,6 +265,12 @@ class AIAssistant(
                 }
 
                 override fun onError(error: Int) {
+                    // 🆕 강제 중지 중이면 에러 무시
+                    if (isForceStopping || isDestroyed) {
+                        Log.d("AIAssistant", "⚠️ 강제 중지 중 - STT 에러 무시")
+                        return
+                    }
+
                     Log.e("AIAssistant", "❌ STT error occurred: $error")
 
                     // STT 오류 시 상태 정리
@@ -183,8 +284,8 @@ class AIAssistant(
                                 speakKorean("음성을 인식하지 못했습니다. 다시 시도합니다.") {
                                     // Retry after TTS completion
                                     CoroutineScope(Dispatchers.Main).launch {
-                                        delay(1000) // Wait 1 additional second
-                                        if (isListening && !isRecognizing && !isTTSPlaying) {
+                                        delay(1000)
+                                        if (!isForceStopping && !isDestroyed && isListening && !isRecognizing && !isTTSPlaying) {
                                             startSpeechRecognition()
                                         }
                                         isRetrying = false
@@ -212,14 +313,12 @@ class AIAssistant(
                 }
                 override fun onBeginningOfSpeech() {
                     Log.d("AIAssistant", "🗣️ Speech input started")
-                    // 🆕 음성 입력 시작 시에도 UI 업데이트
                     onStateChanged?.invoke()
                 }
                 override fun onRmsChanged(rmsdB: Float) {}
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() {
                     Log.d("AIAssistant", "🛑 Speech input ended")
-                    // onResults가 호출되지 않을 경우를 대비해 여기서는 상태 변경하지 않음
                 }
                 override fun onPartialResults(partialResults: Bundle?) {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -242,7 +341,7 @@ class AIAssistant(
         try {
             speechRecognizer?.stopListening()
             isRecognizing = false
-            isAnalyzing = false // 🆕 중지 시 분석 상태도 초기화
+            isAnalyzing = false
             Log.d("AIAssistant", "🛑 Speech recognition stopped")
         } catch (e: Exception) {
             Log.e("AIAssistant", "❌ Failed to stop speech recognition: ${e.message}", e)
@@ -251,15 +350,28 @@ class AIAssistant(
     }
 
     /**
-     * Analyze English commands with Llama
+     * 🆕 수정된 Analyze English commands with Llama - Job 추적 추가
      */
     private fun analyzeWithLlama(userInput: String) {
+        // 🆕 강제 중지 중이거나 파괴된 상태면 분석하지 않음
+        if (isForceStopping || isDestroyed) {
+            Log.w("AIAssistant", "⚠️ 강제 중지 중이거나 파괴된 상태 - Llama 분석 취소")
+            return
+        }
+
         Log.d("AIAssistant", "🧠 Llama analysis started: '$userInput'")
 
         speakKorean("명령을 분석하고 있습니다.")
 
-        CoroutineScope(Dispatchers.IO).launch {
+        // 🆕 현재 분석 Job을 추적하여 필요시 취소할 수 있도록 함
+        currentAnalysisJob = CoroutineScope(Dispatchers.IO).launch {
             try {
+                // 🆕 Job이 취소되었는지 확인
+                if (!isActive || isForceStopping || isDestroyed) {
+                    Log.d("AIAssistant", "⚠️ Llama 분석 Job 취소됨")
+                    return@launch
+                }
+
                 val llamaManager = MyApplication.llamaServiceManager
 
                 // English-focused prompt
@@ -287,19 +399,38 @@ class AIAssistant(
                     - "What's the weather?" → UNKNOWN
                 """.trimIndent()
 
+                // 🆕 다시 한 번 취소 확인
+                if (!isActive || isForceStopping || isDestroyed) {
+                    Log.d("AIAssistant", "⚠️ Llama 쿼리 전 Job 취소됨")
+                    return@launch
+                }
+
                 val llamaResponse = llamaManager.sendQueryBlocking(prompt)
                 Log.d("AIAssistant", "🔤 Llama keyword response: '$llamaResponse'")
 
-                withContext(Dispatchers.Main) {
-                    executeCommand(llamaResponse, userInput)
+                // 🆕 결과 처리 전 마지막 취소 확인
+                if (isActive && !isForceStopping && !isDestroyed) {
+                    withContext(Dispatchers.Main) {
+                        executeCommand(llamaResponse, userInput)
+                    }
+                } else {
+                    Log.d("AIAssistant", "⚠️ Llama 분석 완료 후 Job 취소됨")
                 }
 
+            } catch (e: CancellationException) {
+                Log.d("AIAssistant", "✅ Llama 분석 Job이 정상적으로 취소됨")
+                // CancellationException은 정상적인 취소이므로 별도 처리 불필요
             } catch (e: Exception) {
                 Log.e("AIAssistant", "❌ Llama analysis failed: ${e.message}", e)
-                withContext(Dispatchers.Main) {
-                    speakKorean("명령을 분석할 수 없습니다. 다시 시도해주세요.")
-                    resetState()
+                if (!isForceStopping && !isDestroyed) {
+                    withContext(Dispatchers.Main) {
+                        speakKorean("명령을 분석할 수 없습니다. 다시 시도해주세요.")
+                        resetState()
+                    }
                 }
+            } finally {
+                // Job 추적 해제
+                currentAnalysisJob = null
             }
         }
     }
@@ -307,14 +438,17 @@ class AIAssistant(
     /**
      * Execute command based on Llama keyword response
      */
-
-    //해당 함수에서 각 명령어에 맞게 화면 이동 또는 내용이 구현되어야함.
     private fun executeCommand(llamaResponse: String, originalQuestion: String) {
+        // 🆕 강제 중지 중이거나 파괴된 상태면 명령 실행하지 않음
+        if (isForceStopping || isDestroyed) {
+            Log.w("AIAssistant", "⚠️ 강제 중지 중이거나 파괴된 상태 - 명령 실행 취소")
+            return
+        }
+
         // 분석 완료
         isAnalyzing = false
         Log.d("AIAssistant", "🔄 State changed: isAnalyzing=false (analysis completed)")
 
-        // 🆕 UI에 상태 변경 알림
         onStateChanged?.invoke()
 
         try {
@@ -324,38 +458,32 @@ class AIAssistant(
             when {
                 keyword.contains("TOMORROW") -> {
                     speakKorean("내일 일정을 확인해드리겠습니다.")
-                    onScheduleAction("check", "tomorrow") // -> 이건 의미 있는지 모르겠음 (이종범)
-                    //여기에 내일 일정을 등록하는 내용 삽입하기 (이종범)
+                    onScheduleAction("check", "tomorrow")
                 }
 
                 keyword.contains("TODAY") -> {
                     speakKorean("오늘 일정을 확인해드리겠습니다.")
                     onScheduleAction("check", "today")
-                    //여기에 오늘 일정을 등록하는 내용 삽입하기 (이종범)
                 }
 
                 keyword.contains("CALL_CAREGIVER") -> {
                     speakKorean("보호자에게 전화드리겠습니다.")
                     makePhoneCall("caregiver", "caregiver")
-                    //여기에 보호자 전화번호로 전화하는 내용 삽입하기 (이종범)
                 }
 
                 keyword.contains("CALL_PATIENT") -> {
                     speakKorean("환자에게 전화드리겠습니다.")
                     makePhoneCall("patient", "patient")
-                    //여기에 환자 전화번호로 전화하는 내용 삽입하기 (이종범)
                 }
 
                 keyword.contains("FIND_PATIENT") -> {
                     speakKorean("환자 위치를 확인해드리겠습니다.")
                     onScheduleAction("find", "patient")
-                    //여기에 환자 위치로 길안내 하는 내용 삽입하기 (이종범)
                 }
 
                 keyword.contains("FIND_CAREGIVER") -> {
                     speakKorean("보호자 위치를 확인해드리겠습니다.")
                     onScheduleAction("find", "caregiver")
-                    //여기에 보호자 위치로 길안내 하는 내용 삽입하기 (이종범)
                 }
 
                 else -> {
@@ -370,8 +498,7 @@ class AIAssistant(
         }
 
         resetState()
-
-        onStateChanged?.invoke() // 🆕 상태 변경 알림
+        onStateChanged?.invoke()
     }
 
     /**
@@ -398,9 +525,16 @@ class AIAssistant(
     }
 
     /**
-     * Safe TTS voice output (with state management)
+     * 🆕 TTS에 중지 기능 추가된 Safe TTS voice output
      */
     private fun speakKorean(text: String, onComplete: (() -> Unit)? = null) {
+        // 🆕 강제 중지 중이거나 파괴된 상태면 TTS 실행하지 않음
+        if (isForceStopping || isDestroyed) {
+            Log.w("AIAssistant", "⚠️ 강제 중지 중이거나 파괴된 상태 - TTS 취소")
+            onComplete?.invoke() // 콜백은 실행해서 대기 상태가 무한 대기하지 않도록 함
+            return
+        }
+
         isTTSPlaying = true
         Log.d("AIAssistant", "🔊 TTS started: '$text', isTTSPlaying=true")
 
@@ -408,22 +542,20 @@ class AIAssistant(
             // TTS completion callback
             isTTSPlaying = false
             Log.d("AIAssistant", "🔊 TTS completed: '$text', isTTSPlaying=false")
-            onComplete?.invoke()
+
+            // 🆕 TTS 완료 후에도 강제 중지 상태 확인
+            if (!isForceStopping && !isDestroyed) {
+                onComplete?.invoke()
+            }
         }
     }
 
     /**
-     * Stop assistant
+     * 🆕 수정된 Stop assistant - 강제 중지 사용
      */
     fun stopListening() {
         Log.d("AIAssistant", "🛑 Assistant stopped by user request")
-
-        if (isRecognizing) {
-            stopSpeechRecognition()
-        }
-
-        speakKorean("음성 인식을 중지했습니다.")
-        resetState()
+        forceStop(showMessage = true) // 메시지와 함께 강제 중지
     }
 
     /**
@@ -432,7 +564,7 @@ class AIAssistant(
     private fun resetState() {
         isListening = false
         isRecognizing = false
-        isAnalyzing = false // 🆕 분석 상태도 초기화
+        isAnalyzing = false
         isRetrying = false
         pendingSpeechRecognition = false
         // isTTSPlaying is only set to false in TTS completion callback
@@ -445,15 +577,13 @@ class AIAssistant(
         }
 
         Log.d("AIAssistant", "🔄 Assistant state reset")
-
-        // 🆕 UI에 상태 변경 알림
         onStateChanged?.invoke()
     }
 
     /**
      * Check assistant state
      */
-    fun isActive(): Boolean = isListening || isRecognizing || isAnalyzing // 🆕 분석 중도 활성 상태
+    fun isActive(): Boolean = isListening || isRecognizing || isAnalyzing
 
     /**
      * Check if currently recording
@@ -465,7 +595,7 @@ class AIAssistant(
     }
 
     /**
-     * 🆕 Check if currently analyzing with Llama
+     * Check if currently analyzing with Llama
      */
     fun isCurrentlyAnalyzing(): Boolean {
         val result = isAnalyzing
@@ -488,12 +618,23 @@ class AIAssistant(
     fun isTTSCurrentlyPlaying(): Boolean = isTTSPlaying
 
     /**
-     * Clean up resources
+     * 🆕 강제 중지 중인지 확인
+     */
+    fun isForceStopping(): Boolean = isForceStopping
+
+    /**
+     * 🆕 수정된 Clean up resources - 강제 중지 포함
      */
     fun destroy() {
         Log.d("AIAssistant", "🧹 AI Assistant resource cleanup")
 
-        stopListening()
+        // 파괴 상태 표시
+        isDestroyed = true
+
+        // 강제 중지 (메시지 없이)
+        forceStop(showMessage = false)
+
+        // TTS 서비스 종료
         TTSServiceManager.shutdown()
 
         try {
@@ -502,5 +643,7 @@ class AIAssistant(
         } catch (e: Exception) {
             Log.e("AIAssistant", "❌ Failed to clean up SpeechRecognizer: ${e.message}", e)
         }
+
+        Log.d("AIAssistant", "✅ AI Assistant 완전히 파괴됨")
     }
 }

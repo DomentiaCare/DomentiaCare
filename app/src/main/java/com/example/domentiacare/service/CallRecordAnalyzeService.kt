@@ -217,7 +217,7 @@ class CallRecordAnalyzeService : Service() {
 
                         // 6. 성공 알림
                         // showResultNotification(finalRecord)
-                        
+
                         // 🔧 7. 워치 + 사용자 친화적 알림 (일정 화면으로 이동)
                         try {
                             if (!finalRecord.result.isNullOrBlank()) {
