@@ -70,7 +70,11 @@ import com.example.domentiacare.NotificationData
 import com.example.domentiacare.data.remote.dto.Patient
 
 @Composable
-fun AppNavHost(notificationData: NotificationData? = null) {
+fun AppNavHost(
+    notificationData: NotificationData? = null,
+    getAssistantState: () -> Boolean = {false},
+    toggleAssistant: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val scheduleViewModel: ScheduleViewModel = viewModel()
 
@@ -290,7 +294,11 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                 }
 
                 composable("MySettingScreen") {
-                    MySettingScreen(navController)
+                    MySettingScreen(
+                        navController = navController,
+                        getAssistantState = getAssistantState,
+                        toggleAssistant = toggleAssistant
+                    )
                 }
 
                 composable("CallLogScreen") {
