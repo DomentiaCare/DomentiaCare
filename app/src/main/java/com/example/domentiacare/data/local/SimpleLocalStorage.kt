@@ -18,7 +18,8 @@ data class SimpleSchedule(
     val endDate: String,
     val isAi: Boolean = true,
     val syncStatus: String = "LOCAL_ONLY",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val file_name: String? = null
 )
 
 class SimpleLocalStorage(private val context: Context) {
@@ -66,4 +67,32 @@ class SimpleLocalStorage(private val context: Context) {
             // 로그만 출력
         }
     }
+
+    suspend fun overwriteSchedule(schedule: SimpleSchedule): Result<SimpleSchedule> = withContext(Dispatchers.IO) {
+        // 단일 일정 저장 (기존 일정 덮어쓰기)
+        return@withContext try {
+            val json = gson.toJson(schedule)
+            prefs.edit().putString("single_schedule", json).apply()
+            Result.success(schedule)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getOverwrittenSchedule(): SimpleSchedule? = withContext(Dispatchers.IO) {
+        // 단일 일정 조회
+        return@withContext try {
+            val json = prefs.getString("single_schedule", null)
+            json?.let {
+                gson.fromJson(it, SimpleSchedule::class.java)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun clearOverwrittenSchedule() {  //비우기
+        prefs.edit().remove("single_schedule").apply()
+    }
+
 }

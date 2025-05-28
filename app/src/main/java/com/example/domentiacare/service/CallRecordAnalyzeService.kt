@@ -1,35 +1,42 @@
 package com.example.domentiacare.service
 
-import android.app.Service
-import android.content.Intent
-import android.os.IBinder
-import com.example.domentiacare.R
-import com.example.domentiacare.service.whisper.WhisperWrapper
-import com.example.domentiacare.MyApplication
-import com.example.domentiacare.data.model.*
-import com.example.domentiacare.data.local.RecordStorage
-import com.example.domentiacare.data.util.UserPreferences
 // 필요시 추가
-import java.io.File
+
+//Watch 서비스에서 사용하는 import
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
+import android.content.Intent
 import android.os.Build
 import android.os.FileObserver
+import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.domentiacare.MainActivity
+import com.example.domentiacare.MyApplication
+import com.example.domentiacare.R
+import com.example.domentiacare.data.local.RecordStorage
+import com.example.domentiacare.data.local.SimpleLocalStorage
+import com.example.domentiacare.data.model.ProcessStatus
+import com.example.domentiacare.data.model.Record
+import com.example.domentiacare.data.model.RecordingFile
+import com.example.domentiacare.data.model.parseLlamaScheduleResponseFull
+import com.example.domentiacare.data.model.toRecord
+import com.example.domentiacare.data.util.UserPreferences
 import com.example.domentiacare.data.util.convertM4aToWavForWhisper
 import com.example.domentiacare.network.RecordApiService
-import kotlin.random.Random
-import kotlinx.coroutines.*
-
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-
-//Watch 서비스에서 사용하는 import
 import com.example.domentiacare.service.watch.WatchMessageHelper
+import com.example.domentiacare.service.whisper.WhisperWrapper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.random.Random
 import com.example.domentiacare.ui.screen.call.parseLlamaScheduleResponseFull as parseForNotification
 
 class CallRecordAnalyzeService : Service() {
@@ -563,6 +570,24 @@ class CallRecordAnalyzeService : Service() {
 
             // 결과 저장
             recordStorage.updateExtractedSchedules(recordId, extractedSchedules, ProcessStatus.COMPLETED)
+            // 박진호가 일정 저장.
+            val filename = record.name
+            Log.d("park", "박진호 일정 저장: $filename")
+            val localStorage = SimpleLocalStorage(applicationContext)
+            val firstSchedule = extractedSchedules[0]
+            val firstScheduleWithFileName = firstSchedule.copy(
+                file_name = filename,
+            )
+            serviceScope.launch {
+                localStorage.overwriteSchedule(firstScheduleWithFileName)
+                Log.d("CallRecordAnalyzeService", "✅ 박진호 일정 sharedpreferences 저장 완료")
+            }
+            delay(2000) // 2초 대기 (저장 안정성 확보)
+            serviceScope.launch {
+                val savedSchedule =  localStorage.getOverwrittenSchedule()
+                Log.d("CallRecordAnalyzeService", "저장된 일정 확인: ${savedSchedule?.title} (${savedSchedule?.startDate})")
+            }
+
             Log.d("CallRecordAnalyzeService", "✅ 일정 파싱 완료 및 저장")
 
             true
