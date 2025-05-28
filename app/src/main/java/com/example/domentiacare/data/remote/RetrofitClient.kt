@@ -11,7 +11,7 @@ object RetrofitClient {
     private const val BASE_URL = BuildConfig.BASE_URL // 실제 디바이스는 PC IP로 교체
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.HEADERS
     }
 
     private val client = OkHttpClient.Builder()
