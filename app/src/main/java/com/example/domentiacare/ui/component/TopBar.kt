@@ -34,11 +34,6 @@ fun TopBar(
                 Icon(Icons.Default.Menu, contentDescription = "Menu")
             }
         },
-        actions = {
-            IconButton(onClick = { /* 검색 */ }) {
-                Icon(Icons.Default.Search, contentDescription = "Search")
-            }
-        },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.White // ✅ 배경을 흰색으로 지정
         )

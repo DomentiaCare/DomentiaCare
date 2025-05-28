@@ -11,7 +11,7 @@ import com.quicinc.chatapp.IAnalysisCallback
 import com.quicinc.chatapp.ILlamaAnalysisService
 import kotlinx.coroutines.*
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.atomic.AtomicBoolean
 
 class LlamaServiceManager {
@@ -39,7 +39,10 @@ class LlamaServiceManager {
         Log.d(TAG, "Attempting to connect to ChatApp LlamaAnalysisService via AIDL...")
 
         return try {
-            suspendCoroutine { continuation ->
+            suspendCancellableCoroutine { continuation ->
+                // 중복 resume 방지
+                val isResumed = AtomicBoolean(false)
+
                 val intent = Intent().apply {
                     setClassName(CHATAPP_PACKAGE, SERVICE_CLASS)
                 }
@@ -56,17 +59,28 @@ class LlamaServiceManager {
                                 isConnected = true
                                 isConnecting = false
                                 Log.i(TAG, "Successfully connected to LlamaAnalysisService via AIDL")
-                                continuation.resume(true)
+
+                                // 중복 resume 방지
+                                if (isResumed.compareAndSet(false, true)) {
+                                    continuation.resume(true)
+                                }
                             } else {
                                 Log.e(TAG, "Failed to convert IBinder to ILlamaAnalysisService")
                                 isConnecting = false
-                                continuation.resume(false)
-                            }
 
+                                // 중복 resume 방지
+                                if (isResumed.compareAndSet(false, true)) {
+                                    continuation.resume(false)
+                                }
+                            }
                         } catch (e: Exception) {
                             Log.e(TAG, "Error in onServiceConnected: ${e.message}", e)
                             isConnecting = false
-                            continuation.resume(false)
+
+                            // 중복 resume 방지
+                            if (isResumed.compareAndSet(false, true)) {
+                                continuation.resume(false)
+                            }
                         }
                     }
 
@@ -82,8 +96,10 @@ class LlamaServiceManager {
                 if (!bound) {
                     Log.e(TAG, "Failed to bind to LlamaAnalysisService")
                     isConnecting = false
-                    continuation.resume(false)
-                    return@suspendCoroutine
+                    if (isResumed.compareAndSet(false, true)) {
+                        continuation.resume(false)
+                    }
+                    return@suspendCancellableCoroutine
                 }
 
                 Log.d(TAG, "Service binding initiated successfully")
@@ -91,7 +107,7 @@ class LlamaServiceManager {
                 // 타임아웃 처리
                 CoroutineScope(Dispatchers.Main).launch {
                     delay(CONNECTION_TIMEOUT)
-                    if (isConnecting) {
+                    if (isConnecting && isResumed.compareAndSet(false, true)) {
                         Log.e(TAG, "Connection timeout after ${CONNECTION_TIMEOUT}ms")
                         isConnecting = false
                         continuation.resume(false)
@@ -108,9 +124,6 @@ class LlamaServiceManager {
     /**
      * 텍스트 쿼리 전송 (AIDL 방식) - 실시간 스트리밍 지원
      */
-    /**
-     * 텍스트 쿼리 전송 (AIDL 방식) - 실시간 스트리밍 지원
-     */
     suspend fun sendQuery(
         query: String,
         onPartialUpdate: ((String) -> Unit)? = null
@@ -121,15 +134,15 @@ class LlamaServiceManager {
 
         Log.d(TAG, "Sending query via AIDL: $query")
 
-        return suspendCoroutine { continuation ->
-            // 🔧 중복 응답 방지를 위한 AtomicBoolean
+        return suspendCancellableCoroutine { continuation ->
+            // 중복 응답 방지를 위한 AtomicBoolean
             val responseCalled = AtomicBoolean(false)
             var lastResponse = ""
 
             try {
                 val callback = object : IAnalysisCallback.Stub() {
                     override fun onPartialResult(partialText: String?) {
-                        // 🆕 실시간 부분 결과 처리
+                        // 실시간 부분 결과 처리
                         partialText?.let { partial ->
                             Log.d(TAG, "Received partial result via AIDL, length: ${partial.length}")
                             lastResponse = partial
@@ -197,7 +210,7 @@ class LlamaServiceManager {
                 llamaService!!.analyzeText(query, callback)
                 Log.d(TAG, "Query sent to service successfully")
 
-                // 🔧 타임아웃 처리 (20초)
+                // 타임아웃 처리 (20초)
                 CoroutineScope(Dispatchers.Main).launch {
                     delay(20000)
                     if (responseCalled.compareAndSet(false, true)) {
@@ -231,9 +244,6 @@ class LlamaServiceManager {
         latch.await()
         return result
     }
-
-
-
 
     /**
      * 간단한 쿼리 전송 (기존 호환성 유지)

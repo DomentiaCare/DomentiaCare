@@ -75,6 +75,11 @@ class MyApplication : Application() {
 
     // 🆕 ChatApp 연결 로직
     private suspend fun connectToLlamaService() {
+        if (llamaServiceManager.isConnected()) {
+            Log.d(TAG, "✅ Already connected to ChatApp service")
+            waitForServiceReady()
+            return
+        }
         try {
             Log.d(TAG, "🔄 Attempting to connect to ChatApp service...")
 
