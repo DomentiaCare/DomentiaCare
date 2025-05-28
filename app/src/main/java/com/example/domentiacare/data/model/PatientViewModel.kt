@@ -9,6 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.data.remote.dto.Phone
+import com.example.domentiacare.network.RecordResponse
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PatientViewModel : ViewModel() {
@@ -18,6 +22,16 @@ class PatientViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
         private set
 
+    // 환자별 녹음 관련 StateFlow 추가
+    private val _patientRecords = MutableStateFlow<List<RecordResponse>>(emptyList())
+    val patientRecords: StateFlow<List<RecordResponse>> = _patientRecords.asStateFlow()
+
+    private val _recordsLoading = MutableStateFlow(false)
+    val recordsLoading: StateFlow<Boolean> = _recordsLoading.asStateFlow()
+
+    private val _recordsError = MutableStateFlow<String?>(null)
+    val recordsError: StateFlow<String?> = _recordsError.asStateFlow()
+
     fun loadPatients() {
         viewModelScope.launch {
             try {
@@ -26,6 +40,39 @@ class PatientViewModel : ViewModel() {
             } catch (e: Exception) {
                 // 예외 처리
                 Log.e("PatientViewModel", "Error loading patients: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * 특정 환자의 통화 녹음 목록을 가져옵니다
+     */
+    fun getPatientsRecords(patientId: String) {
+        viewModelScope.launch {
+            try {
+                _recordsLoading.value = true
+                _recordsError.value = null
+
+                Log.d("PatientViewModel", "환자 녹음 로딩 시작: $patientId")
+
+                val response = RetrofitClient.authApi.getPatientRecords(patientId)
+
+                if (response.isSuccessful) {
+                    val records = response.body() ?: emptyList()
+                    _patientRecords.value = records
+                    Log.d("PatientViewModel", "환자 녹음 로딩 성공: ${records.size}개")
+                } else {
+                    val errorMsg = "서버 오류: ${response.code()}"
+                    _recordsError.value = errorMsg
+                    Log.e("PatientViewModel", errorMsg)
+                }
+
+            } catch (e: Exception) {
+                val errorMsg = "네트워크 오류: ${e.message}"
+                _recordsError.value = errorMsg
+                Log.e("PatientViewModel", "환자 녹음 로딩 실패", e)
+            } finally {
+                _recordsLoading.value = false
             }
         }
     }
