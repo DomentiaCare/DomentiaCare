@@ -29,7 +29,7 @@ class ScheduleRepository(context: Context
         //온라인이든 오프라인이든 일정 추가했을때의 함수
         val toInsert = if (isOnline) {
             // 온라인이면 바로 서버 전송 시도
-            val dto = ScheduleDto(schedule.title, schedule.description, schedule.startDate, schedule.endDate)
+            val dto = ScheduleDto(schedule.title, schedule.description, schedule.startDate, schedule.endDate, schedule.isAi, schedule.isCompleted, schedule.recordName )
             val response = RetrofitClient.authApi.syncSchedules(listOf(dto))
 
             if (response.isSuccessful) {
