@@ -3,7 +3,9 @@ package com.example.domentiacare
 import com.example.domentiacare.service.CallRecordAnalyzeService
 import android.Manifest
 import android.app.Activity
+import android.app.AlarmManager
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -563,6 +565,19 @@ class MainActivity : ComponentActivity() {
                 Log.d("Permission", "🎉 모든 권한 요청 완료")
                 allPermissionsRequested = true
                 onAllPermissionsProcessed()
+            }
+            // ✅ 정확한 알람 권한 요청 (Android 12+) 런타임 권한이 아니어서 제일 마지막에 넣음 수동으로 허용 눌러야함 박진호
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    Log.d("Permission", "⏰ 정확한 알람 권한 요청 화면 열기")
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                } else {
+                    Log.d("Permission", "✅ 정확한 알람 권한 이미 허용됨")
+                }
             }
         }
     }
