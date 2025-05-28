@@ -7,6 +7,7 @@ import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.data.remote.dto.Phone
 import com.example.domentiacare.data.remote.dto.RegisterUserRequest
 import com.example.domentiacare.data.remote.dto.User
+import com.example.domentiacare.network.RecordResponse
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
@@ -67,4 +68,7 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     // 백엔드로 위치보내서 웹소켓 서비스 api
     @POST("/api/location/websocket")
     fun websocketLocation(@Body location: LocationRequestBody): Call<Void>
+
+    @GET("api/records/user/{patientId}")
+    suspend fun getPatientRecords(@Path("patientId") patientId: String?): Response<List<RecordResponse>>
 }

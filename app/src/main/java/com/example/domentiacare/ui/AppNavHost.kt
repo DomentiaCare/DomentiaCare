@@ -318,6 +318,28 @@ fun AppNavHost(notificationData: NotificationData? = null) {
 
                     CallLogScreen(
                         viewModel = viewModel,
+                        navController = navController,
+                        patientId = null
+                    )
+                }
+
+                // 그리고 환자별 통화 녹음 라우트도 추가:
+                composable(
+                    "CallLogScreen/{patientId}",
+                    arguments = listOf(navArgument("patientId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val patientId = backStackEntry.arguments?.getString("patientId") ?: ""
+                    val context = LocalContext.current
+                    val viewModel: CallRecordingViewModel = viewModel()
+
+                    // 환자별 통화 녹음 - 권한 불필요 (서버 데이터)
+                    LaunchedEffect(patientId) {
+                        viewModel.loadPatientRecordings(patientId)
+                    }
+
+                    CallLogScreen(
+                        patientId = patientId,
+                        viewModel = viewModel,
                         navController = navController
                     )
                 }
