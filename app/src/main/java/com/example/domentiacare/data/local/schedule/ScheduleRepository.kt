@@ -3,6 +3,7 @@ package com.example.domentiacare.data.local.schedule
 import android.content.Context
 import android.util.Log
 import com.example.domentiacare.data.remote.RetrofitClient
+import kotlinx.coroutines.flow.Flow
 
 class ScheduleRepository(context: Context
 ) {
@@ -63,9 +64,9 @@ class ScheduleRepository(context: Context
         }
     }
 
-//    fun getScheduleFlow(): Flow<List<Schedule>> {  //RoomDB에 자동으로 넣으면 자동으로 가져오게함
-//        return dao.getAllSchedulesFlow()
-//    }
+    fun getScheduleFlow(): Flow<List<Schedule>> {  //RoomDB에 자동으로 넣으면 자동으로 가져오게함
+        return dao.getAllSchedulesFlow()
+    }
 
     suspend fun clearLocalSchedules() {  //로그아웃시
         dao.deleteAllSchedules()

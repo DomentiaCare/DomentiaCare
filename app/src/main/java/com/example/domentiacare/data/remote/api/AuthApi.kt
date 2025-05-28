@@ -73,9 +73,9 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     @POST("/api/schedules/sync")
     suspend fun syncSchedules(@Body schedules: List<ScheduleDto>): Response<Unit>
 
-    @GET("/api/schedule/pending-notifications")
+    @GET("/api/schedules/send-patientSchedules") // 신호왔을때 모두 받아오기
     suspend fun getPendingSchedules(): List<Schedule>
 
-    @GET("/api/schedule/on-login")
+    @GET("/api/schedules/on-login")  //로그인되었을때 모두 받아오기
     suspend fun getServerScheduleOnLogin(): List<Schedule>
 }

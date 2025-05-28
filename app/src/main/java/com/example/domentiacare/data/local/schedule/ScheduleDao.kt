@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ScheduleDao {
@@ -24,8 +25,8 @@ interface ScheduleDao {
     suspend fun getAllSchedules(): List<Schedule>
 
     //db에서 넣으면 자동으로 가져오게함
-//    @Query("SELECT * FROM schedule")
-//    fun getAllSchedulesFlow(): Flow<List<Schedule>>
+    @Query("SELECT * FROM schedule")
+    fun getAllSchedulesFlow(): Flow<List<Schedule>>
 
     @Query("DELETE FROM schedule")
     suspend fun deleteAllSchedules()

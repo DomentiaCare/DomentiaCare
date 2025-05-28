@@ -19,7 +19,13 @@ class ScheduleViewModel(context: Context)
         private set
 
     init {
-        loadSchedules()
+//        loadSchedules()
+        viewModelScope.launch {
+            repository.getScheduleFlow().collect { scheduleList ->
+                schedules.clear()
+                schedules.addAll(scheduleList)
+            }
+        }
 
     }
     fun addSchedule(schedule: Schedule, isOnline: Boolean) {
