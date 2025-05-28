@@ -52,6 +52,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.shadow
 
 // 알림 데이터를 담는 데이터 클래스
 data class NotificationData(
@@ -112,30 +116,25 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         content = { _ ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            ) {
-                                AIAssistantStatusCard()
-
-                                Box(modifier = Modifier.weight(1f)) {
-                                    AppNavHost(
-                                        notificationData = notificationDataState.value,
-                                        getAssistantState = { assistantEnabledByUser.value },
-                                        toggleAssistant = {
-                                            // 🆕 설정에서 스위치를 끌 때 강제 중지
-                                            if (assistantEnabledByUser.value) {
-                                                // 현재 켜져있는데 끄려고 함 → 강제 중지
-                                                Log.d("MainActivity", "🛑 설정에서 AI 어시스턴트 비활성화 - 강제 중지")
-                                                aiAssistant?.forceStop(showMessage = true)
-                                            }
-                                            assistantEnabledByUser.value = !assistantEnabledByUser.value
-                                        }
-                                    )
+                            // 🆕 상태 카드 제거하고 바로 AppNavHost 표시
+                            AppNavHost(
+                                notificationData = notificationDataState.value,
+                                getAssistantState = { assistantEnabledByUser.value },
+                                toggleAssistant = {
+                                    // 🆕 설정에서 스위치를 끌 때 강제 중지
+                                    if (assistantEnabledByUser.value) {
+                                        // 현재 켜져있는데 끄려고 함 → 강제 중지
+                                        Log.d("MainActivity", "🛑 설정에서 AI 어시스턴트 비활성화 - 강제 중지")
+                                        aiAssistant?.forceStop(showMessage = true)
+                                    }
+                                    assistantEnabledByUser.value = !assistantEnabledByUser.value
                                 }
-                            }
+                            )
                         }
                     )
+
+                    // 🆕 플로팅 상태 카드 - 상단에 위치
+                    AIAssistantFloatingStatusCard()
 
                     // FAB는 Box의 상단에서 레이아웃 흐름과 무관하게 위치
                     if (assistantEnabledByUser.value) {
@@ -179,92 +178,101 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 🆕 수정된 AI 어시스턴트 상태 표시 카드 - 강제 중지 정보 추가
+    // 🆕 플로팅 AI 어시스턴트 상태 카드 - 애니메이션과 함께
     @Composable
-    private fun AIAssistantStatusCard() {
-        when {
-            assistantAnalyzingState.value -> {
-                // 분석 중 상태 - 가장 먼저 체크
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 로딩 인디케이터 추가
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "🧠 명령 분석 중... (버튼 클릭 시 중지)",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
+    private fun AIAssistantFloatingStatusCard() {
+        // 🆕 상태에 따른 표시 여부 결정
+        val shouldShowCard = assistantAnalyzingState.value ||
+                assistantRecordingState.value ||
+                assistantActiveState.value
+
+        // 🆕 애니메이션으로 부드럽게 나타나기/사라지기
+        AnimatedVisibility(
+            visible = shouldShowCard,
+            enter = slideInVertically(
+                initialOffsetY = { -it }, // 위에서 아래로 슬라이드
+                animationSpec = tween(300)
+            ) + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(
+                targetOffsetY = { -it }, // 아래에서 위로 슬라이드
+                animationSpec = tween(300)
+            ) + fadeOut(animationSpec = tween(300)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 70.dp) // 🆕 상단에서 60dp 아래로 이동
+                .zIndex(2f) // FAB보다 위에 표시
+        ) {
+            // 🆕 상단에 고정된 플로팅 카드
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                colors = CardDefaults.cardColors(
+                    containerColor = when {
+                        assistantAnalyzingState.value -> MaterialTheme.colorScheme.tertiaryContainer
+                        assistantRecordingState.value -> MaterialTheme.colorScheme.errorContainer
+                        assistantActiveState.value -> MaterialTheme.colorScheme.primaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
                     }
-                }
-            }
-            assistantRecordingState.value -> {
-                // 녹음 중 상태
-                Card(
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Mic,
-                            contentDescription = "녹음 중",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "🎤 음성 인식 중... (버튼 클릭 시 중지)",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-            assistantActiveState.value -> {
-                // 대기 중 상태
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.MicOff,
-                            contentDescription = "대기 중",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "🎙️ 준비됨. 버튼을 눌러 말하세요",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    when {
+                        assistantAnalyzingState.value -> {
+                            // 분석 중 상태
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "🧠 명령 분석 중... (버튼 클릭 시 중지)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                        }
+                        assistantRecordingState.value -> {
+                            // 녹음 중 상태
+                            Icon(
+                                Icons.Default.Mic,
+                                contentDescription = "녹음 중",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "🎤 음성 인식 중... (버튼 클릭 시 중지)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                        assistantActiveState.value -> {
+                            // 대기 중 상태
+                            Icon(
+                                Icons.Default.MicOff,
+                                contentDescription = "대기 중",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                "🎙️ 준비됨. 버튼을 눌러 말하세요",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                 }
             }

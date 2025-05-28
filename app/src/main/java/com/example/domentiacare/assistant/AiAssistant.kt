@@ -459,6 +459,7 @@ class AIAssistant(
                 keyword.contains("TOMORROW") -> {
                     speakKorean("내일 일정을 확인해드리겠습니다.")
                     onScheduleAction("check", "tomorrow")
+                    // -> 
                 }
 
                 keyword.contains("TODAY") -> {
