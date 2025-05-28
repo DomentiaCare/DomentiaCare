@@ -26,8 +26,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.domentiacare.data.remote.dto.Schedule
+import com.example.domentiacare.data.isOnline
+import com.example.domentiacare.data.local.schedule.Schedule
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
@@ -137,14 +139,22 @@ fun AddScheduleScreen(
 
         Button(
             onClick = {
-                val startTime = "$startHour:$startMinute"
-                val endTime = "$endHour:$endMinute"
+                val startDateTime = LocalDateTime.of(startDate, LocalTime.of(startHour, startMinute))
+                val endDateTime = LocalDateTime.of(endDate, LocalTime.of(endHour, endMinute))
+
+                val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
                 val newSchedule = Schedule(
-                    date = startDate, // 필요시 필드 분리
-                    time = "$startDate $startTime ~ $endDate $endTime",
-                    content = scheduleText
+                    title = scheduleText,
+                    description = scheduleText,
+                    startDate = startDateTime.format(formatter),
+                    endDate = endDateTime.format(formatter),
+                    isAi = false,
+                    isCompleted = false,
+                    isSynced = false,
+                    recordName = null
                 )
-                viewModel.addSchedule(newSchedule)
+                val online = isOnline(context)
+                viewModel.addSchedule(newSchedule, online)
                 navController.popBackStack()
             },
             modifier = Modifier.align(Alignment.End)

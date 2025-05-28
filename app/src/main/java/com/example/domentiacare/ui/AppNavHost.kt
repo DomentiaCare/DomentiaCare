@@ -1,8 +1,14 @@
 package com.example.domentiacare.ui
 
+// MainActivity에서 전달받을 알림 데이터
 import ScheduleDetailScreen
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -31,6 +37,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.domentiacare.NotificationData
+import com.example.domentiacare.data.local.CurrentUser
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.data.model.CallRecordingViewModel
 import com.example.domentiacare.data.model.PatientViewModel
@@ -51,33 +59,27 @@ import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
 import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
+import com.example.domentiacare.ui.test.TestCalendar
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.LocalDate
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.domentiacare.ui.screen.call.CallLogViewModel
 import java.net.URLDecoder
-
-// MainActivity에서 전달받을 알림 데이터
-import com.example.domentiacare.NotificationData
-import com.example.domentiacare.data.remote.dto.Patient
+import java.time.LocalDate
 
 @Composable
 fun AppNavHost(notificationData: NotificationData? = null) {
     val navController = rememberNavController()
-    val scheduleViewModel: ScheduleViewModel = viewModel()
+    val context = LocalContext.current
+    val scheduleViewModel = remember { ScheduleViewModel(context) }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     // 🆕 알림에서 온 경우 해당 화면으로 네비게이션
     LaunchedEffect(notificationData) {
+        observeNetworkAndSync(context, scheduleViewModel)  // ✅ 네트워크 감지 등록 (한 번만 실행되도록)
         notificationData?.let { data ->
             if (data.fromNotification) {
                 Log.d("AppNavHost", "알림에서 온 데이터: ${data.targetScreen}")
@@ -150,6 +152,8 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                 DMT_DrawerMenuItem("로그아웃", onClick = {
                     navController.navigate("login") {
                         TokenManager.clearToken()
+                        CurrentUser.user = null
+                        scheduleViewModel.clearSchedulesOnLogout()
                         popUpTo("login") { inclusive = true }
                     }
                     scope.launch { drawerState.close() }
@@ -181,6 +185,7 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                             navController.navigate("home") {
                                 popUpTo("login") { inclusive = true }
                                 sendFcmTokenAfterLogin()
+                                scheduleViewModel.syncFromServerAfterLogin()
                             }
                         }
                     )
@@ -272,6 +277,7 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                     RegisterScreen(email = email, nickname = nickname, onRegistSuccess ={
                         navController.navigate("home") {
                             popUpTo("RegisterScreen") { inclusive = true }
+                            scheduleViewModel.syncFromServerAfterLogin()
                         }
                         sendFcmTokenAfterLogin()
                     } )
@@ -321,9 +327,15 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                         navController = navController
                     )
                 }
+                composable("TestCalendar"){
+                    TestCalendar()
+                }
             }
         }
     }
+
+
+
 }
 
 fun sendFcmTokenAfterLogin(){
@@ -340,4 +352,34 @@ fun sendFcmTokenAfterLogin(){
                 }
             })
         }
+}
+
+val builder = NetworkRequest.Builder()
+    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+
+private var hasSynced = false
+
+fun observeNetworkAndSync(context: Context, viewModel: ScheduleViewModel) {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+
+
+    connectivityManager.registerNetworkCallback(
+        builder.build(),
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                if (!hasSynced && TokenManager.getToken() != null) {
+                    hasSynced = true
+                    // 온라인 전환 시 RoomDB → 서버 동기화
+                    viewModel.syncOfflineSchedules()
+                    Log.d("NetworkCallback", "✅ Network is available, syncing schedules")
+                    viewModel.syncServerSchedules()
+                }
+            }
+            override fun onLost(network: Network) {
+                hasSynced = false
+                Log.d("NetworkCallback", "❌ 네트워크 끊김")
+            }
+        }
+    )
 }

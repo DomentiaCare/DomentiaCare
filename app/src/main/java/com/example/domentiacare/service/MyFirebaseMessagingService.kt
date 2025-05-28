@@ -7,9 +7,13 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.domentiacare.R
+import com.example.domentiacare.data.local.schedule.ScheduleDatabaseProvider
 import com.example.domentiacare.data.remote.RetrofitClient
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -40,7 +44,44 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+        // ✅ 1. 데이터 신호가 있을 경우
+        if (remoteMessage.data.isNotEmpty()) {
+            val command = remoteMessage.data["command"]
+            Log.d("FCM", "📡 신호 수신됨: command = $command")
 
+            // 필요시 분기 처리
+            when (command) {
+                "SYNC_SCHEDULE" -> {
+                    Log.d("FCM", "📥 일정 동기화 신호 수신됨")
+                    // TODO: ViewModel 등 호출하려면 Broadcast/Repository 연계 필요
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            val response = RetrofitClient.authApi.getPendingSchedules()
+                            if (response.isNotEmpty()) {
+
+                                // ✅ RoomDB 인스턴스 및 DAO
+                                val db = ScheduleDatabaseProvider.getDatabase(applicationContext)
+                                val dao = db.scheduleDao()
+
+                                dao.insertSchedules(response)
+
+                                Log.d("FCM", "📦 RoomDB에 일정 저장 완료")
+
+                            } else {
+                                Log.d("FCM", "📭 받아올 일정 없음")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("FCM", "❌ 일정 동기화 실패", e)
+                        }
+                    }
+                }
+                else -> {
+                    Log.d("FCM", "🔍 알 수 없는 명령: $command")
+                }
+            }
+
+            return // 🔁 신호일 경우 노티피케이션은 띄우지 않음
+        }
         val title = remoteMessage.notification?.title
         val body = remoteMessage.notification?.body
 

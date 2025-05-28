@@ -35,7 +35,7 @@ fun ScheduleDetailScreen(
 ) {
     val schedulesForDate = viewModel.getSchedulesForDate(date)
     val schedulesByHour = schedulesForDate.groupBy {
-        it.time.substring(0, 2)
+        it.startDate.substring(11, 13)
     }
 
     Box(
@@ -85,7 +85,8 @@ fun ScheduleDetailScreen(
                                 .background(Color(0xFFBBDEFB), shape = MaterialTheme.shapes.small)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Text("📌 ${schedule.time} ${schedule.content}", color = Color.Black)
+                            Text("📌 ${schedule.startDate.substring(11, 16)} - ${schedule.title}",
+                                color = Color.Black)
                         }
                     }
                 }

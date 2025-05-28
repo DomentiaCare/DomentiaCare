@@ -24,6 +24,7 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("kotlin-kapt") // Hilt만을 위해 유지
     id("com.google.gms.google-services")
+
 }
 
 android {
@@ -80,6 +81,27 @@ android {
     kapt {
         correctErrorTypes = true
         useBuildCache = true
+
+        // Room 특화 설정 추가
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+            arg("room.expandProjection", "true")
+        }
+    }
+
+}
+
+// android 블록 아래에 추가
+configurations.all {
+    resolutionStrategy {
+        // Kotlin stdlib 버전 강제 통일
+        force("org.jetbrains.kotlin:kotlin-stdlib:2.0.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.0")
+        force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0")
+
+        // 문제가 되는 캘린더 라이브러리 버전 다운그레이드
+        force("com.kizitonwose.calendar:compose:2.5.0")
     }
 }
 
@@ -118,6 +140,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
     // Coroutines
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Kakao SDK
@@ -130,7 +153,7 @@ dependencies {
     implementation("com.google.maps.android:maps-compose:2.11.4")
 
     // UI Components
-    implementation("com.kizitonwose.calendar:compose:2.0.3")
+//    implementation("com.kizitonwose.calendar:compose:2.0.3")
     implementation("com.google.accompanist:accompanist-pager:0.30.1")
 
     // Hilt DI
@@ -167,7 +190,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
     implementation("com.google.accompanist:accompanist-navigation-animation:0.32.0")
-    implementation("com.kizitonwose.calendar:compose:2.0.3")
+//    implementation("com.kizitonwose.calendar:compose:2.0.3")
     implementation("com.google.accompanist:accompanist-pager:0.30.1")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.maps.android:maps-compose:2.11.4")
@@ -190,4 +213,27 @@ dependencies {
 
     // Watch service
     implementation ("com.google.android.gms:play-services-wearable:18.1.0")
+
+    // RoomDB
+    // 현재 Room 2.6.1을 2.7.1로 변경
+    implementation("androidx.room:room-runtime:2.7.1")  // 2.6.1 → 2.7.1
+    kapt("androidx.room:room-compiler:2.7.1")           // 2.6.1 → 2.7.1
+    implementation("androidx.room:room-ktx:2.7.1")      // 2.6.1 → 2.7.1
+
+// 테스트 의존성도 업그레이드
+    testImplementation("androidx.room:room-testing:2.7.1") // 2.6.1 → 2.7.1
+
+    //NetworkCallback
+    implementation ("androidx.core:core-ktx:1.12.0")
+
+    // JUnit + 코루틴
+    testImplementation ("junit:junit:4.13.2")
+    testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    //달력
+    // 캘린더 라이브러리 버전 변경
+    implementation("com.kizitonwose.calendar:compose:2.5.0") // 2.7.0 → 2.5.0
+
+
+
 }

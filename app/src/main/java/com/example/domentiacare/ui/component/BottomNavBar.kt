@@ -54,9 +54,9 @@ fun BottomNavBar(navController: NavController) {
         )
         NavigationBarItem(
             selected = false,
-            onClick = { /* TODO */ },
+            onClick = { /* TODO */navController.navigate("TestCalendar") },
             icon = { Icon(Icons.Default.Favorite, contentDescription = "좋아요") },
-            label = { Text("좋아요") },
+            label = { Text("달력테스트") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color(0xFFfbc271)
             )
