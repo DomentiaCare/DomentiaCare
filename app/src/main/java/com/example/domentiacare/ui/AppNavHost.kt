@@ -176,7 +176,7 @@ fun AppNavHost(
         }
         Scaffold(
             topBar = {
-                TopBar(title = "DomentiaCare", drawerState = drawerState, scope = scope)
+                TopBar(title = "DementiaCare", drawerState = drawerState, scope = scope)
             },
             bottomBar = {
                 BottomNavBar(navController)
