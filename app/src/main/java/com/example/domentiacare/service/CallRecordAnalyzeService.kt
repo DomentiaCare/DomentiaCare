@@ -30,6 +30,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 
 //Watch 서비스에서 사용하는 import
 import com.example.domentiacare.service.watch.WatchMessageHelper
+import com.example.domentiacare.ui.screen.call.parseLlamaScheduleResponseFull as parseForNotification
 
 class CallRecordAnalyzeService : Service() {
 
@@ -216,6 +217,22 @@ class CallRecordAnalyzeService : Service() {
 
                         // 6. 성공 알림
                         showResultNotification(finalRecord)
+
+
+
+                        // 중복함수호출로 인한 기존 Intent 재호출
+                        // 🔧 7. 워치 + 사용자 친화적 알림 (일정 화면으로 이동)
+                        try {
+                            if (!finalRecord.result.isNullOrBlank()) {
+                                val (title, date, hour, minute, place) = parseForNotification(finalRecord.result)
+                                showResultNotificationWithIntent(title, date, hour, minute, place)
+                                Log.d("CallRecordAnalyzeService", "✅ 워치 + 친화적 알림 전송 완료")
+                            } else {
+                                Log.w("CallRecordAnalyzeService", "⚠️ Llama 결과가 없어 워치 알림 건너뜀")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("CallRecordAnalyzeService", "❌ 워치 + 친화적 알림 전송 실패", e)
+                        }
                     } else {
                         Log.w("CallRecordAnalyzeService", "⚠️ 추출된 일정이 없습니다.")
                         showErrorNotification("일정 추출 실패", "통화에서 일정을 찾을 수 없습니다.")
@@ -651,26 +668,26 @@ class CallRecordAnalyzeService : Service() {
         val firstSchedule = record.extractedSchedules?.firstOrNull()
         val scheduleCount = record.extractedSchedules?.size ?: 0
 
-        // ===== 🔧 워치에 메시지 전송 추가 =====
-        if (firstSchedule != null) {
-            val watchMessage = """
-            ${firstSchedule.title}
-            ${firstSchedule.startDate}
-            ${firstSchedule.description}
-        """.trimIndent()
-
-            Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
-            try {
-                WatchMessageHelper.sendMessageToWatch(
-                    context = this,
-                    path = "/schedule_notify",
-                    message = watchMessage
-                )
-            } catch (e: Exception) {
-                Log.e("CallRecordAnalyzeService", "워치 메시지 전송 실패", e)
-            }
-        }
-        // =====================================
+//        // ===== 🔧 워치에 메시지 전송 추가 =====
+//        if (firstSchedule != null) {
+//            val watchMessage = """
+//            ${firstSchedule.title}
+//            ${firstSchedule.startDate}
+//            ${firstSchedule.description}
+//        """.trimIndent()
+//
+//            Log.d("CallRecordAnalyzeService", "워치 메세지 전송: $watchMessage")
+//            try {
+//                WatchMessageHelper.sendMessageToWatch(
+//                    context = this,
+//                    path = "/schedule_notify",
+//                    message = watchMessage
+//                )
+//            } catch (e: Exception) {
+//                Log.e("CallRecordAnalyzeService", "워치 메시지 전송 실패", e)
+//            }
+//        }
+//        // =====================================
 
         // MainActivity로 이동하는 인텐트 생성
         val intent = Intent(this, MainActivity::class.java).apply {
