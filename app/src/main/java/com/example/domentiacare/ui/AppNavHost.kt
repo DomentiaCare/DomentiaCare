@@ -48,6 +48,7 @@ import com.example.domentiacare.ui.component.BottomNavBar
 import com.example.domentiacare.ui.component.DMT_DrawerMenuItem
 import com.example.domentiacare.ui.component.TopBar
 import com.example.domentiacare.ui.screen.MyPage.MyPageScreen
+import com.example.domentiacare.ui.screen.MySetting.MySettingScreen
 import com.example.domentiacare.ui.screen.call.CallDetailScreen
 import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
@@ -60,7 +61,6 @@ import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
 import com.example.domentiacare.ui.test.TestCalendar
-import com.example.domentiacare.ui.screen.MySetting.MySettingScreen
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -162,6 +162,9 @@ fun AppNavHost(
                         popUpTo("login") { inclusive = true }
                     }
                     scope.launch { drawerState.close() }
+                })
+                DMT_DrawerMenuItem("달력 테스트", onClick = {
+                    navController.navigate("TestCalendar")
                 })
             }
         }
