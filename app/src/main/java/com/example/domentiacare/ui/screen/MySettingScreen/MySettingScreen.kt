@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -28,18 +29,15 @@ fun MySettingScreen(
         isChecked = getAssistantState()
     }
 
+    // 커스텀 색상 정의
+    val customOrange = Color(0xFFED7D31)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "앱 설정",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
         // 🆕 개선된 AI 어시스턴트 설정 Switch - 강제 중지 정보 추가
         Card(
             modifier = Modifier
@@ -63,8 +61,9 @@ fun MySettingScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "AI 어시스턴트",
-                        style = MaterialTheme.typography.titleMedium
+                        text = "\uD83E\uDDE0 AI 어시스턴트",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = customOrange
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -113,8 +112,8 @@ fun MySettingScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         "💡 사용법 안내",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                        style = MaterialTheme.typography.titleMedium,
+                        color = customOrange
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -143,8 +142,8 @@ fun MySettingScreen(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     "🔒 필요한 권한",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                    style = MaterialTheme.typography.titleMedium,
+                    color = customOrange
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -184,7 +183,8 @@ fun MySettingScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "⚙️ 앱 권한 설정 열기",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        color = customOrange
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
