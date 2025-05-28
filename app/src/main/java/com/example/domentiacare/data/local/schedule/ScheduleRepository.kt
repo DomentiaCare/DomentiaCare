@@ -5,7 +5,7 @@ import android.util.Log
 import com.example.domentiacare.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.Flow
 
-class ScheduleRepository(context: Context
+class ScheduleRepository(private val context: Context
 ) {
     val dao = ScheduleDatabaseProvider.getDatabase(context).scheduleDao()
 
@@ -41,6 +41,7 @@ class ScheduleRepository(context: Context
             schedule.copy(isSynced = false)
         }
         dao.insertSchedule(toInsert)
+
     }
 
 
@@ -69,7 +70,14 @@ class ScheduleRepository(context: Context
     }
 
     suspend fun clearLocalSchedules() {  //로그아웃시
+        val allSchedules = dao.getAllSchedules()
+        allSchedules.forEach {
+            cancelAlarm(context, it)
+        }
+
         dao.deleteAllSchedules()
+        Log.d("ScheduleAlarm", "🧹 모든 알람 취소 및 일정 삭제 완료")
+
     }
 
     suspend fun getServerScheduleOnLogin() {  //로그인시 모두 가져옴

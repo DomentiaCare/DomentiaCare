@@ -7,8 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.domentiacare.data.local.CurrentUser
 import com.example.domentiacare.data.local.schedule.Schedule
 import com.example.domentiacare.data.local.schedule.ScheduleRepository
+import com.example.domentiacare.data.local.schedule.scheduleAlarm
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class ScheduleViewModel(context: Context)
     : ViewModel() {
@@ -20,10 +24,30 @@ class ScheduleViewModel(context: Context)
 
     init {
 //        loadSchedules()
-        viewModelScope.launch {
+        viewModelScope.launch {  // Flow를 사용해서 자동으로 갱신되게
             repository.getScheduleFlow().collect { scheduleList ->
                 schedules.clear()
                 schedules.addAll(scheduleList)
+
+                //알림 등록하기
+                scheduleList.forEach { schedule ->
+                    try {
+                        val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                        val triggerTime = LocalDateTime.parse(schedule.startDate, formatter)
+                            .atZone(ZoneId.systemDefault())
+                            .toInstant()
+                            .toEpochMilli()
+
+                        val now = System.currentTimeMillis()
+
+                        if (triggerTime > now ) {
+                            scheduleAlarm(context, schedule) // ⬅️ 알림 등록
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace() // 파싱 실패 등 예외 처리
+                    }
+                }
+
             }
         }
 
