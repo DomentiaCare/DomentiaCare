@@ -1,5 +1,7 @@
 package com.example.domentiacare.data.remote.api
 
+import com.example.domentiacare.data.local.schedule.Schedule
+import com.example.domentiacare.data.local.schedule.ScheduleDto
 import com.example.domentiacare.data.remote.dto.KakaoLoginResponse
 import com.example.domentiacare.data.remote.dto.KakaoTokenRequest
 import com.example.domentiacare.data.remote.dto.LocationRequestBody
@@ -69,6 +71,15 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     @POST("/api/location/websocket")
     fun websocketLocation(@Body location: LocationRequestBody): Call<Void>
 
+    @POST("/api/schedules/sync")
+    suspend fun syncSchedules(@Body schedules: List<ScheduleDto>): Response<Unit>
+
+    @GET("/api/schedules/send-patientSchedules") // 신호왔을때 모두 받아오기
+    suspend fun getPendingSchedules(): List<Schedule>
+
+    @GET("/api/schedules/on-login")  //로그인되었을때 모두 받아오기
+    suspend fun getServerScheduleOnLogin(): List<Schedule>
+    
     @GET("api/records/user/{patientId}")
     suspend fun getPatientRecords(@Path("patientId") patientId: String?): Response<List<RecordResponse>>
 }

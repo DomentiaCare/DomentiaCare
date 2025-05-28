@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="domentiacarewatch">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-27T14:35:59.790395Z">
+        <DropdownSelection timestamp="2025-05-28T12:35:31.004797500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CY30EYR1R" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CY30EZ4YV" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,16 +15,19 @@
       </SelectionState>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-26T17:41:18.906949700Z">
+        <DropdownSelection timestamp="2025-05-28T12:35:40.475626700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=RFAT81VAW2P" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CY30EZ4YV" />
             </handle>
           </Target>
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="ChatApp">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="ScheduleDaoTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

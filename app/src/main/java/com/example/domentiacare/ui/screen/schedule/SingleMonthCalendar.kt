@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.domentiacare.data.remote.dto.Schedule
+import com.example.domentiacare.data.local.schedule.Schedule
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -85,7 +85,10 @@ fun SingleMonthCalendar(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(dates) { date ->
-                val daySchedule = schedules.find { it.date == date }
+                val daySchedule = schedules.find { schedule ->
+                    val scheduleDate = schedule.startDate.substring(0, 10) // "yyyy-MM-dd"
+                    val localDate = LocalDate.parse(scheduleDate)
+                    localDate == date }
                 val dayOfWeek = date?.dayOfWeek
                 val textColor = when (dayOfWeek) {
                     DayOfWeek.SUNDAY -> if (date == selectedDate) Color.White else Color(0xFFD32F2F)
@@ -131,7 +134,7 @@ fun SingleMonthCalendar(
                         ) {
                             if (daySchedule != null) {
                                 Text(
-                                    text = daySchedule.content,
+                                    text = daySchedule.title,
                                     fontSize = 10.sp,
                                     maxLines = 1,
                                     color = Color.White
