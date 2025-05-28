@@ -45,8 +45,8 @@ class LocationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        //startLocationTracking()
-        //startWebSocketLocationSending() // ✅ 웹소켓 위치 전송 시작
+        startLocationTracking()
+        startWebSocketLocationSending() // ✅ 웹소켓 위치 전송 시작
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
