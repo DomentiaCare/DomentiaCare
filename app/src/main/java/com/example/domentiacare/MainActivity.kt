@@ -47,6 +47,11 @@ import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Stop
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 
 // 알림 데이터를 담는 데이터 클래스
 data class NotificationData(
@@ -66,6 +71,7 @@ data class ScheduleNotificationData(
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val assistantEnabledByUser = mutableStateOf(false)
     private val viewModel: CallLogViewModel by viewModels()
     private val IS_DEV_MODE = true
 
@@ -100,49 +106,62 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            // 🆕 알림 데이터 상태 초기화
+            // 알림 데이터 상태 초기화
             notificationDataState = remember { mutableStateOf(extractNotificationData(intent)) }
 
             DomentiaCareTheme {
-                // 🆕 순차적 권한 요청 컴포저블 호출
                 SequentialPermissionRequester()
 
-                if (IS_DEV_MODE) {
-                    Scaffold(
-                        floatingActionButton = {
-                            AIAssistantFAB()
-                        }
-                    ) { paddingValues ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues)
-                        ) {
-                            // AI 어시스턴트 상태 표시
-                            AIAssistantStatusCard()
+                //AI어시스턴트 버튼 출현 위치
+                val offsetX = remember { mutableStateOf(850f) }
+                val offsetY = remember { mutableStateOf(1700f) }
 
-                            // 기존 앱 네비게이션에 알림 데이터 전달
-                            Box(modifier = Modifier.weight(1f)) {
-                                AppNavHost(notificationData = notificationDataState.value)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        content = { _ ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                            ) {
+                                AIAssistantStatusCard()
+
+                                Box(modifier = Modifier.weight(1f)) {
+                                    AppNavHost(
+                                        notificationData = notificationDataState.value,
+                                        getAssistantState = { assistantEnabledByUser.value },
+                                        toggleAssistant = {
+                                            assistantEnabledByUser.value = !assistantEnabledByUser.value
+                                        }
+                                    )
+                                }
                             }
                         }
-                    }
-                } else {
-                    // 정식 릴리즈에서는 기존 UI만 표시
-                    Scaffold(
-                        floatingActionButton = {
-                            AIAssistantFAB()
-                        }
-                    ) { paddingValues ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues)
-                        ) {
-                            // AI 어시스턴트 상태 표시
-                            AIAssistantStatusCard()
+                    )
 
-                            AppNavHost(notificationData = notificationDataState.value)
+                    // FAB는 Box의 상단에서 레이아웃 흐름과 무관하게 위치
+                    if (assistantEnabledByUser.value) {
+                        FloatingActionButton(
+                            onClick = {
+                                toggleAIAssistant()
+                            },
+                            modifier = Modifier
+                                .offset { IntOffset(offsetX.value.toInt(), offsetY.value.toInt()) }
+                                .zIndex(1f)
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, dragAmount ->
+                                        change.consume()
+                                        offsetX.value += dragAmount.x
+                                        offsetY.value += dragAmount.y
+                                    }
+                                },
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = "AI 어시스턴트",
+                                tint = Color.White
+                            )
                         }
                     }
                 }
@@ -277,6 +296,15 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    fun getAssistantState(): Boolean {
+        return aiAssistant?.isActive() == true
+    }
+
+    fun toggleAssistantFromSetting() {
+        toggleAIAssistant() // 기존 FAB에서 쓰는 함수 재활용
+    }
+
 
     // AI 어시스턴트 토글 - 디버깅 로그 추가
     private fun toggleAIAssistant() {
@@ -625,6 +653,30 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, LocationForegroundService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
+
+    //AI 어시스턴트 버튼
+    @Composable
+    private fun DraggableAIAssistantFAB() {
+        var offsetX by rememberSaveable { mutableStateOf(0f) }
+        var offsetY by rememberSaveable { mutableStateOf(0f) }
+
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.toInt(), offsetY.toInt()) }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        }
+                    )
+                }
+        ) {
+            AIAssistantFAB()
+        }
+    }
+
 
     override fun onDestroy() {
         // 리소스 정리

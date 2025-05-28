@@ -51,6 +51,7 @@ import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
 import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
+import com.example.domentiacare.ui.screen.MySetting.MySettingScreen
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -69,7 +70,11 @@ import com.example.domentiacare.NotificationData
 import com.example.domentiacare.data.remote.dto.Patient
 
 @Composable
-fun AppNavHost(notificationData: NotificationData? = null) {
+fun AppNavHost(
+    notificationData: NotificationData? = null,
+    getAssistantState: () -> Boolean = {false},
+    toggleAssistant: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val scheduleViewModel: ScheduleViewModel = viewModel()
 
@@ -286,6 +291,14 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                 }
                 composable("WhisperScreen"){
                     WhisperScreen()
+                }
+
+                composable("MySettingScreen") {
+                    MySettingScreen(
+                        navController = navController,
+                        getAssistantState = getAssistantState,
+                        toggleAssistant = toggleAssistant
+                    )
                 }
 
                 composable("CallLogScreen") {
