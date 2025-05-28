@@ -216,11 +216,8 @@ class CallRecordAnalyzeService : Service() {
                         uploadAudioFileToServer(finalRecord)
 
                         // 6. 성공 알림
-                        showResultNotification(finalRecord)
-
-
-
-                        // 중복함수호출로 인한 기존 Intent 재호출
+                        // showResultNotification(finalRecord)
+                        
                         // 🔧 7. 워치 + 사용자 친화적 알림 (일정 화면으로 이동)
                         try {
                             if (!finalRecord.result.isNullOrBlank()) {
@@ -756,6 +753,7 @@ class CallRecordAnalyzeService : Service() {
         summary: String, date: String, hour: String, min: String, place: String
     ) {
         val channelId = "call_record_analysis"
+        Log.d("WatchMessageHelper", "showResultNotificationWithIntent 함수 호출!!!!!!!!!!!!!!!")
 
         // ===== 워치에도 메시지 전송 =====
         val watchMessage = """
