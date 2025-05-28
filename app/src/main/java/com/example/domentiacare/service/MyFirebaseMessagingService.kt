@@ -18,6 +18,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+// 워치 알림을 위한 import 추가
+import com.example.domentiacare.service.watch.WatchMessageHelper
+
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
@@ -82,9 +85,21 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             return // 🔁 신호일 경우 노티피케이션은 띄우지 않음
         }
-        val title = remoteMessage.notification?.title
-        val body = remoteMessage.notification?.body
+ 
+        val title = remoteMessage.notification?.title ?: "알림"
+        val body = remoteMessage.notification?.body ?: ""
 
+        // 기존 앱 노티피케이션
+        showAppNotification(title, body)
+
+        // 🆕 워치 알림 추가
+        sendDangerAlertToWatch(title, body)
+    }
+
+    /**
+     * 기존 앱 노티피케이션 로직 (분리)
+     */
+    private fun showAppNotification(title: String, body: String) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "alert_channel"
 
@@ -104,5 +119,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .build()
 
         notificationManager.notify(1, notification)
+    }
+
+    /**
+     * 🆕 치매환자 위험 알림을 워치로 전송
+     */
+    private fun sendDangerAlertToWatch(title: String, body: String) {
+        try {
+            // 워치 메시지 형식 (위험 알림에 맞게 구성)
+            val watchMessage = """
+                $title
+                $body
+            """.trimIndent()
+
+            Log.d("FCM", "워치 위험 알림 전송: $watchMessage")
+
+            // CallRecordAnalyzeService에서 사용한 것과 동일한 방식
+            WatchMessageHelper.sendMessageToWatch(
+                context = this,
+                path = "/danger_alert", // 기존과 동일한 path 사용 (워치에서 같은 방식으로 처리)
+                message = watchMessage
+            )
+
+        } catch (e: Exception) {
+            Log.e("FCM", "워치 위험 알림 전송 실패: ${e.message}", e)
+        }
     }
 }

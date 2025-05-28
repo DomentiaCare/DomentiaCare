@@ -11,7 +11,7 @@ object RetrofitClient {
     private const val BASE_URL = BuildConfig.BASE_URL // 실제 디바이스는 PC IP로 교체
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.HEADERS
     }
 
     private val client = OkHttpClient.Builder()
@@ -25,4 +25,14 @@ object RetrofitClient {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
         .create(AuthApi::class.java)
+
+    private val retrofit: Retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(client)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    fun <T> createService(service: Class<T>): T {
+        return retrofit.create(service)
+    }
 }

@@ -60,6 +60,7 @@ import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
 import com.example.domentiacare.ui.test.TestCalendar
+import com.example.domentiacare.ui.screen.MySetting.MySettingScreen
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -69,7 +70,11 @@ import java.net.URLDecoder
 import java.time.LocalDate
 
 @Composable
-fun AppNavHost(notificationData: NotificationData? = null) {
+fun AppNavHost(
+    notificationData: NotificationData? = null,
+    getAssistantState: () -> Boolean = {false},
+    toggleAssistant: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val scheduleViewModel = remember { ScheduleViewModel(context) }
@@ -292,6 +297,14 @@ fun AppNavHost(notificationData: NotificationData? = null) {
                 }
                 composable("WhisperScreen"){
                     WhisperScreen()
+                }
+
+                composable("MySettingScreen") {
+                    MySettingScreen(
+                        navController = navController,
+                        getAssistantState = getAssistantState,
+                        toggleAssistant = toggleAssistant
+                    )
                 }
 
                 composable("CallLogScreen") {

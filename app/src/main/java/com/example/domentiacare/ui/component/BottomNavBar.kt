@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -26,15 +27,6 @@ fun BottomNavBar(navController: NavController) {
         containerColor = Color.White
     ) {
         NavigationBarItem(
-            selected = currentRoute == "home",
-            onClick = { navController.navigate("home")  },
-            icon = { Icon(Icons.Default.Home, contentDescription = "홈") },
-            label = { Text("홈") },
-            colors = NavigationBarItemDefaults.colors(
-                indicatorColor = Color(0xFFfbc271)
-            )
-        )
-        NavigationBarItem(
             selected = currentRoute == "MyPageScreen",
             onClick = { navController.navigate("MyPageScreen")},
             icon = { Icon(Icons.Default.Person, contentDescription = "내정보") },
@@ -44,19 +36,24 @@ fun BottomNavBar(navController: NavController) {
             )
         )
         NavigationBarItem(
-            selected = false,
-            onClick = { /* TODO */ },
-            icon = { Icon(Icons.Default.LocationOn, contentDescription = "내위치") },
-            label = { Text("내위치") },
+            selected = currentRoute == "home",
+            onClick = { navController.navigate("home")  },
+            icon = { Icon(Icons.Default.Home, contentDescription = "홈") },
+            label = { Text("홈") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color(0xFFfbc271)
             )
         )
         NavigationBarItem(
-            selected = false,
-            onClick = { /* TODO */navController.navigate("TestCalendar") },
-            icon = { Icon(Icons.Default.Favorite, contentDescription = "좋아요") },
-            label = { Text("달력테스트") },
+            selected = currentRoute == "MySettingScreen",
+            onClick = {
+                navController.navigate("MySettingScreen"){
+                    popUpTo("home") {inclusive = false}
+                    launchSingleTop = true
+                }
+            },
+            icon = { Icon(Icons.Default.Settings, contentDescription = "설정") },
+            label = { Text("설정") },
             colors = NavigationBarItemDefaults.colors(
                 indicatorColor = Color(0xFFfbc271)
             )

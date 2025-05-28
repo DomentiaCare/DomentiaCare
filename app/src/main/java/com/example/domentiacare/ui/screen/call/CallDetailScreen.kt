@@ -139,52 +139,52 @@ fun CallDetailScreen(
         ) {
             Text("통화 텍스트", fontWeight = FontWeight.SemiBold)
 
-            // Whisper 변환 버튼
-            DMT_Button(
-                text = if (isLoading) "변환중..." else "STT 변환",
-                onClick = {
-                    Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
-                    isLoading = true // 변환 wav파일 삭제위한 코드 작성
-
-
-                    val m4aFile = File(file.path)
-                    val outputDir = File("/sdcard/Recordings/wav/")
-                    if (!outputDir.exists()) outputDir.mkdirs()
-                    val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
-
-
-                    convertM4aToWavForWhisper(m4aFile, outputWavFile)
-                    Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
-
-                    Log.d("Whisper 변환 시작", "파일 경로: ${outputWavFile.absolutePath}")
-                    val whisper = WhisperWrapper(context)
-                    whisper.copyModelFiles()
-                    whisper.initModel()
-                    whisper.transcribe(
-                        wavPath = outputWavFile.absolutePath,
-                        onResult = { result ->
-                            transcript = result
-                            isLoading = false
-
-                            //Whisper처리 완료 후 WAV파일 삭제
-                            try{
-                                if(outputWavFile.exists()){
-                                    val deleted = outputWavFile.delete()
-                                    if(deleted){
-                                        Log.d("CallDetailScreen", "✅ WAV 파일 삭제 성공: ${outputWavFile.absolutePath}")
-                                    } else {
-                                        Log.w("CallDetailScreen", "⚠️ WAV 파일 삭제 실패: ${outputWavFile.absolutePath}")
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                Log.e("CallDetailScreen", "❌ WAV 파일 삭제 중 오류: ${e.message}")
-                            }
-                        },
-                        onUpdate = { }
-                    )
-                },
-                modifier = Modifier
-            )
+//            // Whisper 변환 버튼
+//            DMT_Button(
+//                text = if (isLoading) "변환중..." else "STT 변환",
+//                onClick = {
+//                    Log.d("CallDetailScreen", "STT 변환 버튼 클릭")
+//                    isLoading = true // 변환 wav파일 삭제위한 코드 작성
+//
+//
+//                    val m4aFile = File(file.path)
+//                    val outputDir = File("/sdcard/Recordings/wav/")
+//                    if (!outputDir.exists()) outputDir.mkdirs()
+//                    val outputWavFile = File(outputDir, m4aFile.nameWithoutExtension + ".wav")
+//
+//
+//                    convertM4aToWavForWhisper(m4aFile, outputWavFile)
+//                    Log.d("RecordingLogItem", "변환 완료: ${outputWavFile.absolutePath}")
+//
+//                    Log.d("Whisper 변환 시작", "파일 경로: ${outputWavFile.absolutePath}")
+//                    val whisper = WhisperWrapper(context)
+//                    whisper.copyModelFiles()
+//                    whisper.initModel()
+//                    whisper.transcribe(
+//                        wavPath = outputWavFile.absolutePath,
+//                        onResult = { result ->
+//                            transcript = result
+//                            isLoading = false
+//
+//                            //Whisper처리 완료 후 WAV파일 삭제
+//                            try{
+//                                if(outputWavFile.exists()){
+//                                    val deleted = outputWavFile.delete()
+//                                    if(deleted){
+//                                        Log.d("CallDetailScreen", "✅ WAV 파일 삭제 성공: ${outputWavFile.absolutePath}")
+//                                    } else {
+//                                        Log.w("CallDetailScreen", "⚠️ WAV 파일 삭제 실패: ${outputWavFile.absolutePath}")
+//                                    }
+//                                }
+//                            } catch (e: Exception) {
+//                                Log.e("CallDetailScreen", "❌ WAV 파일 삭제 중 오류: ${e.message}")
+//                            }
+//                        },
+//                        onUpdate = { }
+//                    )
+//                },
+//                modifier = Modifier
+//            )
         }
         Box(
             modifier = Modifier
@@ -208,103 +208,103 @@ fun CallDetailScreen(
         ) {
             Text("일정", fontWeight = FontWeight.SemiBold)
 
-            // llama 변환 버튼
-            DMT_Button(
-                text = if (isAnalyzing) "분석중..." else "일정 분석",
-                onClick = {
-                    if (isAnalyzing || transcript.isBlank()) return@DMT_Button
-
-                    isAnalyzing = true
-                    memo = ""
-                    extractedTitle = ""
-                    var lastParsedResult = ""
-
-                    val prompt = """
-                        Please analyze the following phone conversation and extract schedule information.
-                        Output only two sections in the following format. . **Do NOT use Markdown or any formatting.**
-                        Summary: [A representative title for the schedule, extracted from the conversation.]
-                        Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}
-            
-                        Instructions:
-                        1. Extract a representative title for this conversation that can be used as a schedule title. Output as 'Summary'.
-                        2. Extract schedule information in JSON format with exactly these keys: "date", "time", "place".
-                        3. If multiple times are mentioned, prioritize the main event time.
-                        4. Output only the summary and JSON, nothing else.
-            
-                        Phone conversation:
-                        "$transcript"
-                    """.trimIndent()
-
-                    coroutineScope.launch {
-                        try {
-                            val result = llamaServiceManager.sendQuery(prompt) { partialText ->
-                                memo = partialText
-
-                                if (partialText.contains("Summary:") && partialText.contains("Schedule:")){
-                                    val (title, _, _, _, _) = parseLlamaScheduleResponseFull(partialText)
-                                    if(title.isNotBlank()){
-                                        extractedTitle = title
-                                    }
-                                }
-
-                                // 부분 응답에서도 완성된 Schedule이면 파싱
-                                if (
-                                    partialText.contains("Schedule:") &&
-                                    partialText.trim().endsWith("}") &&
-                                    lastParsedResult != partialText
-                                ) {
-                                    lastParsedResult = partialText
-                                    val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(partialText)
-                                    coroutineScope.launch(Dispatchers.Main) {
-                                        //memo = title
-                                        extractedTitle = title
-                                        val localDate = parseDateToLocalDate(date)
-                                        selectedYear = localDate.year.toString()
-                                        selectedMonth = localDate.monthValue.toString().padStart(2, '0')
-                                        selectedDay = localDate.dayOfMonth.toString().padStart(2, '0')
-                                        selectedHour = hour.padStart(2, '0')
-                                        selectedMinute = minute.padStart(2, '0')
-                                        selectedPlace = place
-                                    }
-                                }
-                            }
-
-                            Log.d("Llama-final-result", result)
-
-                            // 최종 응답에서도 체크
-                            if (
-                                result.contains("Schedule:") &&
-                                result.trim().endsWith("}") &&
-                                lastParsedResult != result
-                            ) {
-                                lastParsedResult = result
-                                val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(result)
-                                withContext(Dispatchers.Main) {
-                                    extractedTitle = title
-                                    //memo = title
-                                    val localDate = parseDateToLocalDate(date)
-                                    selectedYear = localDate.year.toString()
-                                    selectedMonth = localDate.monthValue.toString().padStart(2, '0')
-                                    selectedDay = localDate.dayOfMonth.toString().padStart(2, '0')
-                                    selectedHour = hour.padStart(2, '0')
-                                    selectedMinute = minute.padStart(2, '0')
-                                    selectedPlace = place
-                                }
-                            }
-
-                        } catch (e: Exception) {
-                            withContext(Dispatchers.Main) {
-                                memo = "일정 분석 중 오류 발생: ${e.message}"
-                            }
-                        } finally {
-                            withContext(Dispatchers.Main) {
-                                isAnalyzing = false
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier
-            )
+//            // llama 변환 버튼
+//            DMT_Button(
+//                text = if (isAnalyzing) "분석중..." else "일정 분석",
+//                onClick = {
+//                    if (isAnalyzing || transcript.isBlank()) return@DMT_Button
+//
+//                    isAnalyzing = true
+//                    memo = ""
+//                    extractedTitle = ""
+//                    var lastParsedResult = ""
+//
+//                    val prompt = """
+//                        Please analyze the following phone conversation and extract schedule information.
+//                        Output only two sections in the following format. . **Do NOT use Markdown or any formatting.**
+//                        Summary: [A representative title for the schedule, extracted from the conversation.]
+//                        Schedule: {"date": "YYYY-MM-DD or day description", "time": "HH:MM", "place": "location name"}
+//
+//                        Instructions:
+//                        1. Extract a representative title for this conversation that can be used as a schedule title. Output as 'Summary'.
+//                        2. Extract schedule information in JSON format with exactly these keys: "date", "time", "place".
+//                        3. If multiple times are mentioned, prioritize the main event time.
+//                        4. Output only the summary and JSON, nothing else.
+//
+//                        Phone conversation:
+//                        "$transcript"
+//                    """.trimIndent()
+//
+//                    coroutineScope.launch {
+//                        try {
+//                            val result = llamaServiceManager.sendQuery(prompt) { partialText ->
+//                                memo = partialText
+//
+//                                if (partialText.contains("Summary:") && partialText.contains("Schedule:")){
+//                                    val (title, _, _, _, _) = parseLlamaScheduleResponseFull(partialText)
+//                                    if(title.isNotBlank()){
+//                                        extractedTitle = title
+//                                    }
+//                                }
+//
+//                                // 부분 응답에서도 완성된 Schedule이면 파싱
+//                                if (
+//                                    partialText.contains("Schedule:") &&
+//                                    partialText.trim().endsWith("}") &&
+//                                    lastParsedResult != partialText
+//                                ) {
+//                                    lastParsedResult = partialText
+//                                    val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(partialText)
+//                                    coroutineScope.launch(Dispatchers.Main) {
+//                                        //memo = title
+//                                        extractedTitle = title
+//                                        val localDate = parseDateToLocalDate(date)
+//                                        selectedYear = localDate.year.toString()
+//                                        selectedMonth = localDate.monthValue.toString().padStart(2, '0')
+//                                        selectedDay = localDate.dayOfMonth.toString().padStart(2, '0')
+//                                        selectedHour = hour.padStart(2, '0')
+//                                        selectedMinute = minute.padStart(2, '0')
+//                                        selectedPlace = place
+//                                    }
+//                                }
+//                            }
+//
+//                            Log.d("Llama-final-result", result)
+//
+//                            // 최종 응답에서도 체크
+//                            if (
+//                                result.contains("Schedule:") &&
+//                                result.trim().endsWith("}") &&
+//                                lastParsedResult != result
+//                            ) {
+//                                lastParsedResult = result
+//                                val (title, date, hour, minute, place) = parseLlamaScheduleResponseFull(result)
+//                                withContext(Dispatchers.Main) {
+//                                    extractedTitle = title
+//                                    //memo = title
+//                                    val localDate = parseDateToLocalDate(date)
+//                                    selectedYear = localDate.year.toString()
+//                                    selectedMonth = localDate.monthValue.toString().padStart(2, '0')
+//                                    selectedDay = localDate.dayOfMonth.toString().padStart(2, '0')
+//                                    selectedHour = hour.padStart(2, '0')
+//                                    selectedMinute = minute.padStart(2, '0')
+//                                    selectedPlace = place
+//                                }
+//                            }
+//
+//                        } catch (e: Exception) {
+//                            withContext(Dispatchers.Main) {
+//                                memo = "일정 분석 중 오류 발생: ${e.message}"
+//                            }
+//                        } finally {
+//                            withContext(Dispatchers.Main) {
+//                                isAnalyzing = false
+//                            }
+//                        }
+//                    }
+//                },
+//                modifier = Modifier
+//            )
         }
         OutlinedTextField(
             value = memo,
@@ -383,93 +383,93 @@ fun CallDetailScreen(
         }
 
         // API 조회 테스트 버튼들
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // 내 일정 조회 버튼
-            DMT_Button(
-                text = "내 일정",
-                onClick = {
-                    coroutineScope.launch {
-                        try {
-                            val schedules = ScheduleApiService.getMySchedules(context)
-                            testMessage = "✅ 내 일정 ${schedules.size}개 조회 (로그 확인)"
-                        } catch (e: Exception) {
-                            testMessage = "❌ 내 일정 조회 실패: ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            // 오늘 일정 조회 버튼
-            DMT_Button(
-                text = "오늘 일정",
-                onClick = {
-                    coroutineScope.launch {
-                        try {
-                            val schedules = ScheduleApiService.getTodaySchedules(currentUserId, context)
-                            testMessage = "✅ 오늘 일정 ${schedules.size}개 조회 (로그 확인)"
-                        } catch (e: Exception) {
-                            testMessage = "❌ 오늘 일정 조회 실패: ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // 전체 일정 조회 버튼
-            DMT_Button(
-                text = "전체 조회",
-                onClick = {
-                    coroutineScope.launch {
-                        try {
-                            ScheduleApiService.getAllSchedulesWithLog(currentUserId, context)
-                            testMessage = "✅ 전체 일정 조회 완료 (로그 확인)"
-                        } catch (e: Exception) {
-                            testMessage = "❌ 전체 조회 실패: ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
-
-            // 이번 주 일정 조회 버튼
-            DMT_Button(
-                text = "이번 주",
-                onClick = {
-                    coroutineScope.launch {
-                        try {
-                            val today = LocalDateTime.now()
-                            val startOfWeek = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                            val endOfWeek = today.plusDays(7).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-
-                            val schedules = ScheduleApiService.getSchedulesByDateRange(
-                                currentUserId, startOfWeek, endOfWeek, context
-                            )
-                            testMessage = "✅ 이번 주 일정 ${schedules.size}개 조회 (로그 확인)"
-                        } catch (e: Exception) {
-                            testMessage = "❌ 이번 주 조회 실패: ${e.message}"
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            // 내 일정 조회 버튼
+//            DMT_Button(
+//                text = "내 일정",
+//                onClick = {
+//                    coroutineScope.launch {
+//                        try {
+//                            val schedules = ScheduleApiService.getMySchedules(context)
+//                            testMessage = "✅ 내 일정 ${schedules.size}개 조회 (로그 확인)"
+//                        } catch (e: Exception) {
+//                            testMessage = "❌ 내 일정 조회 실패: ${e.message}"
+//                        }
+//                    }
+//                },
+//                modifier = Modifier.weight(1f)
+//            )
+//
+//            // 오늘 일정 조회 버튼
+//            DMT_Button(
+//                text = "오늘 일정",
+//                onClick = {
+//                    coroutineScope.launch {
+//                        try {
+//                            val schedules = ScheduleApiService.getTodaySchedules(currentUserId, context)
+//                            testMessage = "✅ 오늘 일정 ${schedules.size}개 조회 (로그 확인)"
+//                        } catch (e: Exception) {
+//                            testMessage = "❌ 오늘 일정 조회 실패: ${e.message}"
+//                        }
+//                    }
+//                },
+//                modifier = Modifier.weight(1f)
+//            )
+//        }
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//            // 전체 일정 조회 버튼
+//            DMT_Button(
+//                text = "전체 조회",
+//                onClick = {
+//                    coroutineScope.launch {
+//                        try {
+//                            ScheduleApiService.getAllSchedulesWithLog(currentUserId, context)
+//                            testMessage = "✅ 전체 일정 조회 완료 (로그 확인)"
+//                        } catch (e: Exception) {
+//                            testMessage = "❌ 전체 조회 실패: ${e.message}"
+//                        }
+//                    }
+//                },
+//                modifier = Modifier.weight(1f)
+//            )
+//
+//            // 이번 주 일정 조회 버튼
+//            DMT_Button(
+//                text = "이번 주",
+//                onClick = {
+//                    coroutineScope.launch {
+//                        try {
+//                            val today = LocalDateTime.now()
+//                            val startOfWeek = today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+//                            val endOfWeek = today.plusDays(7).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+//
+//                            val schedules = ScheduleApiService.getSchedulesByDateRange(
+//                                currentUserId, startOfWeek, endOfWeek, context
+//                            )
+//                            testMessage = "✅ 이번 주 일정 ${schedules.size}개 조회 (로그 확인)"
+//                        } catch (e: Exception) {
+//                            testMessage = "❌ 이번 주 조회 실패: ${e.message}"
+//                        }
+//                    }
+//                },
+//                modifier = Modifier.weight(1f)
+//            )
+//        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // 저장 버튼
         DMT_Button(
-            text = if (isSaving) "저장중..." else "저장",
+            text = if (isSaving) "저장중..." else "일정 저장",
             onClick = {
                 // 입력 검증 강화
                 if (extractedTitle.isBlank()) {
@@ -572,6 +572,7 @@ fun parseLlamaScheduleResponseFull(response: String): Quintuple<String, String, 
     val json = try {
         JSONObject(jsonString)
     } catch (e: Exception) {
+        Log.d("parseLlama", "Invalid JSON: $jsonString (${e.message})")
         Log.d("parseLlama", "Invalid JSON: $jsonString (${e.message})")
         JSONObject()
     }

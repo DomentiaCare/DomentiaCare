@@ -20,11 +20,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
@@ -40,10 +44,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.NotificationCompat
 import java.util.Locale
 
+enum class MessageType {
+    NONE,        // 기본 상태
+    DANGER,      // 위험 알림 (빨간색)
+    SCHEDULE     // 일정 알림 (초록색)
+}
+
 class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListener, TextToSpeech.OnInitListener {
 
     private val latestMessageState = mutableStateOf<String?>(null)
-    private val testMessageState = mutableStateOf<String>("워치 앱 정상 작동중")
+    private val messageTypeState = mutableStateOf<MessageType>(MessageType.NONE)
 
     // TTS 관련 변수
     private var tts: TextToSpeech? = null
@@ -71,11 +81,8 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             tts = TextToSpeech(this, this)
 
             setContent {
-                WearApp("Android", latestMessageState, testMessageState)
+                WearApp(latestMessageState, messageTypeState)
             }
-
-            // 5초 후 간단한 진동 테스트
-            scheduleSimpleTest()
 
             Log.d("WatchMainActivity", "✅ MainActivity onCreate 완료")
 
@@ -106,11 +113,8 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             window.attributes = layoutParams
             Log.d("WatchMainActivity", "✅ 화면 밝기 30%로 설정")
 
-            testMessageState.value = "Always-On 모드 활성화"
-
         } catch (e: Exception) {
             Log.e("WatchMainActivity", "❌ Always-On 설정 오류: ${e.message}", e)
-            testMessageState.value = "Always-On 설정 실패"
         }
     }
 
@@ -127,21 +131,13 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
                     Log.d("WatchMainActivity", "✅ VIBRATE 권한 있음")
                 }
 
-                // WAKE_LOCK 권한은 manifest에서만 선언하면 됨 (dangerous permission 아님)
-                Log.d("WatchMainActivity", "✅ WAKE_LOCK 권한은 매니페스트에서 처리")
-
                 if (permissions.isNotEmpty()) {
                     Log.d("WatchMainActivity", "🔓 권한 요청: $permissions")
                     ActivityCompat.requestPermissions(this, permissions.toTypedArray(), 1001)
-                } else {
-                    testMessageState.value = "모든 권한 확인됨"
                 }
-            } else {
-                testMessageState.value = "Android 6.0 미만 - 권한 확인 생략"
             }
         } catch (e: Exception) {
             Log.e("WatchMainActivity", "❌ 권한 확인 오류: ${e.message}", e)
-            testMessageState.value = "권한 확인 실패"
         }
     }
 
@@ -155,10 +151,8 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             1001 -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     Log.d("WatchMainActivity", "✅ 권한 승인됨")
-                    testMessageState.value = "권한 승인됨"
                 } else {
                     Log.d("WatchMainActivity", "❌ 권한 거부됨")
-                    testMessageState.value = "권한 거부됨"
                 }
             }
         }
@@ -173,7 +167,6 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             // Always-On 모드 재설정
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-            testMessageState.value = "앱 활성화됨"
             Log.d("WatchMainActivity", "✅ 메시지 리스너 등록 완료")
         } catch (e: Exception) {
             Log.e("WatchMainActivity", "❌ onResume 오류: ${e.message}", e)
@@ -207,126 +200,145 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         }
     }
 
-    private fun scheduleSimpleTest() {
-        try {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                testMessageState.value = "5초 후 진동 테스트 시작..."
-                performSimpleVibrationTest()
-            }, 5000)
-        } catch (e: Exception) {
-            Log.e("WatchMainActivity", "❌ 테스트 스케줄링 오류: ${e.message}", e)
-        }
-    }
-
-    private fun performSimpleVibrationTest() {
-        try {
-            Log.d("WatchMainActivity", "🧪 간단한 진동 테스트 시작")
-            val hasVibratePermission = ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.VIBRATE
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            Log.d("WatchMainActivity", "📋 VIBRATE 권한: $hasVibratePermission")
-            if (!hasVibratePermission) {
-                testMessageState.value = "VIBRATE 권한 없음"
-                return
-            }
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            if (vibrator == null) {
-                Log.e("WatchMainActivity", "❌ Vibrator 서비스를 가져올 수 없음")
-                testMessageState.value = "진동 서비스 없음"
-                return
-            }
-            val hasVibrator = vibrator.hasVibrator()
-            Log.d("WatchMainActivity", "📋 hasVibrator(): $hasVibrator")
-            if (!hasVibrator) {
-                Log.e("WatchMainActivity", "❌ 이 기기는 진동을 지원하지 않음")
-                testMessageState.value = "진동 미지원 기기"
-                return
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val hasAmplitudeControl = vibrator.hasAmplitudeControl()
-                Log.d("WatchMainActivity", "📋 hasAmplitudeControl(): $hasAmplitudeControl")
-            }
-            Log.d("WatchMainActivity", "✅ 모든 진동 조건 확인됨")
-            testMessageState.value = "진동 준비 완료"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val effect = VibrationEffect.createOneShot(2000, VibrationEffect.DEFAULT_AMPLITUDE)
-                vibrator.vibrate(effect)
-                Log.d("WatchMainActivity", "✅ VibrationEffect.createOneShot 실행")
-                testMessageState.value = "진동 실행됨 (API 26+)"
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(2000)
-                Log.d("WatchMainActivity", "✅ vibrate(long) 실행")
-                testMessageState.value = "진동 실행됨 (레거시)"
-            }
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                performSimpleSoundTest()
-            }, 3000)
-        } catch (e: SecurityException) {
-            Log.e("WatchMainActivity", "❌ 진동 보안 오류: ${e.message}")
-            testMessageState.value = "진동 보안 오류: ${e.message}"
-        } catch (e: Exception) {
-            Log.e("WatchMainActivity", "❌ 진동 테스트 오류: ${e.message}", e)
-            testMessageState.value = "진동 오류: ${e.message}"
-        }
-    }
-
-    private fun performSimpleSoundTest() {
-        try {
-            Log.d("WatchMainActivity", "🧪 간단한 소리 테스트 시작")
-            testMessageState.value = "소리 테스트 시작"
-            val toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
-            toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 500)
-            Log.d("WatchMainActivity", "✅ 0.5초 비프음 실행")
-            testMessageState.value = "소리 테스트 실행됨"
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                try {
-                    toneGenerator.release()
-                } catch (e: Exception) {
-                    Log.e("WatchMainActivity", "ToneGenerator 해제 오류: ${e.message}")
-                }
-            }, 1000)
-        } catch (e: Exception) {
-            Log.e("WatchMainActivity", "❌ 소리 테스트 오류: ${e.message}", e)
-            testMessageState.value = "소리 테스트 실패"
-        }
-    }
-
     override fun onMessageReceived(event: MessageEvent) {
         try {
             Log.d("WatchMainActivity", "📨 메시지 수신됨! - path: ${event.path}")
-            if (event.path == "/schedule_notify") {
-                val message = String(event.data)
-                Log.d("WatchMainActivity", "📅 일정 알림 메시지: $message")
-                runOnUiThread {
-                    try {
-                        // 1. 화면에 메시지 표시
-                        latestMessageState.value = message
-                        testMessageState.value = "알림 수신됨!"
 
-                        // 2. 간단한 알림
-                        showSimpleNotification(message)
+            val message = String(event.data)
 
-                        // 3. 진동
-                        performMessageVibration()
-
-                        // 4. 소리 (1초 후)
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            performMessageSound()
-                        }, 1000)
-
-                        // 5. TTS (음성 안내)
-                        speakTTS(message)
-
-                        Log.d("WatchMainActivity", "✅ 알림 처리 완료")
-                    } catch (e: Exception) {
-                        Log.e("WatchMainActivity", "❌ 알림 처리 오류: ${e.message}", e)
+            when (event.path) {
+                "/danger_alert" -> {
+                    // 🚨 위험 알림 (빨간색)
+                    Log.d("WatchMainActivity", "🚨 위험 알림 메시지: $message")
+                    runOnUiThread {
+                        handleAlertMessage(message, MessageType.DANGER)
                     }
+                }
+                "/schedule_notify" -> {
+                    // 📅 일정 알림 (초록색)
+                    Log.d("WatchMainActivity", "📅 일정 알림 메시지: $message")
+                    runOnUiThread {
+                        handleAlertMessage(message, MessageType.SCHEDULE)
+                    }
+                }
+                else -> {
+                    Log.d("WatchMainActivity", "⚠️ 알 수 없는 path: ${event.path}")
                 }
             }
         } catch (e: Exception) {
             Log.e("WatchMainActivity", "❌ 메시지 수신 오류: ${e.message}", e)
+        }
+    }
+
+    /**
+     * 🆕 알림 메시지 처리 (타입별 구분)
+     */
+    private fun handleAlertMessage(message: String, messageType: MessageType) {
+        try {
+            // 🔧 화면 표시용 메시지 (정리된 형태)
+            val displayMessage = when (messageType) {
+                MessageType.SCHEDULE -> formatScheduleForDisplay(message)
+                MessageType.DANGER -> message // 위험 알림은 그대로 표시
+                else -> message
+            }
+
+            // 🔧 수정: displayMessage를 화면에 표시
+            latestMessageState.value = displayMessage
+            messageTypeState.value = messageType
+
+            // 워치 노티피케이션 (원본 메시지 사용)
+            showSimpleNotification(message, messageType)
+
+            // 진동
+            performMessageVibration()
+
+            // 소리 (1초 후)
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                performMessageSound()
+            }, 1000)
+
+            // TTS (음성 안내) - 원본 메시지 사용
+            speakTTS(message)
+
+            // 🆕 알림 타입에 따라 다른 시간 후 복원
+            val displayTime = when (messageType) {
+                MessageType.DANGER -> 15000L    // 위험 알림: 15초
+                MessageType.SCHEDULE -> 10000L  // 일정 알림: 10초
+                MessageType.NONE -> 0L
+                else -> 10000L // 기본값
+            }
+
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                latestMessageState.value = null
+                messageTypeState.value = MessageType.NONE
+            }, displayTime)
+
+            Log.d("WatchMainActivity", "✅ ${messageType.name} 알림 처리 완료")
+            Log.d("WatchMainActivity", "📱 화면 표시: $displayMessage")
+        } catch (e: Exception) {
+            Log.e("WatchMainActivity", "❌ 알림 처리 오류: ${e.message}", e)
+        }
+    }
+
+    /**
+     * 🆕 일정 메시지를 화면 표시용으로 포맷팅
+     */
+    private fun formatScheduleForDisplay(message: String): String {
+        return try {
+            Log.d("WatchMainActivity", "🔧 포맷팅 시작 - 원본 메시지: $message")
+
+            val lines = message.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+            Log.d("WatchMainActivity", "🔧 분할된 라인: $lines (개수: ${lines.size})")
+
+            if (lines.size < 3) {
+                Log.d("WatchMainActivity", "🔧 라인 수 부족, 원본 반환")
+                return message // 파싱 실패 시 원본 반환
+            }
+
+            val title = lines[0]
+            val dateTime = lines[1]
+            val location = lines[2]
+
+            Log.d("WatchMainActivity", "🔧 파싱: title=$title, dateTime=$dateTime, location=$location")
+
+            // 날짜/시간 파싱
+            val dateTimeParts = dateTime.split(" ")
+            if (dateTimeParts.size != 2) {
+                Log.d("WatchMainActivity", "🔧 날짜시간 형식 오류, 원본 반환")
+                return message
+            }
+
+            val datePart = dateTimeParts[0] // "2025-06-01"
+            val timePart = dateTimeParts[1] // "12:30"
+
+            val dateParts = datePart.split("-")
+            if (dateParts.size != 3) {
+                Log.d("WatchMainActivity", "🔧 날짜 형식 오류, 원본 반환")
+                return message
+            }
+
+            val year = dateParts[0]
+            val month = dateParts[1]
+            val day = dateParts[2]
+
+            val timeParts = timePart.split(":")
+            if (timeParts.size != 2) {
+                Log.d("WatchMainActivity", "🔧 시간 형식 오류, 원본 반환")
+                return message
+            }
+
+            val hour = timeParts[0]
+            val minute = timeParts[1]
+
+            // 화면 표시용 포맷
+            val formattedMessage = "일정 제목 : $title\n일정 시간 : ${year}년 ${month}월 ${day}일 ${hour}시 ${minute}분\n약속 장소 : $location"
+
+            Log.d("WatchMainActivity", "📱 포맷팅 완료: $formattedMessage")
+            return formattedMessage
+
+        } catch (e: Exception) {
+            Log.e("WatchMainActivity", "❌ 화면 포맷팅 오류: ${e.message}", e)
+            return message // 파싱 실패 시 원본 반환
         }
     }
 
@@ -370,29 +382,37 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         }
     }
 
-    private fun showSimpleNotification(message: String) {
+    private fun showSimpleNotification(message: String, messageType: MessageType) {
         try {
-            val channelId = "simple_schedule_notify"
+            val channelId = "dementia_care_notify"
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val channel = NotificationChannel(
                     channelId,
-                    "일정 알림",
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    "DementiaCare 알림",
+                    NotificationManager.IMPORTANCE_HIGH
                 )
                 notificationManager.createNotificationChannel(channel)
             }
+
+            val title = when (messageType) {
+                MessageType.DANGER -> "🚨 위험 알림"
+                MessageType.SCHEDULE -> "📅 일정 알림"
+                MessageType.NONE -> "DementiaCare"
+                else -> "DementiaCare"
+            }
+
             val notification = NotificationCompat.Builder(this, channelId)
-                .setContentTitle("📅 새 일정")
+                .setContentTitle(title)
                 .setContentText(message)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .build()
             notificationManager.notify(System.currentTimeMillis().toInt(), notification)
-            Log.d("WatchMainActivity", "🔔 간단한 알림 생성")
+            Log.d("WatchMainActivity", "🔔 워치 노티피케이션 생성: $title")
         } catch (e: Exception) {
-            Log.e("WatchMainActivity", "❌ 알림 생성 오류: ${e.message}", e)
+            Log.e("WatchMainActivity", "❌ 노티피케이션 생성 오류: ${e.message}", e)
         }
     }
 
@@ -470,9 +490,8 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
 
 @Composable
 fun WearApp(
-    greetingName: String,
     latestMessageState: State<String?>,
-    testMessageState: State<String>
+    messageTypeState: State<MessageType>
 ) {
     DomentiaCareTheme {
         Box(
@@ -481,29 +500,38 @@ fun WearApp(
                 .background(MaterialTheme.colors.background),
             contentAlignment = Alignment.Center
         ) {
+            // 상단에 시계 표시
             TimeText()
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.primary,
-                text = stringResource(R.string.hello_world, greetingName)
-            )
-            Text(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.secondary,
-                text = testMessageState.value
-            )
-            latestMessageState.value?.let { message ->
+
+            // 중앙 컨텐츠: 기본 상태 vs 알림 상태
+            if (latestMessageState.value != null) {
+                // 알림이 있을 때: 타입에 따라 다른 색상으로 표시
+                val (textColor, fontSize) = when (messageTypeState.value) {
+                    MessageType.DANGER -> Pair(Color.Red, 20.sp)       // 🚨 위험 알림: 빨간색 20sp
+                    MessageType.SCHEDULE -> Pair(Color.Green, 16.sp)   // 📅 일정 알림: 초록색 20sp
+                    MessageType.NONE -> Pair(Color.White, 16.sp)       // 기본값 (사용되지 않음)
+                    else -> Pair(Color.White, 16.sp)                   // 기본값
+                }
+
                 Text(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colors.primary,
-                    text = "📅 $message"
+                    color = textColor,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold,
+                    text = latestMessageState.value ?: ""
+                )
+            } else {
+                // 🧡 기본 상태: DementiaCare 로고
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFFFF7F00), // 주황색
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    text = "DementiaCare"
                 )
             }
         }
@@ -514,8 +542,25 @@ fun WearApp(
 @Composable
 fun DefaultPreview() {
     WearApp(
-        "Preview Android",
-        remember { mutableStateOf("테스트 메시지") },
-        remember { mutableStateOf("앱 상태 정상") }
+        remember { mutableStateOf(null) },
+        remember { mutableStateOf(MessageType.NONE) }
+    )
+}
+
+@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@Composable
+fun DangerAlertPreview() {
+    WearApp(
+        remember { mutableStateOf("🚨 안전 범위 이탈 경고\n김OO님이 설정된 안전범위를 벗어났습니다.\n즉시 확인 필요") },
+        remember { mutableStateOf(MessageType.DANGER) }
+    )
+}
+
+@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+@Composable
+fun ScheduleAlertPreview() {
+    WearApp(
+        remember { mutableStateOf("일정 제목 : Movie outing on Sunday\n일정 시간 : 2025년 06월 01일 12시 30분\n약속 장소 : AMC theater on main street") },
+        remember { mutableStateOf(MessageType.SCHEDULE) }
     )
 }
