@@ -2,6 +2,7 @@ package com.example.domentiacare.data.remote
 
 import com.example.domentiacare.BuildConfig
 import com.example.domentiacare.data.remote.api.AuthApi
+import com.example.domentiacare.network.RecordApiService
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,7 +16,7 @@ object RetrofitClient {
     }
 
     private val client = OkHttpClient.Builder()
-        .addInterceptor(AuthInterceptor()) // 👈 추가
+        .addInterceptor(AuthInterceptor())
         .addInterceptor(logging)
         .build()
 
