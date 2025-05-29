@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.domentiacare.ui.component.SimpleDropdown
 import com.example.domentiacare.ui.screen.call.theme.OrangePrimary
+import java.time.YearMonth
 
 @Composable
 fun DateTimeSelectionSection(
@@ -30,10 +31,28 @@ fun DateTimeSelectionSection(
     onPlaceChange: (String) -> Unit,
     years: List<String>,
     months: List<String>,
-    days: List<String>,
     hours: List<String>,
     minutes: List<String>
 ) {
+    // 월별 올바른 일수 계산
+    val daysInMonth = remember(selectedYear, selectedMonth) {
+        val year = selectedYear.toIntOrNull() ?: 2025
+        val month = selectedMonth.toIntOrNull() ?: 1
+        YearMonth.of(year, month).lengthOfMonth()
+    }
+
+    val days = remember(daysInMonth) {
+        (1..daysInMonth).map { it.toString().padStart(2, '0') }
+    }
+
+    // 선택된 일자가 해당 월의 최대 일수를 초과하는 경우 자동 조정
+    LaunchedEffect(daysInMonth, selectedDay) {
+        val currentDay = selectedDay.toIntOrNull() ?: 1
+        if (currentDay > daysInMonth) {
+            onDayChange(daysInMonth.toString().padStart(2, '0'))
+        }
+    }
+
     SectionCard(
         title = "일시 및 장소",
         icon = Icons.Default.Schedule

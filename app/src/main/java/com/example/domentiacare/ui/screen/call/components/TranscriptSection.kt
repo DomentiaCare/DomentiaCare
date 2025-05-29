@@ -14,16 +14,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.domentiacare.ui.screen.call.theme.OrangePrimary
 
 @Composable
 fun TranscriptSection(
     transcript: String,
     isLoading: Boolean,
-    onTranscribe: () -> Unit
+    onTranscribe: () -> Unit = {} // 사용하지 않음
 ) {
     SectionCard(
         title = "통화 텍스트",
         icon = Icons.Default.TextFields
+        // actionButton 제거 - 버튼 없음
     ) {
         Box(
             modifier = Modifier
@@ -35,9 +37,25 @@ fun TranscriptSection(
                 )
                 .padding(16.dp)
         ) {
-            if (transcript.isBlank()) {
+            if (isLoading) {
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        color = OrangePrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "음성을 텍스트로 변환 중...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF9E9E9E)
+                    )
+                }
+            } else if (transcript.isBlank()) {
                 Text(
-                    text = "통화 내용이 텍스트로 변환됩니다.",
+                    text = "음성이 자동으로 텍스트로 변환됩니다.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF9E9E9E),
                     textAlign = TextAlign.Center,
