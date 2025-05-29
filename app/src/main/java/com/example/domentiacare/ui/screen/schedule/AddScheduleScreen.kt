@@ -1,3 +1,4 @@
+/*
 package com.example.domentiacare.ui.screen.schedule
 
 import android.app.DatePickerDialog
@@ -216,3 +217,4 @@ fun TimePickerField(
         )
     }
 }
+*/

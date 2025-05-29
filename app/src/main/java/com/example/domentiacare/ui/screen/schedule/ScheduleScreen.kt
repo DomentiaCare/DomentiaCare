@@ -1,3 +1,4 @@
+/*
 package com.example.domentiacare.ui.screen.schedule
 
 import android.util.Log
@@ -177,7 +178,8 @@ fun ScheduleScreen(
             }
         }
         // 🆕 알림에서 온 경우 상단에 특별한 카드 표시
-        /*notificationData?.let { data ->
+        */
+/*notificationData?.let { data ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -258,10 +260,12 @@ fun ScheduleScreen(
 
                 }
             }
-        }*/
+        }*//*
+
 
         // 기존 캘린더 UI
-        PagerCalendar(
+        // 새로운 코드 (추가):
+        HorizontalCalendarComponent(
             selectedDate = selectedDate,
             onDateSelected = {
                 selectedDate = it
@@ -350,3 +354,4 @@ fun convertToIsoDateTime(raw: String): String {
     val resultDateTime = LocalDateTime.of(targetDate, LocalTime.of(hour, minute))
     return resultDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) // "2025-05-30T12:30:00"
 }
+*/
