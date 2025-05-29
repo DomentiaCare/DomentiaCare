@@ -38,7 +38,10 @@ class ScheduleAlarmReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
+        //이거 호출하는순간 핸드폰에 호출
         notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+
+        //워치 알람도 구현해줬으면 좋겠어.
     }
 }
 
