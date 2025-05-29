@@ -94,9 +94,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         Log.d("MainActivity", "onCreate 진입")
-
-        // AI 어시스턴트 초기화
-        initializeAIAssistant()
         Log.d("MainActivity", "initializeAIAssistant() 호출")
 
         val serviceIntent = Intent(this, CallRecordAnalyzeService::class.java)
@@ -109,6 +106,12 @@ class MainActivity : ComponentActivity() {
 
             // navController를 기억하고 전달
             var navigationRoute by remember { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(Unit) {
+                initializeAIAssistant { route ->
+                    navigationRoute = route // 🎯 "HomeNavigationScreen" 저장
+                }
+            }
 
             // AIAssistant 콜백에서 navigationRoute 설정
             LaunchedEffect(Unit) {
@@ -206,7 +209,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var navigationCallback: (String) -> Unit
 
     // AI 어시스턴트 초기화 함수 - 수정된 버전
-    private fun initializeAIAssistant() {
+    private fun initializeAIAssistant(navigationCallback: (String) -> Unit) {
         Log.d("MainActivity", "initializeAIAssistant() 진입")
         aiAssistant = AIAssistant(
             context = this,
@@ -214,7 +217,7 @@ class MainActivity : ComponentActivity() {
                 handleScheduleAction(action, details)
             },
             onNavigateToScreen = { route ->
-                updateScreen(route)
+                navigationCallback(route)
             },
             onStateChanged = {
                 // 상태 변경 시 UI 업데이트 콜백
