@@ -48,6 +48,8 @@ import com.example.domentiacare.data.model.PatientViewModel
 import com.example.domentiacare.data.remote.dto.Patient
 import com.example.domentiacare.ui.component.DMT_Button
 import com.example.domentiacare.ui.component.DMT_GrayButton
+import androidx.compose.material3.OutlinedTextFieldDefaults
+
 
 
 @Composable
@@ -226,7 +228,6 @@ fun PatientCard(patient: Patient, index: Int, onClick: () -> Unit) {
     }
 }
 
-
 @Composable
 fun RegisterPatientDialog(
     onDismiss: () -> Unit,
@@ -237,20 +238,48 @@ fun RegisterPatientDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "환자 ID 입력")
+            Text(
+                text = "환자 전화번호 입력",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         },
         text = {
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("ID") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                Text(
+                    text = "등록하실 환자의 전화번호를 입력해주세요.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { it -> phoneNumber = it },
+                    label = { Text("전화번호") },
+                    placeholder = {
+                        Text(
+                            text = "01012345678",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFED7D31),
+                        focusedLabelColor = Color(0xFFED7D31),
+                        cursorColor = Color(0xFFED7D31)
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
         },
         confirmButton = {
             DMT_Button(
                 text = "등록",
-                onClick = { onConfirm(phoneNumber) }
+                onClick = {
+                    if (phoneNumber.isNotBlank()) {
+                        onConfirm(phoneNumber)
+                    }
+                }
             )
         },
         dismissButton = {
