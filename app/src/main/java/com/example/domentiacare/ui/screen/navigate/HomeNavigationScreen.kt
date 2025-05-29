@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.text.isDigitsOnly
 import androidx.navigation.NavController
 import com.example.domentiacare.R
 import com.example.domentiacare.data.local.CurrentUser
@@ -39,7 +40,8 @@ import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
 
 @Composable
-fun HomeNavigationScreen(navController: NavController) {
+fun HomeNavigationScreen(navController: NavController,
+                         flag: String? = null) {
     val context = LocalContext.current
     val currentUser = CurrentUser.user
 
@@ -129,6 +131,63 @@ fun HomeNavigationScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         Log.d("HomeNavigationScreen", "LaunchedEffect 진입")
+
+        when {
+            flag == null -> {
+                Log.d("Navigation", "null 값")
+                // null 처리
+            }
+            flag == "home" -> {
+                // 🎯 자동 길찾기 실행
+                // 사용자 위치가 확인될 때까지 잠시 대기 후 실행
+                kotlinx.coroutines.delay(2000) // 2초 대기 (위치 정보 로딩 시간)
+
+                // 현재 위치와 집 위치 정보로 자동 길찾기 실행
+                val currentUserLocation = userLatLng.value
+                val homeLocation = homeLatLng.value
+
+                if (currentUserLocation != null) {
+                    Log.d("HomeNavigationScreen", "자동 구글 맵 길찾기 실행")
+                    Log.d("HomeNavigationScreen", "출발지: ${currentUserLocation.latitude}, ${currentUserLocation.longitude}")
+                    Log.d("HomeNavigationScreen", "목적지: ${homeLocation.latitude}, ${homeLocation.longitude}")
+
+                    // 구글 맵 길찾기 자동 실행
+                    openGoogleMapsNavigation(
+                        context = context,
+                        startLat = currentUserLocation.latitude,
+                        startLng = currentUserLocation.longitude,
+                        endLat = homeLocation.latitude,
+                        endLng = homeLocation.longitude,
+                        destinationName = "집"
+                    )
+                } else {
+                    Log.w("HomeNavigationScreen", "사용자 위치 정보가 없어 자동 길찾기를 실행할 수 없습니다")
+                    // 기본 위치(서울 시청)에서 집으로 길찾기
+                    val defaultLocation = LatLng(37.5665, 126.9780) // 서울 시청
+
+                    Log.d("HomeNavigationScreen", "기본 위치에서 집으로 길찾기 실행")
+                    openGoogleMapsNavigation(
+                        context = context,
+                        startLat = defaultLocation.latitude,
+                        startLng = defaultLocation.longitude,
+                        endLat = homeLocation.latitude,
+                        endLng = homeLocation.longitude,
+                        destinationName = "집"
+                    )
+                }
+            }
+            flag.isDigitsOnly() -> { // 환자 ID 받는 곳
+                // 숫자인지 확인
+                val number = flag.toIntOrNull()
+                Log.d("Navigation", "숫자 값: $number")
+                // 환자 ID로 환자 위치
+
+            }
+            else -> {
+                Log.d("Navigation", "문자열 값: $flag")
+
+            }
+        }
     }
 
     Box(
