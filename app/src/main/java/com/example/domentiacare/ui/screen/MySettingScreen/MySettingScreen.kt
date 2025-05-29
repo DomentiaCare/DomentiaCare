@@ -13,6 +13,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun MySettingScreen(
@@ -22,6 +28,11 @@ fun MySettingScreen(
 ) {
     val context = LocalContext.current
     var isChecked by remember { mutableStateOf(getAssistantState()) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitDialog = true
+    }
 
     // 🆕 상태 변경 감지를 위한 LaunchedEffect 개선
     LaunchedEffect(getAssistantState()) {
@@ -202,5 +213,51 @@ fun MySettingScreen(
                 )
             }
         }
+    }
+    // 함수 마지막 부분에 추가
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Text(
+                    text = "앱 종료",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    text = "DementiaCare를 종료하시겠습니까?",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        (context as? ComponentActivity)?.finish()
+                    }
+                ) {
+                    Text(
+                        text = "종료",
+                        color = Color(0xFFE53E3E), // 빨간색
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(
+                        text = "취소",
+                        color = Color(0xFFED7D31), // 주황색
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
