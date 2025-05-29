@@ -234,7 +234,7 @@ class CallRecordAnalyzeService : Service() {
                         try {
                             if (!finalRecord.result.isNullOrBlank()) {
                                 val (title, date, hour, minute, place) = parseForNotification(finalRecord.result)
-                                showResultNotificationWithIntent(title, date, hour, minute, place)
+                                showResultNotificationWithIntent(finalRecord.transcript, title, date, hour, minute, place)
                                 Log.d("CallRecordAnalyzeService", "✅ 워치 + 친화적 알림 전송 완료")
                             } else {
                                 Log.w("CallRecordAnalyzeService", "⚠️ Llama 결과가 없어 워치 알림 건너뜀")
@@ -777,9 +777,10 @@ class CallRecordAnalyzeService : Service() {
     }
 
     /**
-     * 성공 알림 표시 (Record 기반)
+     * 성공 알림 표시 (Record 기반) - 향상된 버전
      */
     private fun showResultNotificationWithIntent(
+        transcript: String?,
         summary: String, date: String, hour: String, min: String, place: String
     ) {
         val channelId = "call_record_analysis"
@@ -819,14 +820,38 @@ class CallRecordAnalyzeService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // 🔧 더 깔끔한 형태로 정리
+        val bigTextContent = buildString {
+            //append("══════════════════\n")
+            append("📞 통화 내용 (Whisper 변환)\n")
+
+            // transcript를 적절히 정리해서 표시
+            val cleanTranscript = transcript?.trim()
+            if (cleanTranscript != null) {
+                if (cleanTranscript.length > 100) {
+                    append("${cleanTranscript.take(100)}...\n")
+                } else {
+                    append("$cleanTranscript\n")
+                }
+            }
+
+            append("══════════════════\n")
+            append("📅 추출된 일정 정보\n")
+            append("제목: $summary\n")
+            append("날짜: $date\n")
+            append("시간: $hour:$min\n")
+            append("장소: $place\n")
+            append("\n💡 클릭하여 일정을 확인하고 수정하세요.")
+        }
+
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("일정 자동 등록 완료")
-            .setContentText("$summary ($date $hour:$min @ $place)")
+            .setContentText("$summary • $date $hour:$min • $place")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentIntent(pendingIntent) // 클릭시 일정 화면으로 이동
-            .setAutoCancel(true) // 클릭하면 알림 자동 삭제
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("새로운 일정이 통화에서 자동으로 등록되었습니다.\n$summary\n📅 $date $hour:$min\n📍 $place\n\n클릭하여 확인하고 수정하세요."))
+                .bigText(bigTextContent))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
