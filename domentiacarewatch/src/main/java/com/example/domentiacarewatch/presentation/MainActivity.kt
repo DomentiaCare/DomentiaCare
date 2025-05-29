@@ -564,8 +564,8 @@ fun WearApp(
             if (latestMessageState.value != null) {
                 // 알림이 있을 때: 타입에 따라 다른 색상으로 표시
                 val (textColor, fontSize) = when (messageTypeState.value) {
-                    MessageType.DANGER -> Pair(Color.Red, 20.sp)       // 🚨 위험 알림: 빨간색 20sp
-                    MessageType.SCHEDULE -> Pair(Color.Green, 16.sp)   // 📅 일정 알림: 초록색 20sp
+                    MessageType.DANGER -> Pair(Color.Red, 10.sp)       // 🚨 위험 알림: 빨간색 20sp
+                    MessageType.SCHEDULE -> Pair(Color.Green, 12.sp)   // 📅 일정 알림: 초록색 20sp
                     MessageType.NONE -> Pair(Color.White, 16.sp)       // 기본값 (사용되지 않음)
                     else -> Pair(Color.White, 16.sp)                   // 기본값
                 }
@@ -608,7 +608,7 @@ fun DefaultPreview() {
 @Composable
 fun DangerAlertPreview() {
     WearApp(
-        remember { mutableStateOf("🚨 안전 범위 이탈 경고\n김OO님이 설정된 안전범위를 벗어났습니다.\n즉시 확인 필요") },
+        remember { mutableStateOf("안전 범위 이탈 경고\n김OO님이 설정된 안전범위를 벗어났습니다.\n즉시 확인 필요") },
         remember { mutableStateOf(MessageType.DANGER) }
     )
 }
