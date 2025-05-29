@@ -3,7 +3,7 @@ package com.example.domentiacare.ui.test
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.example.domentiacare.ui.screen.schedule.GuardianScheduleScreen
+import com.example.domentiacare.ui.screen.patientCare.GuardianScheduleScreen
 import java.time.LocalDate
 
 @Composable

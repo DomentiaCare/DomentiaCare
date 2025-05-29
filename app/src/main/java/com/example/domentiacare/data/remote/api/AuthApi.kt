@@ -82,4 +82,10 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
     
     @GET("api/records/user/{patientId}")
     suspend fun getPatientRecords(@Path("patientId") patientId: String?): Response<List<RecordResponse>>
+
+    @GET("api/schedules/patient/{id}")
+    suspend fun getSchedules(@Path("id") patientId: Long): List<ScheduleDto>
+
+    @POST("/api/schedules/addPatientSchedule")
+    suspend fun addPatientSchedule(@Body schedules: ScheduleDto): Response<Unit>
 }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -138,7 +137,7 @@ fun PatientDetailScreen(navController: NavController,
                     text = "일정 보기",
                     icon = Icons.Filled.Schedule,
                     backgroundColor = Color(0xFF2196F3),
-                    onClick = { navController.navigate("schedule") }
+                    onClick = { navController.navigate("schedule/${patient.patientId}") }
                 )
             }
 
