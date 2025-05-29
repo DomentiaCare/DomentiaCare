@@ -17,8 +17,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.domentiacare.data.model.RecordingFile
 import com.example.domentiacare.data.local.SimpleSchedule
 import com.example.domentiacare.data.sync.SimpleSyncManager
@@ -27,6 +29,7 @@ import com.example.domentiacare.ui.screen.call.business.handleSaveSchedule
 import com.example.domentiacare.ui.screen.call.components.*
 import com.example.domentiacare.ui.screen.call.theme.OrangeLight
 import com.example.domentiacare.ui.screen.call.theme.OrangePrimary
+import com.example.domentiacare.ui.screen.home.Home
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

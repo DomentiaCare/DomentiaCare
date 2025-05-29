@@ -48,6 +48,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// 브랜드 컬러 정의
+object CallLogDesignTokens {
+    val OrangePrimary = Color(0xFFF49000)     // 메인 주황색
+    val OrangeLight = Color(0xFFFFF4E6)       // 연한 주황색
+    val OrangeDark = Color(0xFFE67E00)        // 진한 주황색
+    val WhiteBackground = Color(0xFFFFFFFF)   // 배경
+    val WarmGray = Color(0xFFF8F8F8)          // 따뜻한 회색 배경
+    val TextPrimary = Color(0xFF2D2D2D)       // 진한 회색
+    val TextSecondary = Color(0xFF757575)     // 중간 회색
+    val Success = Color(0xFF4CAF50)           // 성공 그린
+    val Error = Color(0xFFE53E3E)            // 에러 레드
+}
+
 data class RecordLog(
     val name: String,
     val type: String,
@@ -67,100 +80,117 @@ fun CallLogScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // 주황색 컬러 정의
-    val primaryOrange = Color(0xFFFF6B35)
-    val lightOrange = Color(0xFFFFE5DB)
-    val darkOrange = Color(0xFFBF2600)
-
     LaunchedEffect(patientId) {
         Log.d("CallLogScreen", "patientId: $patientId")
         viewModel.loadPatientRecordings(patientId)
     }
 
-    // 전체 컨테이너를 흰색으로 감싸기
-    Box(
+    // 시스템 UI 패딩 제거하고 깔끔한 레이아웃
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)  // 전체 배경 명시적 흰색
+            .background(CallLogDesignTokens.WhiteBackground)
     ) {
+        // 커스텀 상단바 (StatusBar 패딩 제거)
+        CustomTopBar(
+            onBackClick = { navController.popBackStack() },
+            recordingCount = recordings.size
+        )
 
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = "통화 녹음",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1C1B1E)
-                            )
-                            Text(
-                                text = "${recordings.size}개의 녹음",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF49454E)
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = { navController.popBackStack() },
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                        ) {
-                            Icon(
-                                Icons.Default.ArrowBack,
-                                contentDescription = "뒤로가기",
-                                tint = primaryOrange
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.White,
-                        titleContentColor = Color(0xFF1C1B1E)
-                    ),
-                    modifier = Modifier.statusBarsPadding()
-                )
-            },
-            containerColor = Color.White  // 명시적으로 흰색 지정
-        ) { paddingValues ->
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)  // LazyColumn 배경 명시적 흰색
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // 에러 상태
-                error?.let { errorMessage ->
-                    item {
-                        ErrorCard(errorMessage = errorMessage)
-                    }
+        // 메인 콘텐츠
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(CallLogDesignTokens.WhiteBackground),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 에러 상태
+            error?.let { errorMessage ->
+                item {
+                    ErrorCard(errorMessage = errorMessage)
                 }
+            }
 
-                // 로딩 상태
-                if (isLoading) {
-                    items(5) {
-                        ShimmerRecordingItem()
+            // 로딩 상태
+            if (isLoading) {
+                items(5) {
+                    ShimmerRecordingItem()
+                }
+            } else {
+                // 빈 상태
+                if (recordings.isEmpty()) {
+                    item {
+                        EmptyStateCard()
                     }
                 } else {
-                    // 빈 상태
-                    if (recordings.isEmpty()) {
-                        item {
-                            EmptyStateCard()
-                        }
-                    } else {
-                        // 녹음 파일 리스트
-                        items(recordings) { file ->
-                            RecordingLogItem(
-                                file = file,
-                                navController = navController
-                            )
-                        }
+                    // 녹음 파일 리스트
+                    items(recordings) { file ->
+                        RecordingLogItem(
+                            file = file,
+                            navController = navController
+                        )
                     }
                 }
+            }
+
+            // 하단 여백
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomTopBar(
+    onBackClick: () -> Unit,
+    recordingCount: Int
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = CallLogDesignTokens.WhiteBackground,
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 뒤로가기 버튼
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        CallLogDesignTokens.OrangeLight.copy(alpha = 0.3f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "뒤로가기",
+                    tint = CallLogDesignTokens.OrangePrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // 제목과 카운트
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "통화 녹음",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = CallLogDesignTokens.TextPrimary
+                )
+                Text(
+                    text = "${recordingCount}개의 녹음",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CallLogDesignTokens.TextSecondary
+                )
             }
         }
     }
@@ -182,7 +212,7 @@ fun ErrorCard(errorMessage: String) {
             Icon(
                 Icons.Default.Error,
                 contentDescription = null,
-                tint = Color(0xFFD32F2F),
+                tint = CallLogDesignTokens.Error,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
@@ -191,12 +221,12 @@ fun ErrorCard(errorMessage: String) {
                     text = "오류가 발생했습니다",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFD32F2F)
+                    color = CallLogDesignTokens.Error
                 )
                 Text(
                     text = errorMessage,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFD32F2F).copy(alpha = 0.8f),
+                    color = CallLogDesignTokens.Error.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -206,15 +236,12 @@ fun ErrorCard(errorMessage: String) {
 
 @Composable
 fun EmptyStateCard() {
-    val primaryOrange = Color(0xFFFF6B35)
-    val lightOrange = Color(0xFFFFE5DB)
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 32.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF5F5F5)
+            containerColor = CallLogDesignTokens.WarmGray
         ),
         shape = RoundedCornerShape(20.dp)
     ) {
@@ -226,7 +253,7 @@ fun EmptyStateCard() {
                 modifier = Modifier
                     .size(80.dp)
                     .background(
-                        color = lightOrange,
+                        color = CallLogDesignTokens.OrangeLight,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -235,7 +262,7 @@ fun EmptyStateCard() {
                     Icons.Outlined.VoiceChat,
                     contentDescription = null,
                     modifier = Modifier.size(40.dp),
-                    tint = primaryOrange
+                    tint = CallLogDesignTokens.OrangePrimary
                 )
             }
 
@@ -245,14 +272,14 @@ fun EmptyStateCard() {
                 text = "아직 통화 녹음이 없어요",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C1B1E),
+                color = CallLogDesignTokens.TextPrimary,
                 textAlign = TextAlign.Center
             )
 
             Text(
                 text = "통화가 녹음되면 여기에 표시됩니다.\n녹음 권한을 확인해주세요.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color(0xFF49454E),
+                color = CallLogDesignTokens.TextSecondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp,
                 modifier = Modifier.padding(top = 8.dp)
@@ -266,7 +293,7 @@ fun ShimmerRecordingItem() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = CallLogDesignTokens.WhiteBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(16.dp)
@@ -313,10 +340,6 @@ fun RecordingLogItem(
     val formattedDate = rememberFormattedDate(file.lastModified)
     val duration = rememberRecordingDuration(file.size)
 
-    val primaryOrange = Color(0xFFFF6B35)
-    val lightOrange = Color(0xFFFFE5DB)
-    val secondaryOrange = Color(0xFFFF8C42)
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -325,7 +348,7 @@ fun RecordingLogItem(
                 navController.navigate("CallDetailScreen/$encodedPath")
             },
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = CallLogDesignTokens.WhiteBackground
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp,
@@ -337,12 +360,12 @@ fun RecordingLogItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(16.dp)
         ) {
-            // 아이콘 컨테이너
+            // 아이콘 컨테이너 (브랜드 컬러 적용)
             Box(
                 modifier = Modifier
                     .size(56.dp)
                     .background(
-                        color = lightOrange,
+                        color = CallLogDesignTokens.OrangeLight,
                         shape = RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
@@ -350,7 +373,7 @@ fun RecordingLogItem(
                 Icon(
                     imageVector = Icons.Default.GraphicEq,
                     contentDescription = null,
-                    tint = primaryOrange,
+                    tint = CallLogDesignTokens.OrangePrimary,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -363,7 +386,7 @@ fun RecordingLogItem(
                     text = file.name.removeSuffix(".m4a"),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF1C1B1E),
+                    color = CallLogDesignTokens.TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -377,13 +400,13 @@ fun RecordingLogItem(
                         Icons.Outlined.Schedule,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF49454E)
+                        tint = CallLogDesignTokens.TextSecondary
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = formattedDate,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF49454E)
+                        color = CallLogDesignTokens.TextSecondary
                     )
                 }
 
@@ -396,18 +419,18 @@ fun RecordingLogItem(
                         Icons.Outlined.Storage,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = Color(0xFF49454E)
+                        tint = CallLogDesignTokens.TextSecondary
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "${formatSize(file.size)} • $duration",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF49454E)
+                        color = CallLogDesignTokens.TextSecondary
                     )
                 }
             }
 
-            // 재생 버튼
+            // 재생 버튼 (브랜드 컬러 적용)
             IconButton(
                 onClick = {
                     val encodedPath = URLEncoder.encode(file.path, "utf-8")
@@ -416,14 +439,14 @@ fun RecordingLogItem(
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        color = secondaryOrange.copy(alpha = 0.1f),
+                        color = CallLogDesignTokens.OrangePrimary.copy(alpha = 0.1f),
                         shape = CircleShape
                     )
             ) {
                 Icon(
                     Icons.Default.PlayArrow,
                     contentDescription = "재생",
-                    tint = secondaryOrange,
+                    tint = CallLogDesignTokens.OrangePrimary,
                     modifier = Modifier.size(20.dp)
                 )
             }
