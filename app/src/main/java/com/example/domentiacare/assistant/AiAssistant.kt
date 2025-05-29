@@ -1,9 +1,12 @@
 package com.example.domentiacare.assistant
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -11,7 +14,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.rememberNavController
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.example.domentiacare.MyApplication
+import com.example.domentiacare.data.local.CurrentUser
 import com.example.domentiacare.service.androidtts.TTSServiceManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -487,12 +494,15 @@ class AIAssistant(
 
                 keyword.contains("CALL_CAREGIVER") -> {
                     speakKorean("보호자에게 전화드리겠습니다.")
-                    makePhoneCall("caregiver", "caregiver")
+                    callMethod(CurrentUser.user?.managerPhone ?: "010-5067-5629") // 보호자 전화번호로 대체 필요
+
                 }
 
                 keyword.contains("CALL_PATIENT") -> {
                     speakKorean("환자에게 전화드리겠습니다.")
-                    makePhoneCall("patient", "patient")
+                    //makePhoneCall("patient", "patient")
+                    // 해당 부분에 callMethod 함수 호출 전에 DB에서 환자 리스트를 가져와서 선택을 해야함.
+                    //
                 }
 
                 keyword.contains("FIND_PATIENT") -> {
@@ -526,28 +536,6 @@ class AIAssistant(
         onStateChanged?.invoke()
     }
 
-    /**
-     * Make phone call
-     */
-    private fun makePhoneCall(contactKey: String, contactName: String) {
-        try {
-            val phoneNumber = contacts[contactKey]
-            if (phoneNumber != null) {
-                val callIntent = Intent(Intent.ACTION_CALL).apply {
-                    data = Uri.parse("tel:$phoneNumber")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(callIntent)
-                Log.d("AIAssistant", "📞 Making call: $contactName ($phoneNumber)")
-            } else {
-                speakKorean("연락처 정보를 찾을 수 없습니다.")
-                Log.e("AIAssistant", "❌ Contact not found: $contactKey")
-            }
-        } catch (e: Exception) {
-            Log.e("AIAssistant", "❌ Failed to make phone call: ${e.message}", e)
-            speakKorean("전화를 걸 수 없습니다.")
-        }
-    }
 
     /**
      * 🆕 TTS에 중지 기능 추가된 Safe TTS voice output
@@ -670,5 +658,49 @@ class AIAssistant(
         }
 
         Log.d("AIAssistant", "✅ AI Assistant 완전히 파괴됨")
+    }
+
+
+
+    fun callMethod(phoneNumber: String) {
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CALL_PHONE
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // 권한이 있으면 바로 전화 걸기
+            makeCall(phoneNumber)
+        } else {
+            // 권한이 없으면 설정 화면으로 이동
+            showPermissionSettings()
+        }
+    }
+
+    private fun makeCall(phoneNumber: String) {
+        try {
+            val intent = Intent(Intent.ACTION_CALL).apply {
+                data = Uri.parse("tel:$phoneNumber")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            Log.d("SimplePhoneCallManager", "📞 전화 걸기: $phoneNumber")
+        } catch (e: Exception) {
+            Log.e("SimplePhoneCallManager", "❌ 전화 걸기 실패: ${e.message}")
+            Toast.makeText(context, "전화를 걸 수 없습니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showPermissionSettings() {
+        Toast.makeText(context, "전화 권한이 필요합니다. 설정에서 권한을 허용해주세요.", Toast.LENGTH_LONG).show()
+
+        try {
+            val settingsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(settingsIntent)
+        } catch (e: Exception) {
+            Log.e("SimplePhoneCallManager", "❌ 설정 화면 열기 실패: ${e.message}")
+        }
     }
 }
