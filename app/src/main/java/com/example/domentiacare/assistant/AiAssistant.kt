@@ -395,6 +395,7 @@ class AIAssistant(
                     CALL_PATIENT - call patient, phone patient, call elderly
                     FIND_PATIENT - find patient, locate patient, where is patient, patient location
                     FIND_CAREGIVER - find caregiver, locate caregiver, where is caregiver, caregiver location
+                    HOME_NAVIGATE - home navigation, navigate home, go home, route to home, directions to home, want to go home
                     UNKNOWN - everything else not mentioned above
                     
                     IMPORTANT: Respond with ONLY the keyword. No additional text.
@@ -405,6 +406,7 @@ class AIAssistant(
                     - "Call my caregiver" → CALL_CAREGIVER
                     - "Where is my dad?" → FIND_CAREGIVER
                     - "Find the patient" → FIND_PATIENT
+                    - "Navigate to home" -> HOME_NAVIGATE
                     - "What's the weather?" → UNKNOWN
                 """.trimIndent()
 
@@ -503,7 +505,7 @@ class AIAssistant(
                     onScheduleAction("find", "caregiver")
                 }
 
-                keyword.contains("I_WANT_TO_GO_HOME") -> {
+                keyword.contains("HOME_NAVIGATE") -> {
                     speakKorean("집까지의 길을 안내해드리겠습니다.")
                     // navigate to HomeNavigationScreen
                     onNavigateToScreen("HomeNavigationScreen")
