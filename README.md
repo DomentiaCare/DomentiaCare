@@ -11,10 +11,12 @@
 
 ## 🍁 Developers
 **전담 업무:**
-- **김소룡**: 앱 개발, AI 모델 연동, 백엔드 서버 개발
-- **박진호**: 앱 개발, AI 모델 연동, 백엔드 서버 개발  
-- **이종범**: 앱 개발, Wear OS 개발, AI 모듈 개발, AI 모델 연동
-- **임성훈**: 웹 개발
+|  |  |  |  |
+|:-:|:-:|:-:|:-:|
+| <img src="https://github.com/user-attachments/assets/7e8cef4c-b951-4f1b-a8e6-1b3f2b7d0118" width="300"/> | <img src="https://github.com/user-attachments/assets/0c8f226a-d73f-47ba-8d1c-0e773f55e769" width="300"/> | <img src="https://github.com/user-attachments/assets/ffa22d00-9f9f-42b5-9ea2-2f5fe32e4636" width="300"/> | <img src="https://github.com/user-attachments/assets/dfbbea63-19af-4e70-9ede-955fbd4f97f6" width="300"/> |
+| 김소룡 | 박진호 | 이종범 | 임성훈 |
+| [@SoRyong-Kim](https://github.com/SoRyong-Kim) | [@parkddddd](https://github.com/parkddddd) | [@KorJIGSAW](https://github.com/KorJIGSAW) | [@PocheonLim](https://github.com/PocheonLim) |
+| 앱 개발, AI 모델 연동<br> 백엔드 서버 개발 | 앱 개발, AI 모델 연동<br> 백엔드 서버 개발 | 앱 개발, Wear OS 개발<br> AI 모듈 개발, AI 모델 연동 | 웹 개발 |
 
  **유상미**: 지도 교수
 
