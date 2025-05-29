@@ -1,10 +1,6 @@
-import java.net.InetAddress
 import java.util.Properties
 
-//val localIpAddress = InetAddress.getLocalHost().hostAddress // 로컬 IP 주소 자동 설정
-val localIpAddress = "3.35.8.215" // db 서버 IP 주소로 교체
 
-val baseUrl = "http://$localIpAddress:8080"
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -14,6 +10,11 @@ if (localPropertiesFile.exists()) {
 val kakaoKey = localProperties.getProperty("KAKAO_NATIVE_APP_KEY") ?: ""
 val googleMapKey = localProperties.getProperty("GOOGLE_MAP_KEY") ?: ""
 val naverMapClientId = localProperties.getProperty("NAVER_MAP_CLIENT_ID") ?: ""
+
+val localIpAddress = localProperties.getProperty("SERVER_IP") ?: "127.0.0.1"
+//val localIpAddress = InetAddress.getLocalHost().hostAddress // 로컬 IP 주소 자동 설정
+
+val baseUrl = "http://$localIpAddress:8080"
 
 plugins {
     alias(libs.plugins.android.application)
