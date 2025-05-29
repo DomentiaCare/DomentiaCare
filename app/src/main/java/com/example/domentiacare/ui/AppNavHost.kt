@@ -206,7 +206,7 @@ fun AppNavHost(
             }
 
             // 🆕 HomeNavigationScreen 라우트 추가
-            composable("homeNavigation") {
+            composable("HomeNavigationScreen") {
                 HomeNavigationScreen(navController)
             }
 
