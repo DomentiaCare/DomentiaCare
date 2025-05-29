@@ -107,6 +107,16 @@ class MainActivity : ComponentActivity() {
             // 알림 데이터 상태 초기화
             notificationDataState = remember { mutableStateOf(extractNotificationData(intent)) }
 
+            // navController를 기억하고 전달
+            var navigationRoute by remember { mutableStateOf<String?>(null) }
+
+            // AIAssistant 콜백에서 navigationRoute 설정
+            LaunchedEffect(Unit) {
+                aiAssistant?.setNavigationCallback { route ->
+                    navigationRoute = route
+                }
+            }
+
             DomentiaCareTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -134,7 +144,9 @@ class MainActivity : ComponentActivity() {
                                             aiAssistant?.forceStop(showMessage = true)
                                         }
                                         assistantEnabledByUser.value = !assistantEnabledByUser.value
-                                    }
+                                    },
+                                    navigationRoute = navigationRoute, // 🆕 추가
+                                    onNavigationComplete = { navigationRoute = null } // 🆕 추가
                                 )
                             }
                         )
@@ -188,6 +200,29 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    // 🔧 수정: initializeAIAssistant() 메서드
+    private lateinit var navigationCallback: (String) -> Unit
+
+    // AI 어시스턴트 초기화 함수 - 수정된 버전
+    private fun initializeAIAssistant() {
+        Log.d("MainActivity", "initializeAIAssistant() 진입")
+        aiAssistant = AIAssistant(
+            context = this,
+            onScheduleAction = { action, details ->
+                handleScheduleAction(action, details)
+            },
+            onNavigateToScreen = { route ->
+                updateScreen(route)
+            },
+            onStateChanged = {
+                // 상태 변경 시 UI 업데이트 콜백
+                Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
+                updateAssistantStates()
+            }
+        )
+        Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
     }
 
     // 🆕 플로팅 AI 어시스턴트 상태 카드 - 애니메이션과 함께
@@ -469,21 +504,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // AI 어시스턴트 초기화 함수 - 수정된 버전
-    private fun initializeAIAssistant() {
-        Log.d("MainActivity", "initializeAIAssistant() 진입")
-        aiAssistant = AIAssistant(
-            context = this,
-            onScheduleAction = { action, details ->
-                handleScheduleAction(action, details)
-            },
-            onStateChanged = {
-                // 상태 변경 시 UI 업데이트 콜백
-                Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
-                updateAssistantStates()
-            }
-        )
-        Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
+
+
+    private fun updateScreen(route: String) {
+
     }
 
     // 🆕 순차적 권한 요청 컴포저블

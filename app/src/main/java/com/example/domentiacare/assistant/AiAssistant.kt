@@ -9,6 +9,8 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.rememberNavController
 import com.example.domentiacare.MyApplication
 import com.example.domentiacare.service.androidtts.TTSServiceManager
 import kotlinx.coroutines.CancellationException
@@ -23,6 +25,7 @@ import kotlinx.coroutines.withContext
 class AIAssistant(
     private val context: Context,
     private val onScheduleAction: (action: String, details: String) -> Unit,
+    private val onNavigateToScreen: (route: String) -> Unit,
     private val onStateChanged: (() -> Unit)? = null
 ) {
 
@@ -441,6 +444,13 @@ class AIAssistant(
         }
     }
 
+    // 🆕 추가: setNavigationCallback 함수
+    fun setNavigationCallback(callback: (String) -> Unit) {
+        // 이미 생성자에서 onNavigateToScreen을 받으므로
+        // 별도로 설정할 필요는 없지만, MainActivity에서 호출하므로 빈 함수로 제공
+        Log.d("AIAssistant", "setNavigationCallback 호출됨 (이미 생성자에서 설정됨)")
+    }
+
     /**
      * Execute command based on Llama keyword response
      */
@@ -491,6 +501,12 @@ class AIAssistant(
                 keyword.contains("FIND_CAREGIVER") -> {
                     speakKorean("보호자 위치를 확인해드리겠습니다.")
                     onScheduleAction("find", "caregiver")
+                }
+
+                keyword.contains("I_WANT_TO_GO_HOME") -> {
+                    speakKorean("집까지의 길을 안내해드리겠습니다.")
+                    // navigate to HomeNavigationScreen
+                    onNavigateToScreen("HomeNavigationScreen")
                 }
 
                 else -> {
