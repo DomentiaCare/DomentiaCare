@@ -37,7 +37,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.random.Random
-import com.example.domentiacare.ui.screen.call.parseLlamaScheduleResponseFull as parseForNotification
+import com.example.domentiacare.ui.screen.call.utils.parseLlamaScheduleResponseFull as parseForNotification
+//import com.example.domentiacare.data.model.parseLlamaScheduleResponseFull as parseForNotification
+
 
 class CallRecordAnalyzeService : Service() {
 
