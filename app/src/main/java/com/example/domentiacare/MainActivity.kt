@@ -580,7 +580,7 @@ class MainActivity : ComponentActivity() {
             Manifest.permission.RECORD_AUDIO -> {
                 Log.d("Permission", "🎤 음성 녹음 권한 허용됨")
                 // 권한이 허용되면 AI 어시스턴트를 즉시 시작할 수 있도록 상태 업데이트
-                Toast.makeText(this, "이제 AI 어시스턴트를 사용할 수 있습니다!", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "이제 AI 어시스턴트를 사용할 수 있습니다!", Toast.LENGTH_SHORT).show()
             }
         }
     }
