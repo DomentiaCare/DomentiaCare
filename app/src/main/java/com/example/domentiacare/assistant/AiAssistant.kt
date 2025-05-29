@@ -490,6 +490,8 @@ class AIAssistant(
                 keyword.contains("CALL_PATIENT") -> {
                     speakKorean("환자에게 전화드리겠습니다.")
                     //makePhoneCall("patient", "patient")
+                    // 해당 부분에 callMethod 함수 호출 전에 DB에서 환자 리스트를 가져와서 선택을 해야함.
+                    //
                 }
 
                 keyword.contains("FIND_PATIENT") -> {
