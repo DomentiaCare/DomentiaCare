@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Card
@@ -47,7 +46,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -68,8 +66,6 @@ import com.example.domentiacare.data.remote.dto.User
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 // 디자인 시스템 색상 정의 - 어르신 친화적으로 개선
 object DesignTokens {
@@ -160,10 +156,10 @@ fun Home(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(24.dp)) // 상단 여백 증가
 
-            // 헤더 섹션
-            HeaderSection()
+            // ✅ navController를 HeaderSection에 전달
+            HeaderSection(navController)
 
-            Spacer(modifier = Modifier.height(32.dp)) // 더 큰 간격
+            Spacer(modifier = Modifier.height(20.dp)) // 더 큰 간격
 
             // 웰컴 카드
             WelcomeCard(
@@ -184,7 +180,7 @@ fun Home(navController: NavController) {
                 }
             )
 
-            Spacer(modifier = Modifier.height(40.dp)) // 더 큰 간격
+            Spacer(modifier = Modifier.height(24.dp)) // 더 큰 간격
 
             // 빠른 메뉴 섹션
             QuickMenuSection(navController)
@@ -195,7 +191,7 @@ fun Home(navController: NavController) {
 }
 
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(navController: NavController) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -209,60 +205,41 @@ private fun HeaderSection() {
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "도멘티아 케어",
+                text = "DementiaCare",
                 style = MaterialTheme.typography.headlineLarge, // 더 큰 제목
                 fontWeight = FontWeight.Bold,
                 color = DesignTokens.TextPrimary
             )
         }
 
-        Row {
-            IconButton(
-                onClick = { /* 알림 */ },
-                modifier = Modifier
-                    .size(52.dp) // 더 큰 버튼
-                    .background(
-                        DesignTokens.WhiteBackground,
-                        CircleShape
-                    )
-                    .shadow(DesignTokens.Elevation2, CircleShape) // 더 뚜렷한 그림자
-            ) {
-                Icon(
-                    Icons.Default.Notifications,
-                    contentDescription = "알림",
-                    tint = DesignTokens.TextSecondary,
-                    modifier = Modifier.size(24.dp) // 더 큰 아이콘
+        // ✅ 알림 아이콘 제거, 프로필 아이콘만 유지하고 클릭 시 MyPageScreen으로 이동
+        IconButton(
+            onClick = {
+                navController.navigate("MyPageScreen")
+            },
+            modifier = Modifier
+                .size(52.dp) // 더 큰 버튼
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            DesignTokens.OrangePrimary,
+                            DesignTokens.OrangeDark
+                        )
+                    ),
+                    shape = CircleShape
                 )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            IconButton(
-                onClick = { /* 프로필 */ },
-                modifier = Modifier
-                    .size(52.dp) // 더 큰 버튼
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                DesignTokens.OrangePrimary,
-                                DesignTokens.OrangeDark
-                            )
-                        ),
-                        shape = CircleShape
-                    )
-                    .shadow(
-                        DesignTokens.Elevation2,
-                        CircleShape,
-                        spotColor = DesignTokens.OrangeShadow
-                    )
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "프로필",
-                    tint = DesignTokens.WhiteBackground,
-                    modifier = Modifier.size(24.dp) // 더 큰 아이콘
+                .shadow(
+                    DesignTokens.Elevation2,
+                    CircleShape,
+                    spotColor = DesignTokens.OrangeShadow
                 )
-            }
+        ) {
+            Icon(
+                Icons.Default.Person,
+                contentDescription = "내 정보",
+                tint = DesignTokens.WhiteBackground,
+                modifier = Modifier.size(24.dp) // 더 큰 아이콘
+            )
         }
     }
 }
@@ -366,7 +343,7 @@ private fun QuickMenuSection(navController: NavController) {
         style = MaterialTheme.typography.headlineSmall, // 더 큰 제목
         fontWeight = FontWeight.Bold,
         color = DesignTokens.TextPrimary,
-        modifier = Modifier.padding(bottom = 20.dp) // 더 큰 간격
+        modifier = Modifier.padding(bottom = 8.dp) // 더 큰 간격
     )
 
     val menuItems = listOf(
