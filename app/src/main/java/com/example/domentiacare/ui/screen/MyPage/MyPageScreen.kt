@@ -49,6 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.domentiacare.data.local.CurrentUser
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.platform.LocalContext
+
 
 // 테마 색상 정의 (Home.kt와 동일)
 object MyPageDesignTokens {
@@ -73,6 +77,12 @@ fun MyPageScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     val user = CurrentUser.user
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitDialog = true
+    }
 
     Box(
         modifier = Modifier
@@ -338,6 +348,53 @@ fun MyPageScreen(
             shape = RoundedCornerShape(MyPageDesignTokens.CornerRadius)
         )
     }
+    // 함수 마지막 부분에 추가 (기존 로그아웃 다이얼로그 뒤에)
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = {
+                Text(
+                    text = "앱 종료",
+                    fontWeight = FontWeight.Bold,
+                    color = MyPageDesignTokens.TextPrimary
+                )
+            },
+            text = {
+                Text(
+                    text = "DementiaCare를 종료하시겠습니까?",
+                    color = MyPageDesignTokens.TextSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        (context as? ComponentActivity)?.finish()
+                    }
+                ) {
+                    Text(
+                        text = "종료",
+                        color = Color.Red,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text(
+                        text = "취소",
+                        color = MyPageDesignTokens.OrangePrimary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            containerColor = MyPageDesignTokens.WhiteBackground,
+            shape = RoundedCornerShape(MyPageDesignTokens.CornerRadius)
+        )
+    }
+
 }
 
 @Composable

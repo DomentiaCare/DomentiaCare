@@ -66,6 +66,10 @@ import com.example.domentiacare.data.remote.dto.User
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 
 // 디자인 시스템 색상 정의 - 어르신 친화적으로 개선
 object DesignTokens {
@@ -97,6 +101,11 @@ fun Home(navController: NavController) {
     val context = LocalContext.current
     var user by remember { mutableStateOf<User?>(null) }
     val scrollState = rememberScrollState()
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitDialog = true
+    }
 
     LaunchedEffect(Unit) {
         val jwt = TokenManager.getToken()
@@ -159,7 +168,7 @@ fun Home(navController: NavController) {
             // ✅ navController를 HeaderSection에 전달
             HeaderSection(navController)
 
-            Spacer(modifier = Modifier.height(20.dp)) // 더 큰 간격
+            Spacer(modifier = Modifier.height(24.dp)) // 더 큰 간격
 
             // 웰컴 카드
             WelcomeCard(
@@ -185,8 +194,31 @@ fun Home(navController: NavController) {
             // 빠른 메뉴 섹션
             QuickMenuSection(navController)
 
-            Spacer(modifier = Modifier.height(32.dp)) // 하단 여백 증가
+            Spacer(modifier = Modifier.height(16.dp)) // 하단 여백 증가
         }
+    }
+    // Home 함수 마지막 부분에 다이얼로그 추가 (기존 } 앞에)
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("앱 종료", fontWeight = FontWeight.Bold, color = DesignTokens.TextPrimary) },
+            text = { Text("DementiaCare를 종료하시겠습니까?", color = DesignTokens.TextSecondary) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitDialog = false
+                    (context as? ComponentActivity)?.finish()
+                }) {
+                    Text("종료", color = DesignTokens.Error, fontWeight = FontWeight.Medium)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("취소", color = DesignTokens.OrangePrimary, fontWeight = FontWeight.Medium)
+                }
+            },
+            containerColor = DesignTokens.WhiteBackground,
+            shape = RoundedCornerShape(DesignTokens.CornerRadius)
+        )
     }
 }
 
@@ -343,7 +375,7 @@ private fun QuickMenuSection(navController: NavController) {
         style = MaterialTheme.typography.headlineSmall, // 더 큰 제목
         fontWeight = FontWeight.Bold,
         color = DesignTokens.TextPrimary,
-        modifier = Modifier.padding(bottom = 8.dp) // 더 큰 간격
+        modifier = Modifier.padding(bottom = 20.dp) // 더 큰 간격
     )
 
     val menuItems = listOf(
