@@ -402,7 +402,7 @@ private fun QuickMenuSection(navController: NavController) {
 
     val menuItems = listOf(
         QuickMenuItem("길찾기", Icons.Default.Place, DesignTokens.Info) {
-            navController.navigate("WhisperScreen")
+            navController.navigate("HomeNavigationScreen") // 길찾기 화면으로 이동
         },
         QuickMenuItem("일정관리", Icons.Default.DateRange, DesignTokens.OrangePrimary) {
             navController.navigate("schedule")

@@ -15,6 +15,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
+import com.example.domentiacare.ui.screen.navigation.HomeNavigationScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientAddScheduleScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
@@ -128,7 +130,7 @@ fun AppNavHost(
         "home"
     }
 
-    // ✅ ModalNavigationDrawer와 TopBar 제거, 깔끔한 Scaffold만 사용
+    // ✅ 깔끔한 Scaffold 사용
     Scaffold(
         bottomBar = {
             if (shouldShowBottomBar) {
@@ -184,7 +186,6 @@ fun AppNavHost(
                 )
             }
 
-            // 기존 라우트들 유지...
             composable(
                 "patientDetail/{patientId}",
                 arguments = listOf(
@@ -200,7 +201,7 @@ fun AppNavHost(
                 if (patient != null) {
                     PatientDetailScreen(navController, patient)
                 } else {
-                    androidx.compose.material3.Text("환자 정보를 찾을 수 없습니다.")
+                    Text("환자 정보를 찾을 수 없습니다.")
                 }
             }
 
@@ -220,8 +221,13 @@ fun AppNavHost(
                 if (patient != null) {
                     PatientLocationScreen(navController, patient)
                 } else {
-                    androidx.compose.material3.Text("환자 정보를 찾을 수 없습니다.")
+                    Text("환자 정보를 찾을 수 없습니다.")
                 }
+            }
+
+            // 🆕 HomeNavigationScreen 라우트 추가
+            composable("HomeNavigationScreen") {
+                HomeNavigationScreen(navController)
             }
 
             composable("MyPageScreen") {
@@ -238,6 +244,7 @@ fun AppNavHost(
                     }
                 )
             }
+
             composable(
                 "RegisterScreen?email={email}&nickname={nickname}",
                 arguments = listOf(
@@ -263,6 +270,7 @@ fun AppNavHost(
                 val filePath = URLDecoder.decode(backStackEntry.arguments?.getString("filePath") ?: "", "utf-8")
                 CallDetailScreen(filePath, navController)
             }
+
             composable("WhisperScreen"){
                 WhisperScreen()
             }
@@ -310,7 +318,7 @@ fun AppNavHost(
                 )
             }
 
-            // 그리고 환자별 통화 녹음 라우트도 추가:
+            // 환자별 통화 녹음 라우트
             composable(
                 "CallLogScreen/{patientId}",
                 arguments = listOf(navArgument("patientId") { type = NavType.StringType })
@@ -330,15 +338,19 @@ fun AppNavHost(
                     navController = navController
                 )
             }
+
             composable("TestCalendar"){
                 TestCalendar()
             }
+
+            // 환자별 일정 관리 화면 라우트
             composable("schedule/{patientId}") { backStackEntry ->
                 val patientId = backStackEntry.arguments?.getString("patientId")?.toLongOrNull()
                 if (patientId != null) {
                     ScheduleScreenWrapper(navController , patientId = patientId)
                 }
             }
+
             composable("addSchedule/{patientId}/{selectedDate}") { backStackEntry ->
                 val patientId = backStackEntry.arguments?.getString("patientId")?.toLongOrNull()
                 val selectedDate = backStackEntry.arguments?.getString("selectedDate") ?: LocalDate.now().toString()
