@@ -54,6 +54,7 @@ import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
+import com.example.domentiacare.ui.screen.navigation.HomeNavigationScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientAddScheduleScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
@@ -232,7 +233,6 @@ fun AppNavHost(
                     )
                 }
 
-                // 기존 라우트들 유지...
                 composable(
                     "patientDetail/{patientId}",
                     arguments = listOf(
@@ -270,6 +270,10 @@ fun AppNavHost(
                     } else {
                         Text("환자 정보를 찾을 수 없습니다.")
                     }
+                }
+
+                composable("HomeNavigationScreen") {
+                    HomeNavigationScreen(navController)
                 }
 
                 composable("MyPageScreen") {
@@ -370,6 +374,13 @@ fun AppNavHost(
                 composable("TestCalendar"){
                     TestCalendar()
                 }
+
+                /* ****************************************************************************************************** */
+                /*
+                    환자별 일정 관리 화면 라우트
+                    - 환자 ID를 받아 해당 환자의 일정을 관리하는 화면으로 이동
+                    - 환자 ID는 Long 타입으로 전달
+                */
                 composable("schedule/{patientId}") { backStackEntry ->
                     val patientId = backStackEntry.arguments?.getString("patientId")?.toLongOrNull()
                     if (patientId != null) {
