@@ -58,6 +58,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.draw.shadow
+import com.example.domentiacare.assistant.PatientSelectionDialog
+import com.example.domentiacare.data.remote.dto.Patient
 
 // 알림 데이터를 담는 데이터 클래스
 data class NotificationData(
@@ -89,6 +91,9 @@ class MainActivity : ComponentActivity() {
     private val assistantActiveState = mutableStateOf(false)
     private val assistantRecordingState = mutableStateOf(false)
     private val assistantAnalyzingState = mutableStateOf(false)
+    // 🆕 환자 선택 다이얼로그 상태
+    private val showPatientSelectionDialog = mutableStateOf(false)
+    private val patientsForSelection = mutableStateOf<List<Patient>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -183,6 +188,23 @@ class MainActivity : ComponentActivity() {
                                     tint = Color.White
                                 )
                             }
+                        }
+                        // 🆕 환자 선택 다이얼로그 추가
+                        if (showPatientSelectionDialog.value) {
+                            PatientSelectionDialog(
+                                patients = patientsForSelection.value,
+                                onPatientSelected = { selectedPatient ->
+                                    Log.d("MainActivity", "👤 환자 선택됨: ${selectedPatient.patientName}")
+                                    showPatientSelectionDialog.value = false
+
+                                    // AI 어시스턴트를 통해 전화 걸기
+                                    aiAssistant?.callPatient(selectedPatient)
+                                },
+                                onDismiss = {
+                                    Log.d("MainActivity", "❌ 환자 선택 취소")
+                                    showPatientSelectionDialog.value = false
+                                }
+                            )
                         }
                     }
                 }
@@ -477,8 +499,12 @@ class MainActivity : ComponentActivity() {
             onScheduleAction = { action, details ->
                 handleScheduleAction(action, details)
             },
+            onPatientSelectionRequired = { patients -> // 🆕 환자 선택 콜백
+                Log.d("MainActivity", "🔔 환자 선택 요청: ${patients.size}명")
+                patientsForSelection.value = patients
+                showPatientSelectionDialog.value = true
+            },
             onStateChanged = {
-                // 상태 변경 시 UI 업데이트 콜백
                 Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
                 updateAssistantStates()
             }
@@ -499,6 +525,8 @@ class MainActivity : ComponentActivity() {
                 add(Manifest.permission.ACCESS_FINE_LOCATION)
                 add(Manifest.permission.READ_PHONE_STATE)
                 add(Manifest.permission.RECORD_AUDIO) // AI 어시스턴트용 추가
+                add(Manifest.permission.CALL_PHONE) // 🆕 직접 전화 걸기용 권한 추가
+
 
                 // Android 버전에 따른 오디오/저장소 권한
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -607,6 +635,9 @@ class MainActivity : ComponentActivity() {
                 // 권한이 허용되면 AI 어시스턴트를 즉시 시작할 수 있도록 상태 업데이트
                 //Toast.makeText(this, "이제 AI 어시스턴트를 사용할 수 있습니다!", Toast.LENGTH_SHORT).show()
             }
+            Manifest.permission.CALL_PHONE -> { // 🆕 전화 걸기 권한 추가
+                Log.d("Permission", "☎️ 전화 걸기 권한 허용됨")
+            }
         }
     }
 
@@ -631,6 +662,9 @@ class MainActivity : ComponentActivity() {
             }
             Manifest.permission.RECORD_AUDIO -> {
                 Toast.makeText(this, "음성 인식 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+            Manifest.permission.CALL_PHONE -> { // 🆕 전화 걸기 권한 거절 시 처리
+                Toast.makeText(this, "전화 걸기 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
             }
         }
     }
