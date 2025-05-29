@@ -303,6 +303,9 @@ private fun WelcomeCard(
     user: User?,
     onCallClick: () -> Unit
 ) {
+    // 🔧 역할 체크 함수
+    val isProtector = user?.role?.lowercase() in listOf("보호자", "protector", "guardian", "caregiver")
+
     Card(
         shape = RoundedCornerShape(DesignTokens.CornerRadiusLarge),
         modifier = Modifier
@@ -338,7 +341,12 @@ private fun WelcomeCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(
-                    modifier = Modifier.weight(1f)
+                    // 🔧 보호자인 경우 전체 너비 사용, 환자인 경우 weight 사용
+                    modifier = if (isProtector) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier.weight(1f)
+                    }
                 ) {
                     Text(
                         buildAnnotatedString {
@@ -361,29 +369,36 @@ private fun WelcomeCard(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        "오늘도 건강한 하루 보내세요!",
-                        style = MaterialTheme.typography.bodyLarge, // 더 큰 폰트
+                        // 🔧 역할에 따른 다른 메시지
+                        if (isProtector) {
+                            "보호자님, 오늘도 따뜻한 돌봄 감사합니다!"
+                        } else {
+                            "오늘도 건강한 하루 보내세요!"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
                         color = DesignTokens.TextSecondary,
                         fontWeight = FontWeight.Medium
                     )
                 }
 
-                // 단순한 전화 버튼 - 배경 없이 아이콘만
-                IconButton(
-                    onClick = onCallClick,
-                    modifier = Modifier
-                        .size(64.dp) // 더 큰 터치 영역
-                        .background(
-                            Color.Transparent, // 투명 배경
-                            CircleShape
+                // 🔧 보호자가 아닌 경우에만 전화 버튼 표시
+                if (!isProtector) {
+                    IconButton(
+                        onClick = onCallClick,
+                        modifier = Modifier
+                            .size(64.dp) // 더 큰 터치 영역
+                            .background(
+                                Color.Transparent, // 투명 배경
+                                CircleShape
+                            )
+                    ) {
+                        Icon(
+                            Icons.Default.Call,
+                            contentDescription = "전화걸기",
+                            tint = DesignTokens.OrangePrimary, // 주황색 전화기 아이콘
+                            modifier = Modifier.size(32.dp) // 더 큰 아이콘
                         )
-                ) {
-                    Icon(
-                        Icons.Default.Call,
-                        contentDescription = "전화걸기",
-                        tint = DesignTokens.OrangePrimary, // 주황색 전화기 아이콘
-                        modifier = Modifier.size(32.dp) // 더 큰 아이콘
-                    )
+                    }
                 }
             }
         }
@@ -392,6 +407,8 @@ private fun WelcomeCard(
 
 @Composable
 private fun QuickMenuSection(navController: NavController) {
+    val currentUser = CurrentUser.user // 현재 사용자 정보 가져오기
+
     Text(
         "빠른 메뉴",
         style = MaterialTheme.typography.headlineSmall, // 더 큰 제목
@@ -401,16 +418,24 @@ private fun QuickMenuSection(navController: NavController) {
     )
 
     val menuItems = listOf(
-        QuickMenuItem("길찾기", Icons.Default.Place, DesignTokens.Info) {
+        QuickMenuItem("길찾기", Icons.Default.Place, DesignTokens.Info, true) {
             navController.navigate("HomeNavigationScreen") // 길찾기 화면으로 이동
         },
-        QuickMenuItem("일정관리", Icons.Default.DateRange, DesignTokens.OrangePrimary) {
+        QuickMenuItem("일정관리", Icons.Default.DateRange, DesignTokens.OrangePrimary, true) {
             navController.navigate("schedule")
         },
-        QuickMenuItem("환자관리", Icons.Default.Face, DesignTokens.Success) {
-            navController.navigate("patientList")
+        QuickMenuItem(
+            "환자관리",
+            Icons.Default.Face,
+            DesignTokens.Success,
+            // 🔧 보호자인 경우에만 활성화
+            currentUser?.role == "보호자" || currentUser?.role == "PROTECTOR" || currentUser?.role == "protector"
+        ) {
+            if (currentUser?.role == "보호자" || currentUser?.role == "PROTECTOR" || currentUser?.role == "protector") {
+                navController.navigate("patientList")
+            }
         },
-        QuickMenuItem("통화목록", Icons.Default.History, DesignTokens.Error) {
+        QuickMenuItem("통화목록", Icons.Default.History, DesignTokens.Error, true) {
             navController.navigate("CallLogScreen")
         }
     )
@@ -450,6 +475,7 @@ data class QuickMenuItem(
     val label: String,
     val icon: ImageVector,
     val color: Color,
+    val isEnabled: Boolean = true,
     val onClick: () -> Unit
 )
 
@@ -458,18 +484,32 @@ fun QuickAccessButton(
     menuItem: QuickMenuItem,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     Card(
         shape = RoundedCornerShape(DesignTokens.CornerRadius),
         modifier = modifier
             .height(160.dp) // 높이 증가로 텍스트 공간 확보
-            .clickable { menuItem.onClick() }
+            .clickable(enabled = menuItem.isEnabled) {
+                if (menuItem.isEnabled) {
+                    menuItem.onClick()
+                } else {
+                    // 🔧 비활성화된 버튼 클릭 시 Toast 메시지
+                    Toast.makeText(context, "보호자만 사용할 수 있는 기능입니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
             .shadow(
                 DesignTokens.Elevation2, // 더 뚜렷한 그림자
                 RoundedCornerShape(DesignTokens.CornerRadius),
                 spotColor = DesignTokens.CardShadow
             ),
         colors = CardDefaults.cardColors(
-            containerColor = DesignTokens.WhiteBackground
+            // 🔧 비활성화 상태일 때 색상 변경
+            containerColor = if (menuItem.isEnabled) {
+                DesignTokens.WhiteBackground
+            } else {
+                DesignTokens.SurfaceVariant.copy(alpha = 0.6f)
+            }
         ),
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
@@ -485,7 +525,12 @@ fun QuickAccessButton(
                 modifier = Modifier
                     .size(64.dp) // 큰 아이콘 배경
                     .background(
-                        menuItem.color.copy(alpha = 0.15f),
+                        // 🔧 비활성화 상태일 때 색상 조정
+                        if (menuItem.isEnabled) {
+                            menuItem.color.copy(alpha = 0.15f)
+                        } else {
+                            DesignTokens.TextLight.copy(alpha = 0.1f)
+                        },
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -493,7 +538,12 @@ fun QuickAccessButton(
                 Icon(
                     imageVector = menuItem.icon,
                     contentDescription = menuItem.label,
-                    tint = menuItem.color,
+                    // 🔧 비활성화 상태일 때 아이콘 색상 변경
+                    tint = if (menuItem.isEnabled) {
+                        menuItem.color
+                    } else {
+                        DesignTokens.TextLight
+                    },
                     modifier = Modifier.size(32.dp) // 큰 아이콘
                 )
             }
@@ -511,9 +561,25 @@ fun QuickAccessButton(
                     text = menuItem.label,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = DesignTokens.TextPrimary,
+                    // 🔧 비활성화 상태일 때 텍스트 색상 변경
+                    color = if (menuItem.isEnabled) {
+                        DesignTokens.TextPrimary
+                    } else {
+                        DesignTokens.TextLight
+                    },
                     maxLines = 2, // 최대 2줄까지 허용
                     lineHeight = 20.sp // 줄 간격 설정
+                )
+            }
+
+            // 🆕 비활성화 상태 표시
+            if (!menuItem.isEnabled) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "보호자 전용",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = DesignTokens.TextLight,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
