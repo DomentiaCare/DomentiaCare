@@ -54,9 +54,11 @@ import com.example.domentiacare.ui.screen.call.CallLogScreen
 import com.example.domentiacare.ui.screen.home.Home
 import com.example.domentiacare.ui.screen.login.LoginScreen
 import com.example.domentiacare.ui.screen.login.RegisterScreen
+import com.example.domentiacare.ui.screen.patientCare.PatientAddScheduleScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientDetailScreen
 import com.example.domentiacare.ui.screen.patientCare.PatientList
 import com.example.domentiacare.ui.screen.patientCare.PatientLocationScreen
+import com.example.domentiacare.ui.screen.patientCare.ScheduleScreenWrapper
 import com.example.domentiacare.ui.screen.schedule.AddScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleScreen
 import com.example.domentiacare.ui.screen.schedule.ScheduleViewModel
@@ -367,6 +369,25 @@ fun AppNavHost(
                 }
                 composable("TestCalendar"){
                     TestCalendar()
+                }
+                composable("schedule/{patientId}") { backStackEntry ->
+                    val patientId = backStackEntry.arguments?.getString("patientId")?.toLongOrNull()
+                    if (patientId != null) {
+                        ScheduleScreenWrapper(navController , patientId = patientId)
+                    }
+                }
+                composable("addSchedule/{patientId}/{selectedDate}") { backStackEntry ->
+                    val patientId = backStackEntry.arguments?.getString("patientId")?.toLongOrNull()
+                    val selectedDate = backStackEntry.arguments?.getString("selectedDate") ?: LocalDate.now().toString()
+
+                    if (patientId != null) {
+                        PatientAddScheduleScreen(
+                            navController = navController,
+                            patientId = patientId,
+                            selectedDate = selectedDate,
+                            viewModel = viewModel()
+                        )
+                    }
                 }
             }
         }
