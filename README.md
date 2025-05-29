@@ -79,13 +79,8 @@
 
 
 ```
-DomentiaCare
+DementiaCare
 ├─ app
-│  ├─ proguard-rules.pro
-│  ├─ sampledata
-│  ├─ schemas
-│  │  └─ com.example.domentiacare.data.local.schedule.ScheduleDatabase
-│  │     └─ 1.json
 │  └─ src
 │     ├─ androidTest
 │     │  └─ java
@@ -465,7 +460,6 @@ DomentiaCare
 ├─ gradle.properties
 ├─ gradlew
 └─ gradlew.bat
-
 ```
 
 ---
