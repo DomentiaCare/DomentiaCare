@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -101,6 +100,8 @@ fun Home(navController: NavController) {
     val context = LocalContext.current
     var user by remember { mutableStateOf<User?>(null) }
     val scrollState = rememberScrollState()
+    var managerPhone by remember { mutableStateOf<String?>(null) } // 매니저 전화번호 상태 추가
+
     var showExitDialog by remember { mutableStateOf(false) }
 
     BackHandler {
@@ -130,13 +131,34 @@ fun Home(navController: NavController) {
         }
     }
 
+    LaunchedEffect(user) {
+        user?.let { userData ->
+            try {
+                // managerId가 따로 있다면 그것을 사용, 현재는 user.id를 사용
+                val managerId = userData.managerId // 또는 userData.managerId가 있다면 그것 사용
+                val response = RetrofitClient.authApi.getProtectorPhone(managerId)
+                if (response.isSuccessful) {
+                    val phoneNumber = response.body()?.string()
+                    managerPhone = phoneNumber
+                    val updatedUser = userData.copy(managerPhone = phoneNumber ?: "")
+                    CurrentUser.user = updatedUser
+                    Log.d("Home", "매니저 전화번호 로드 완료: $managerPhone")
+                } else {
+                    Log.e("Home", "매니저 전화번호 요청 실패: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("Home", "매니저 전화번호 요청 중 오류", e)
+            }
+        }
+    }
+
     val phoneNumber = "010-1234-4567"
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             val intent = Intent(Intent.ACTION_CALL).apply {
-                data = Uri.parse("tel:$phoneNumber")
+                data = Uri.parse("tel:$managerPhone")
             }
             context.startActivity(intent)
         } else {
@@ -180,7 +202,7 @@ fun Home(navController: NavController) {
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
                         val intent = Intent(Intent.ACTION_CALL).apply {
-                            data = Uri.parse("tel:$phoneNumber")
+                            data = Uri.parse("tel:$managerPhone")
                         }
                         context.startActivity(intent)
                     } else {

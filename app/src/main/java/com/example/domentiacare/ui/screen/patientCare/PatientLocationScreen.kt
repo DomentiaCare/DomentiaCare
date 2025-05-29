@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Directions
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -37,7 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.domentiacare.R
 import com.example.domentiacare.data.remote.RetrofitClient
-import com.example.domentiacare.data.remote.connectWebSocket
+import com.example.domentiacare.data.remote.WebSocketManager
 import com.example.domentiacare.data.remote.dto.LocationRequestBody
 import com.example.domentiacare.data.remote.dto.Patient
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -146,7 +145,7 @@ fun PatientLocationScreen(
                     cameraPositionState.move(CameraUpdateFactory.newLatLng(patientLatLng.value))
 
                     // WebSocket 연결 시작
-                    connectWebSocket(patient.patientId) { lat, lon ->
+                    WebSocketManager.connectWebSocket(patient.patientId) { lat, lon ->
                         patientLatLng.value = LatLng(lat, lon)
                         patientMarkerState.position = patientLatLng.value
                     }
@@ -161,11 +160,13 @@ fun PatientLocationScreen(
     }
 
     // 리소스 정리
-    DisposableEffect(patient.patientId) {
+    // 화면 종료 시 구독 해제
+    DisposableEffect(Unit) {
         onDispose {
-            // WebSocket 연결 해제 로직 추가 필요
+            WebSocketManager.disconnect()
         }
     }
+
 
     Box(
         modifier = Modifier.fillMaxSize()

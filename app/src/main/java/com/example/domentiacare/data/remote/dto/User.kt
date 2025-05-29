@@ -13,5 +13,7 @@ data class User(
     val address: String,
     val addressDetail1: String,
     val addressDetail2: String,
-    val role: String
+    val role: String,
+    val managerId : Long,
+    val managerPhone : String
 )

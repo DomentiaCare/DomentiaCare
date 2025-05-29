@@ -11,8 +11,14 @@ import android.util.Log
 import android.widget.Toast
 import com.example.domentiacare.MyApplication
 import com.example.domentiacare.service.androidtts.TTSServiceManager
-import kotlinx.coroutines.*
-import java.util.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AIAssistant(
     private val context: Context,
@@ -454,7 +460,7 @@ class AIAssistant(
         try {
             val keyword = llamaResponse.trim().uppercase()
             Log.d("AIAssistant", "🎯 Command to execute: '$keyword' (original: '$originalQuestion')")
-
+//박진호
             when {
                 keyword.contains("TOMORROW") -> {
                     speakKorean("내일 일정을 확인해드리겠습니다.")
