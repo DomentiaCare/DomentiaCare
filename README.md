@@ -77,72 +77,9 @@
 
 ## 프로젝트 구조
 
+
 ```
 DomentiaCare
-├─ .idea
-│  ├─ androidTestResultsUserPreferences.xml
-│  ├─ compiler.xml
-│  ├─ deploymentTargetSelector.xml
-│  ├─ deviceManager.xml
-│  ├─ gradle.xml
-│  ├─ inspectionProfiles
-│  │  └─ Project_Default.xml
-│  ├─ kotlinc.xml
-│  ├─ migrations.xml
-│  ├─ modules
-│  │  └─ domentiacarewatch
-│  ├─ runConfigurations.xml
-│  ├─ shelf
-│  │  ├─ Uncommitted_changes_before_Checkout_at_2025-05-22__9_13__Changes_.xml
-│  │  ├─ Uncommitted_changes_before_Checkout_at_2025-05-22__9_14__Changes_.xml
-│  │  ├─ Uncommitted_changes_before_Checkout_at_2025-05-22_오후_9_13_[Changes]
-│  │  │  ├─ R.jar
-│  │  │  └─ shelved.patch
-│  │  ├─ Uncommitted_changes_before_Checkout_at_2025-05-22_오후_9_14_[Changes]
-│  │  │  ├─ +G5eq3v8SoGN5Gnwpm8S2WnlliU=
-│  │  │  ├─ 2MGf_7uVV_cz8L294mvp6wa1XCM=
-│  │  │  ├─ 49lWxTNNty2MOhbCCAtCMHzM7_s=
-│  │  │  ├─ 9xmgqviix+l5KGYUW0pgq83Wgjs=
-│  │  │  ├─ androidResources
-│  │  │  ├─ base.jar
-│  │  │  ├─ classes.dex
-│  │  │  ├─ Crhfq2aOvnlJOw7kAczKQ82g1C4=
-│  │  │  ├─ D+b7o7mYmopWywz_f3pwJ_wcpz8=
-│  │  │  ├─ D79HGvEJ0+3DBdzxFiFVFv8dtgQ=
-│  │  │  ├─ F4S33Vd6nSQZ8LsyRVEopMztdGc=
-│  │  │  ├─ graph.bin
-│  │  │  ├─ graph1.bin
-│  │  │  ├─ graph2.bin
-│  │  │  ├─ graph3.bin
-│  │  │  ├─ graph4.bin
-│  │  │  ├─ graph5.bin
-│  │  │  ├─ graph6.bin
-│  │  │  ├─ javaResources0
-│  │  │  ├─ j_uLkp1rqiOs3xPWOFBlW66S6_I=
-│  │  │  ├─ K37KJERxSKnxhLOGYwDcu4FvF4w=
-│  │  │  ├─ linked-resources-binary-format-debug.ap_
-│  │  │  ├─ MB1c2ixGr0U86M8F+lDRjRP_nFI=
-│  │  │  ├─ merge-state
-│  │  │  ├─ oukJeB_qRoN7UloGOOUx07q0RJo=
-│  │  │  ├─ out
-│  │  │  ├─ previous-compilation-data.bin
-│  │  │  ├─ R.jar
-│  │  │  ├─ rFjInWLjtSoO6dpu0CrW05JnbuI=
-│  │  │  ├─ rOVFrdxAn9XEMNuZowgpNKIrhD8=
-│  │  │  ├─ S+LLA_U2DLXGovuNUpRuWTPSq8c=
-│  │  │  ├─ shelved.patch
-│  │  │  ├─ TKHXY+A9AyeTb7K3Gv52KbzNRe8=
-│  │  │  ├─ tokenizer.json.jar
-│  │  │  ├─ uAQ7UMnEyxg8awyFWDZK7S9YKCo=
-│  │  │  ├─ vXnfrgGoGjPDxjdePGBLAjPkbIQ=
-│  │  │  ├─ xyOt_vRzUZvmuakRGhO_4vwt574=
-│  │  │  └─ zYWRh4Wm4TksowI925C3KYuel4I=
-│  │  ├─ Uncommitted_changes_before_Checkout_at_2025-05-28__8_54__Changes_.xml
-│  │  └─ Uncommitted_changes_before_Checkout_at_2025-05-28_오후_8_54_[Changes]
-│  │     └─ shelved.patch
-│  └─ vcs.xml
-├─ .kotlin
-│  └─ sessions
 ├─ app
 │  ├─ proguard-rules.pro
 │  ├─ sampledata
