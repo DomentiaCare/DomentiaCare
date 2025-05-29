@@ -76,8 +76,9 @@
 🔗 [DementiaCare 시연 영상](https://youtu.be/demo-video-link)
 
 ## 프로젝트 구조
-
-
+<details>
+  <summary>여기를 클릭하면 내용이 보입니다!</summary>
+  
 ```
 DementiaCare
 ├─ app
@@ -461,6 +462,10 @@ DementiaCare
 ├─ gradlew
 └─ gradlew.bat
 ```
+
+
+</details>
+
 
 ---
 
