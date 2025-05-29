@@ -85,9 +85,16 @@ fun ScheduleScreen(
     }
 
     // 선택된 날짜의 일정 리스트
-    val schedulesForSelectedDate = scheduleMap[selectedDate]?.map {
-        "${it.startDate.substring(11, 16)} - ${it.title}"
-    } ?: emptyList()
+    // 선택된 날짜의 일정 리스트 (시간 순서대로 정렬)
+    val schedulesForSelectedDate = scheduleMap[selectedDate]
+        ?.sortedBy { schedule ->
+            // startDate에서 시간 부분을 추출하여 정렬 기준으로 사용
+            val timePart = schedule.startDate.substring(11, 16) // "HH:mm" 형태로 추출
+            timePart
+        }
+        ?.map { schedule ->
+            "${schedule.startDate.substring(11, 16)} - ${schedule.title}"
+        } ?: emptyList()
 
     // 달력 상태
     val currentMonth = remember { YearMonth.now() }
