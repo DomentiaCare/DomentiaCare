@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.NotificationData
@@ -67,6 +69,22 @@ fun AppNavHost(
     val navController = rememberNavController()
     val context = LocalContext.current
     val scheduleViewModel = remember { ScheduleViewModel(context) }
+
+    // 현재 화면 정보 가져오기
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // 바텀바를 숨길 화면들 정의
+    val screensWithoutBottomBar = listOf(
+        "login",
+        "RegisterScreen?email={email}&nickname={nickname}"
+    )
+
+    // 현재 화면이 바텀바를 숨겨야 하는지 확인
+    val shouldShowBottomBar = !screensWithoutBottomBar.any { route ->
+        currentRoute?.startsWith(route.split("?")[0]) == true
+    }
+
 
     // 🆕 알림에서 온 경우 해당 화면으로 네비게이션
     LaunchedEffect(notificationData) {
@@ -113,7 +131,9 @@ fun AppNavHost(
     // ✅ ModalNavigationDrawer와 TopBar 제거, 깔끔한 Scaffold만 사용
     Scaffold(
         bottomBar = {
-            BottomNavBar(navController)
+            if (shouldShowBottomBar) {
+                BottomNavBar(navController)
+            }
         }
     ) { innerPadding ->
         NavHost(
