@@ -127,6 +127,10 @@ fun HomeNavigationScreen(navController: NavController) {
         }
     }
 
+    LaunchedEffect(Unit) {
+        Log.d("HomeNavigationScreen", "LaunchedEffect 진입")
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

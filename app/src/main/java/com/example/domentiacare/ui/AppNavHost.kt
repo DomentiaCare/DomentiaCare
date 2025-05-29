@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.domentiacare.NotificationData
+import com.example.domentiacare.assistant.AIAssistant
 import com.example.domentiacare.data.local.CurrentUser
 import com.example.domentiacare.data.local.TokenManager
 import com.example.domentiacare.data.model.CallRecordingViewModel
@@ -66,7 +67,9 @@ import java.time.LocalDate
 fun AppNavHost(
     notificationData: NotificationData? = null,
     getAssistantState: () -> Boolean = {false},
-    toggleAssistant: () -> Unit = {}
+    toggleAssistant: () -> Unit = {},
+    navigationRoute: String? = null, // 이 파라미터가 있는지 확인
+    onNavigationComplete: () -> Unit = {} // 이 파라미터가 있는지 확인
 ) {
     val navController = rememberNavController()
     val context = LocalContext.current
@@ -87,6 +90,14 @@ fun AppNavHost(
         currentRoute?.startsWith(route.split("?")[0]) == true
     }
 
+    // 🔧 외부에서 네비게이션 요청 처리
+    LaunchedEffect(navigationRoute) {
+        navigationRoute?.let { route ->
+            Log.d("AppNavHost", "🚀 네비게이션 실행: $route")
+            navController.navigate(route)
+            onNavigationComplete()
+        }
+    }
 
     // 🆕 알림에서 온 경우 해당 화면으로 네비게이션
     LaunchedEffect(notificationData) {
