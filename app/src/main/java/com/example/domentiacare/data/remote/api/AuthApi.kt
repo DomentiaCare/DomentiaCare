@@ -10,6 +10,7 @@ import com.example.domentiacare.data.remote.dto.Phone
 import com.example.domentiacare.data.remote.dto.RegisterUserRequest
 import com.example.domentiacare.data.remote.dto.User
 import com.example.domentiacare.network.RecordResponse
+import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
@@ -17,6 +18,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근할 수 있는 api 백엔드의 SecurityConfig를 참고하면됨
     //kakao에서 받은 token을 백엔드로 보냄
@@ -88,4 +90,9 @@ interface AuthApi {  //  /auth/** 는 백엔드에서 jwt토큰 없이도 접근
 
     @POST("/api/schedules/addPatientSchedule")
     suspend fun addPatientSchedule(@Body schedules: ScheduleDto): Response<Unit>
+
+    @GET("/api/user/protector-phone")
+    suspend fun getProtectorPhone(
+        @Query("protectorId") protectorId: Long
+    ): Response<ResponseBody>
 }
