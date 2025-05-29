@@ -245,7 +245,7 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
             // 🔧 화면 표시용 메시지 (정리된 형태)
             val displayMessage = when (messageType) {
                 MessageType.SCHEDULE -> formatScheduleForDisplay(message)
-                MessageType.DANGER -> message // 위험 알림은 그대로 표시
+                MessageType.DANGER -> formatDangerAlertMessage(message)
                 else -> message
             }
 
@@ -418,6 +418,15 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         }
     }
 
+    private fun formatDangerAlertMessage(message: String): String {
+        return message
+            .split("\n") // 줄바꿈으로 분리
+            .map { it.trim() } // 앞뒤 공백 제거
+            .filter { it.isNotEmpty() } // 빈 줄 제거
+            .joinToString("\n") // 다시 줄바꿈으로 연결
+    }
+
+
     private fun performMessageSound() {
         try {
             val toneGenerator = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 90)
@@ -564,8 +573,8 @@ fun WearApp(
             if (latestMessageState.value != null) {
                 // 알림이 있을 때: 타입에 따라 다른 색상으로 표시
                 val (textColor, fontSize) = when (messageTypeState.value) {
-                    MessageType.DANGER -> Pair(Color.Red, 10.sp)       // 🚨 위험 알림: 빨간색 20sp
-                    MessageType.SCHEDULE -> Pair(Color.Green, 12.sp)   // 📅 일정 알림: 초록색 20sp
+                    MessageType.DANGER -> Pair(Color.Red, 16.sp)       // 🚨 위험 알림: 빨간색 20sp
+                    MessageType.SCHEDULE -> Pair(Color.Green, 16.sp)   // 📅 일정 알림: 초록색 20sp
                     MessageType.NONE -> Pair(Color.White, 16.sp)       // 기본값 (사용되지 않음)
                     else -> Pair(Color.White, 16.sp)                   // 기본값
                 }

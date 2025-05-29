@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="domentiacarewatch">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-28T12:35:31.004797500Z">
+        <DropdownSelection timestamp="2025-05-29T17:11:42.924104100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CY30EZ4YV" />
@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-28T12:35:40.475626700Z">
+        <DropdownSelection timestamp="2025-05-29T17:36:46.760165400Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R3CY30EZ4YV" />
+              <DeviceId pluginId="Default" identifier="serial=192.168.137.52:37487;connection=39467e7a" />
             </handle>
           </Target>
         </DropdownSelection>
