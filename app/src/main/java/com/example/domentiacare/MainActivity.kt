@@ -245,7 +245,12 @@ class MainActivity : ComponentActivity() {
                 // 상태 변경 시 UI 업데이트 콜백
                 Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
                 updateAssistantStates()
-            }
+            },
+            onPatientSelectionRequired = { patients -> // 🆕 환자 선택 콜백
+                Log.d("MainActivity", "🔔 환자 선택 요청: ${patients.size}명")
+                patientsForSelection.value = patients
+                showPatientSelectionDialog.value = true
+            },
         )
         Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
     }
@@ -530,25 +535,25 @@ class MainActivity : ComponentActivity() {
     }
 
     // AI 어시스턴트 초기화 함수 - 수정된 버전
-    private fun initializeAIAssistant() {
-        Log.d("MainActivity", "initializeAIAssistant() 진입")
-        aiAssistant = AIAssistant(
-            context = this,
-            onScheduleAction = { action, details ->
-                handleScheduleAction(action, details)
-            },
-            onPatientSelectionRequired = { patients -> // 🆕 환자 선택 콜백
-                Log.d("MainActivity", "🔔 환자 선택 요청: ${patients.size}명")
-                patientsForSelection.value = patients
-                showPatientSelectionDialog.value = true
-            },
-            onStateChanged = {
-                Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
-                updateAssistantStates()
-            }
-        )
-        Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
-    }
+//    private fun initializeAIAssistant() {
+//        Log.d("MainActivity", "initializeAIAssistant() 진입")
+//        aiAssistant = AIAssistant(
+//            context = this,
+//            onScheduleAction = { action, details ->
+//                handleScheduleAction(action, details)
+//            },
+//            onPatientSelectionRequired = { patients -> // 🆕 환자 선택 콜백
+//                Log.d("MainActivity", "🔔 환자 선택 요청: ${patients.size}명")
+//                patientsForSelection.value = patients
+//                showPatientSelectionDialog.value = true
+//            },
+//            onStateChanged = {
+//                Log.d("MainActivity", "🔄 AI Assistant 상태 변경됨 - UI 업데이트 실행")
+//                updateAssistantStates()
+//            }
+//        )
+//        Log.d("MainActivity", "✅ AI 어시스턴트 초기화 완료")
+//    }
 
     // 🆕 순차적 권한 요청 컴포저블
     @Composable
