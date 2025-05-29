@@ -221,6 +221,13 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
                         handleAlertMessage(message, MessageType.SCHEDULE)
                     }
                 }
+                "/schedule_simple_notify" -> {
+                    // ✅ 새로운 간단 일정 알림 (파란색)
+                    Log.d("WatchMainActivity", "💙 간단 일정 알림 메시지: $message")
+                    runOnUiThread {
+                        handleSimpleScheduleMessage(message)
+                    }
+                }
                 else -> {
                     Log.d("WatchMainActivity", "⚠️ 알 수 없는 path: ${event.path}")
                 }
@@ -339,6 +346,56 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         } catch (e: Exception) {
             Log.e("WatchMainActivity", "❌ 화면 포맷팅 오류: ${e.message}", e)
             return message // 파싱 실패 시 원본 반환
+        }
+    }
+
+    private fun handleSimpleScheduleMessage(message: String) {
+        try {
+            // 간단한 메시지는 그대로 표시 (별도 포맷팅 불필요)
+            latestMessageState.value = message
+            messageTypeState.value = MessageType.SCHEDULE // 기존 SCHEDULE 타입 사용 또는 새로운 타입 생성
+
+            // 워치 노티피케이션
+            showSimpleNotification(message, MessageType.SCHEDULE)
+
+            // 진동
+            performMessageVibration()
+
+            // 소리 (1초 후)
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                performMessageSound()
+            }, 1000)
+
+            // TTS (음성 안내) - 간단한 메시지 그대로 읽기
+            speakSimpleTTS(message)
+
+            // 8초 후 메시지 제거 (간단한 알림이므로 조금 더 짧게)
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                latestMessageState.value = null
+                messageTypeState.value = MessageType.NONE
+            }, 8000L)
+
+            Log.d("WatchMainActivity", "✅ 간단 일정 알림 처리 완료: $message")
+
+        } catch (e: Exception) {
+            Log.e("WatchMainActivity", "❌ 간단 일정 알림 처리 오류: ${e.message}", e)
+        }
+    }
+
+    /**
+     * ✅ 새로운 함수: 간단한 TTS (복잡한 파싱 없이 바로 읽기)
+     */
+    private fun speakSimpleTTS(message: String) {
+        try {
+            if (tts != null) {
+                tts?.language = Locale.KOREAN
+                tts?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "simpleScheduleId")
+                Log.d("WatchMainActivity", "🔊 간단 TTS 실행: $message")
+            } else {
+                pendingSpeak = message
+            }
+        } catch (e: Exception) {
+            Log.e("WatchMainActivity", "❌ 간단 TTS 오류: ${e.message}", e)
         }
     }
 
