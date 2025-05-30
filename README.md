@@ -75,7 +75,7 @@
 
 
 ## 🎬 시연 영상
-🔗 [DementiaCare 시연 영상](https://youtu.be/demo-video-link)
+🔗 [DementiaCare 시연 영상](https://www.youtube.com/watch?v=_20qZaq7iK8&ab_channel=SoRyongKIM)
 
 ## 프로젝트 구조
 <details>
