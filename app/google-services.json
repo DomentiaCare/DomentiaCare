@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "769711127053",
+    "project_id": "domentiacare-b1064",
+    "storage_bucket": "domentiacare-b1064.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769711127053:android:758dc8173a77b3045a7344",
+        "android_client_info": {
+          "package_name": "com.example.domentiacare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZr307abPFl7dlxCBwENHQVXTlSnHF27w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

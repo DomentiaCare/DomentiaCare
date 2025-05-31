@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
+<!--<network-security-config>
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">map.naver.com</domain>
         <domain includeSubdomains="true">naveropenapi.apigw.ntruss.com</domain>
-    <!-- 여기에 본인 서버 IP 입력 -->
-    <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">223.194.131.143</domain>
     </domain-config>
+</network-security-config>-->
+
+<!--노트북 주소가 바뀔때마다 바뀌어서 배포할때 바꿔야함-->
+<network-security-config>
+<base-config cleartextTrafficPermitted="true" />
 </network-security-config>

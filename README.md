@@ -463,7 +463,6 @@ DementiaCare
 ├─ gradle.properties
 ├─ gradlew
 └─ gradlew.bat
-```
 
 
 </details>
